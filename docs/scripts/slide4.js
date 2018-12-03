@@ -1073,7 +1073,16 @@
         lineTop.margin = plot.margin;
         lineTop
             .data(transformLineX(data, plot.innerWidth()))
+            .points()
             .draw();
+        lineTop.svg
+            .selectAll(".data-item")
+            .each(function (dt, j) {
+            var node = d3$1.select(this);
+            if (j > 0 && j % 9 !== 0) {
+                node.remove();
+            }
+        });
         lineSide
             .area(false)
             .flipAxis(true)
@@ -1083,8 +1092,9 @@
         lineSide.svg
             .selectAll(".data-item")
             .each(function (dt, j) {
+            var node = d3$1.select(this);
             if (j > 0 && j % 9 !== 0) {
-                d3$1.select(this).remove();
+                node.remove();
             }
         });
         legend.toggle();
@@ -1097,8 +1107,8 @@
     function transformLineX(data, width) {
         var r = {
             series: [
-                { label: "ED-based", values: [] },
-                { label: "UCC-based", values: [] }
+                { label: "ED-based", shape: "circle", values: [] },
+                { label: "UCC-based", shape: "circle", values: [] }
             ]
         };
         data.series.forEach(function (s) {
@@ -1113,6 +1123,7 @@
                 .range([0, width]);
             var ticks = scale.ticks(s.values.length * 0.2);
             var res = kde(kernelEpanechnikov(7), ticks)(s.values);
+            res.forEach(function (re) { return re[0] /= 100.0; });
             s.values = res;
         });
         return r;
@@ -1120,8 +1131,8 @@
     function transformLineY(data, width) {
         var r = {
             series: [
-                { fill: "#333", label: "GP", shape: "GP", values: [] },
-                { fill: "#333", label: "Nurse", shape: "Nurse", values: [] }
+                { fill: "#666", label: "GP", shape: "GP", values: [] },
+                { fill: "#666", label: "Nurse", shape: "Nurse", values: [] }
             ]
         };
         data.series.forEach(function (s) {
@@ -1136,6 +1147,7 @@
                 .range([0, width]);
             var ticks = scale.ticks(s.values.length * 0.2);
             var res = kde(kernelEpanechnikov(7), ticks)(s.values);
+            res.forEach(function (re) { return re[0] /= 1000.0; });
             s.values = res;
         });
         return r;

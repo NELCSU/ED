@@ -31,22 +31,37 @@ getJSON("data/slide4.json", data => {
   contour.data(contourData);
   plot.data(data).draw();
   lineTop.margin = plot.margin;
+
   lineTop
     .data(transformLineX(data, plot.innerWidth()))
+    .points()
     .draw();
+
+  lineTop.svg
+    .selectAll(".data-item")
+    .each(function (dt: any, j: number) {
+      const node = d3.select(this);
+      if (j > 0 && j % 9 !== 0) {
+        node.remove();
+      }
+    });
+
   lineSide
     .area(false)
     .flipAxis(true)
     .points(true)
     .data(transformLineY(data, plot.innerHeight()))
     .draw();
+
   lineSide.svg
     .selectAll(".data-item")
     .each(function (dt: any, j: number) {
+      const node = d3.select(this);
       if (j > 0 && j % 9 !== 0) {
-        d3.select(this).remove();
+        node.remove();
       }
     });
+
   legend.toggle();
 });
 
@@ -59,8 +74,8 @@ function flatten(data: any): any[] {
 function transformLineX(data: any, width: number): any {
   const r = {
     series: [
-      { label: "ED-based", values: [] },
-      { label: "UCC-based", values: [] }
+      { label: "ED-based", shape: "circle", values: [] },
+      { label: "UCC-based", shape: "circle", values: [] }
     ]
   };
 
@@ -78,6 +93,7 @@ function transformLineX(data: any, width: number): any {
       .range([0, width]);
     const ticks = scale.ticks(s.values.length * 0.2);
     const res = kde(kernelEpanechnikov(7), ticks)(s.values);
+    res.forEach(re => re[0] /= 100.0);
     s.values = res;
   });
 
@@ -87,8 +103,8 @@ function transformLineX(data: any, width: number): any {
 function transformLineY(data: any, width: number) {
   const r = {
     series: [
-      { fill: "#333", label: "GP", shape: "GP", values: [] },
-      { fill: "#333", label: "Nurse", shape: "Nurse", values: [] }
+      { fill: "#666", label: "GP", shape: "GP", values: [] },
+      { fill: "#666", label: "Nurse", shape: "Nurse", values: [] }
     ]
   };
 
@@ -106,6 +122,7 @@ function transformLineY(data: any, width: number) {
       .range([0, width]);
     const ticks = scale.ticks(s.values.length * 0.2);
     const res = kde(kernelEpanechnikov(7), ticks)(s.values);
+    res.forEach(re => re[0] /= 1000.0);
     s.values = res;
   });
 
