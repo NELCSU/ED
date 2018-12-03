@@ -17,15 +17,11 @@
       main { align-items: center; flex-direction: column; justify-content: center }
             
       .group-panel { align-items: flex-start; display: flex; justify-content: flex-start; width: 100% }
-      .group-panel.top { height: 20vh }
-      .group-panel.main { height: 70vh }
-      .main-panel { width: 75% }
-      .side-panel { width: 20% }
 
-      #placeholder { background-color: #eee; height: 20vh }
-      #topPlot { height: 20vh }
-      #mainPlot { height: 70vh }
-      #sidePlot { background-color: #ccc; height: 70vh }
+      #placeholder { height: 20vh; width: 25vw }
+      #mainPlot { height: 65vh; width: 73vw }
+      #topPlot { height: 20vh; width: 73vw }
+      #sidePlot { height: 65vh; width: 20vh }
     </style>
   </head>
   <body>
@@ -44,11 +40,11 @@
         </div> 
       </header>
       <main>
-        <div class="group-panel top">
+        <div class="group-panel">
           <div id="topPlot" class="main-panel"></div>
           <div id="placeholder" class="side-panel"></div>
         </div>
-        <div class="group-panel main">
+        <div class="group-panel">
           <div id="mainPlot" class="main-panel"></div>
           <div id="sidePlot" class="side-panel"></div>
         </div>

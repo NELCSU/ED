@@ -7,7 +7,8 @@ import { kde, kernelEpanechnikov } from "../lib/kde.es";
 import { getJSON} from "../lib/get-json.es";
 
 const plot = new Plot("mainPlot", "scatterPlot");
-const line = new Line("topPlot", "linePlot");
+const lineTop = new Line("topPlot", "lineTopPlot");
+const lineSide = new Line("sidePlot", "lineSidePlot");
 
 const legend = new Legend(plot);
 legend
@@ -29,18 +30,33 @@ getJSON("data/slide4.json", data => {
   const contourData = flatten(data);
   contour.data(contourData);
   plot.data(data).draw();
-  const areaData = transformLineX(data, plot.innerWidth());
-  line.margin = plot.margin;
-  line.data(areaData).draw();
+  lineTop.margin = plot.margin;
+  lineTop
+    .data(transformLineX(data, plot.innerWidth()))
+    .draw();
+  lineSide
+    .area(false)
+    .flipAxis(true)
+    .points(true)
+    .data(transformLineY(data, plot.innerHeight()))
+    .draw();
+  lineSide.svg
+    .selectAll(".data-item")
+    .each(function (dt: any, j: number) {
+      if (j > 0 && j % 9 !== 0) {
+        d3.select(this).remove();
+      }
+    });
+  legend.toggle();
 });
 
-function flatten(data: any) {
+function flatten(data: any): any[] {
   const f = [];
   data.series.forEach(s => s.values.forEach(v => f.push(v)));
   return f;
 }
 
-function transformLineX(data: any, width: number) {
+function transformLineX(data: any, width: number): any {
   const r = {
     series: [
       { label: "ED-based", values: [] },
@@ -64,6 +80,35 @@ function transformLineX(data: any, width: number) {
     const res = kde(kernelEpanechnikov(7), ticks)(s.values);
     s.values = res;
   });
+
+  return r;
+}
+
+function transformLineY(data: any, width: number) {
+  const r = {
+    series: [
+      { fill: "#333", label: "GP", shape: "GP", values: [] },
+      { fill: "#333", label: "Nurse", shape: "Nurse", values: [] }
+    ]
+  };
+
+  data.series.forEach(s => {
+    const i = s.shape === "Nurse" ? 1 : 0;
+    s.values.forEach(v => {
+      // x1000 required to make density function input values
+      r.series[i].values.push(v[1] * 1000.0);
+    });
+  });
+
+  r.series.forEach(s => {
+    const scale = d3.scaleLinear()
+      .domain(d3.extent(s.values))
+      .range([0, width]);
+    const ticks = scale.ticks(s.values.length * 0.2);
+    const res = kde(kernelEpanechnikov(7), ticks)(s.values);
+    s.values = res;
+  });
+
   return r;
 }
 
