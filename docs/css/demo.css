@@ -10,6 +10,15 @@ h1 { font-size: 1.5rem }
 h2 { font-size: 1.3rem }
 h3 { font-size: 1.1rem }
 
+a > h2 { 
+  margin: 0; 
+  padding-left: 40px
+}
+a { 
+  color: rgb(10, 96, 167); 
+  text-decoration: none 
+}
+
 header { 
   align-items: flex-start;
   background-color: #fff; 
@@ -29,7 +38,11 @@ header.sticky {
   top: 0; 
 }
 
-main { display: flex; margin-top: 8vh; width: 100vw }
+main { 
+  display: flex; 
+  margin-top: 8vh; 
+  width: 100vw 
+}
 
 .box-shadow {
   border: 1px solid #D5D5D5;
