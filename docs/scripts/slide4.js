@@ -1164,5 +1164,49 @@
         note.style.opacity = null;
         setTimeout(function () { return note.style.display = "none"; }, 600);
     });
+    function drag(element, handle, toggle) {
+        var x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+        var v = true;
+        var el = document.querySelector(element);
+        var h = handle ? document.querySelector(handle) : el;
+        var t = document.querySelector(toggle);
+        t.addEventListener("click", function () {
+            if (v) {
+                t.classList.remove("rotate45");
+                h.classList.add("drag-handle");
+                h.addEventListener("pointerdown", start);
+            }
+            else {
+                t.classList.add("rotate45");
+                h.classList.remove("drag-handle");
+                h.removeEventListener("pointerdown", start);
+            }
+            v = !v;
+        });
+        t.dispatchEvent(new Event("click"));
+        function start(e) {
+            e = e || window.event;
+            e.preventDefault();
+            x2 = e.clientX;
+            y2 = e.clientY;
+            window.addEventListener("pointerup", end);
+            window.addEventListener("pointermove", move);
+        }
+        function move(e) {
+            e = e || window.event;
+            e.preventDefault();
+            x1 = x2 - e.clientX;
+            y1 = y2 - e.clientY;
+            x2 = e.clientX;
+            y2 = e.clientY;
+            el.style.top = (el.offsetTop - y1) + "px";
+            el.style.left = (el.offsetLeft - x1) + "px";
+        }
+        function end() {
+            window.removeEventListener("pointerup", end);
+            window.removeEventListener("pointermove", move);
+        }
+    }
+    drag(".note", ".note-control", ".note-control > .pin");
 
 }(d3));

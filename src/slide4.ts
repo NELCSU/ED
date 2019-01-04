@@ -142,3 +142,51 @@ document.querySelector(".close")
     note.style.opacity = null;
     setTimeout(() => note.style.display = "none", 600);
   });
+
+function drag(element: string, handle?: string, toggle?: string) {
+  let x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+  let v: boolean = true;
+  const el = document.querySelector(element) as HTMLElement;
+  const h = handle ? document.querySelector(handle) as HTMLElement : el;
+  const t = document.querySelector(toggle) as HTMLElement;
+  t.addEventListener("click", () => {
+    if (v) {
+      t.classList.remove("rotate45");
+      h.classList.add("drag-handle");
+      h.addEventListener("pointerdown", start);
+    } else {
+      t.classList.add("rotate45");
+      h.classList.remove("drag-handle");
+      h.removeEventListener("pointerdown", start);
+    }
+    v = !v;
+  });
+  t.dispatchEvent(new Event("click"));
+
+  function start(e: any) {
+    e = e || window.event;
+    e.preventDefault();
+    x2 = e.clientX;
+    y2 = e.clientY;
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointermove", move);
+  }
+
+  function move(e: any) {
+    e = e || window.event;
+    e.preventDefault();
+    x1 = x2 - e.clientX;
+    y1 = y2 - e.clientY;
+    x2 = e.clientX;
+    y2 = e.clientY;
+    el.style.top = (el.offsetTop - y1) + "px";
+    el.style.left = (el.offsetLeft - x1) + "px";
+  }
+
+  function end() {
+    window.removeEventListener("pointerup", end);
+    window.removeEventListener("pointermove", move);
+  }
+}
+
+drag(".note", ".note-control", ".note-control > .pin");
