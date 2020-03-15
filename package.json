@@ -14,15 +14,15 @@
   "author": "NEL",
   "license": "MIT",
   "devDependencies": {
-    "@types/d3": "^5.5.0",
-    "http-server": "^0.11.1",
-    "rollup": "^1.0.1",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-typescript2": "^0.18.1",
-    "typescript": "^3.2.2"
+    "@types/d3": "^5.7.2",
+    "http-server": "^0.12.1",
+    "rollup": "^2.0.6",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.26.0",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
-    "d3": "^5.7.0",
-    "d3-sankey": "^0.7.1"
+    "d3": "^5.15.0",
+    "d3-sankey": "^0.12.3"
   }
 }
