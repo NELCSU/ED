@@ -8,14 +8,6 @@ by Sgouris Sgouridis, Ugo Bardi & Denes Csala
 
 */
 
-//set global database path
-////////////
-//DEPRECATED
-////////////
-//var datapath = "https://dl.dropboxusercontent.com/u/333992592/Food-Energy/"  //old MIT dropbox
-//var datapath = "https://dl.dropboxusercontent.com/u/531697/datarepo/Food-Energy/" //default
-//var datapath = "http://raw.githubusercontent.com/csaladenes/Food-Energy/master/"  //if data on github server
-//var datapath = "" //for local testing
 ////////////////////
 //NEW DYNAMIC METHOD
 ///////////////////
@@ -34,7 +26,7 @@ var dropdown2 = d3.select("#json_sources2");
 var dropdown3 = d3.select("#json_sources3");
 var scrollscatter=function(a){};
 
-d3.json(datapath + "json/countries.json", function(d) {
+d3.json(datapath + "docs/json/countries.json", function(d) {
 	dropdown2.selectAll("option").remove();
     for (var key in d.countries) {
         dropdown2.append("option").text(d.countries[key]);

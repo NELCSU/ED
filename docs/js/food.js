@@ -31,14 +31,6 @@ String.prototype.addLines = function () {
 };
 //<!--convert non-default URL-->
 
-//set global database path
-////////////
-//DEPRECATED
-////////////
-//var datapath = "https://dl.dropboxusercontent.com/u/333992592/Food-Energy/"  //old MIT dropbox
-//var datapath = "https://dl.dropboxusercontent.com/u/531697/datarepo/Food-Energy/" //default
-//var datapath = "http://raw.githubusercontent.com/csaladenes/Food-Energy/master/"  //if data on github server
-//var datapath = "" //for local testing
 ////////////////////
 //NEW DYNAMIC METHOD
 ///////////////////
@@ -336,7 +328,7 @@ var tiphide = function (d) {
 
 };
 
-d3.json(datapath + "json/countries.json", function (d) {
+d3.json(datapath + "docs/json/countries.json", function (d) {
 			dropdown.selectAll("option").remove();
 			for (var key in d.countries) {
 				dropdown.append("option").text(d.countries[key]);
@@ -348,7 +340,7 @@ d3.json(datapath + "json/countries.json", function (d) {
 			}
 			dropdown.on("change", sourcechange);
 			var setyears = function () {
-				JSZipUtils.getBinaryContent(datapath + "json/" + dropdown.node().value + ".zip", function (err, rawdata) {
+				JSZipUtils.getBinaryContent(datapath + "docs/json/" + dropdown.node().value + ".zip", function (err, rawdata) {
 						var zip = new JSZip(rawdata);
 						var qdata = JSON.parse(zip.files[dropdown.node().value + "m.json"].asText());
 						var missing = qdata.missing;
