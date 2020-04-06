@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "http": "http-server . -a localhost -p 8000 -o",
+    "http": "http-server ./docs -a localhost -p 8000 -o",
     "test": "npm run http"
   },
   "repository": {
