@@ -199,6 +199,28 @@ option:hover {
   box-shadow: 0 0 15px #667;
 }
 
+iframe {
+  border: none;
+  margin-top: 10px;
+  margin-left: 0px;
+  width: 100%;
+  height: 100%;
+}
+
+.nbembed {
+  position: fixed;
+  top: 40px;
+  left: 40px;
+  border-top: solid;
+  width: -moz-calc(100% - 70px);
+  width: -webkit-calc(100% - 70px);
+  width: calc(100% - 70px);
+  height: -moz-calc(100% - 70px);
+  height: -webkit-calc(100% - 70px);
+  height: calc(100% - 70px);
+  text-align: center;
+}
+
 div.tooltip {
   line-height: 1;
   font-weight: bold;

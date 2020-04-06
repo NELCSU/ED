@@ -37,7 +37,7 @@ String.prototype.addLines = function () {
 //check if in dev mode and on local server
 var datapath = ((window.location.hostname == 'localhost') ?
 	'./' :
-	"https://github.com/NELCSU/ED/blob/master/"
+	"https://github.com/NELCSU/ED/raw/master/"
 );
 //////////////////
 
