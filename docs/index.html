@@ -1,11 +1,13 @@
 <!DOCTYPE xhtml>
 <html xmlns="https://www.w3.org/1999/xhtml">
+
 <head>
 	<meta http-equiv="content-Type" content="text/html; charset=utf-8" />
-	<meta name="description" content="COVID-19" />
-	<meta name="keywords" content="NHS, COVID-19" />
-	<title>Food Energy Flows</title>
-	<link rel="shortcut icon" href="favicon.png" />
+	<meta name="description" content="Urgent Care COVID-19 Flows" />
+	<meta name="keywords" content="NHS, COVID-19, urgent care" />
+	<title>Urgent Care COVID-19 Flows</title>
+
+	<link href="favicon.png" rel="shortcut icon" />
 	<link href="css/index.css" rel="stylesheet" />
 	<link href="css/nv.d3.css" rel="stylesheet" />
 
@@ -14,100 +16,72 @@
 	<script src="js/nv.d3.min.js"></script>
 	<script src="js/jszip.min.js"></script>
 	<script src="js/JSZipUtils.min.js"></script>
-
-	<script>
-		var sizecorrection = Math.max(0, 220 - parseInt(window.innerWidth * 0.2));
-		var inithash = ""; // NEW
-		function checksize() {
-			if (window.innerWidth < 1000) {
-				document.getElementById("titlebar-right").style.display = "none";
-			} else {
-				document.getElementById("titlebar-right").style.display = "inline";
-			}
-			if ((window.innerWidth < 800) || (window.innerHeight < 600)) {
-				alert("The recommended minimum resolution is 800 x 600.\n Yours is " + window.innerWidth + " x " + window.innerHeight + ".");
-			}
-			setTimeout(function () {
-				d3.select("#loading").style("display", "none");
-				var text = "Sankey Diagram";
-				if (inithash == "#&description") { text = "Description" };
-				if (inithash == "#&scatter") { text = "Data Plots" };
-				d3.select("#titletext").text("Food Energy Flows " + text);
-				if ((inithash == "#&description") || (inithash == "#&scatter")) {
-					d3.select("#" + inithash.slice(2, inithash.length)).style("visibility", "visible");
-					d3.select("#" + inithash.slice(2, inithash.length)).transition().style("opacity", 1);
-					d3.select("#" + inithash.slice(2, inithash.length)).style("z-index", 0);
-				}
-				else {
-					d3.select("#content").style("visibility", "visible");
-					d3.select("#content").transition().style("opacity", 1);
-				}
-			}, 500);
-		}
-	</script>
 </head>
 
-<body onload="checksize();">
+<body>
 
 	<!--TITLELBAR-->
 
 	<div id="titlebar" class="acc">
-		<img id="favicon" onclick="disp_content('#content',myhash);" src="favicon2.png" alt="Sankey Diagram"
-			title="Sankey Diagram" style="height:20px; width:20px; margin-left:5px; margin-top:0px;" />
+		<img id="favicon" onclick="disp_content('#content',myhash);" src="favicon2.png" alt="Home" title="Home" />
+		<span id="titletext" class="pagetitle" title="Food Energy Flows">Urgent Care COVID-19 Flows</span>
 	</div>
 
 	<!--LOADING-->
-
 	<div id="loading" class="pagetitle" style="font-size:75px;z-index:0;position:absolute;top:120px;left:100px;">
-		Loading...</div>
+		Loading...
+	</div>
 
 	<!--PAGE WRAPPER-->
-
 	<div id="content" style="opacity:0;visibility:hidden;">
 
-		<div id="titlebar-right"> <span class="pagetitle" id="cid"></span>
+		<div id="titlebar-right">
+			<span class="pagetitle" id="cid"></span>
 			<span class="pagetitle" style="margin-left:5px; margin-right:5px;">|</span>
 			<span class="pagetitle" id="yid"></span>
 		</div>
 
 		<!--SANKEY DIAGRAM CONTROLS-->
-
-		<div id="sourcecontrol" class="acc"
-			style="float:right; margin-right:10px; width:20%; margin-top:10px; min-width:220px; border-left:solid; height:98%; padding-left:20px;line-height:26px;z-index:600000;">
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Country:</span><span
-					style="float:right;">
+		<div id="sourcecontrol" class="acc" style="float:right; margin-right:10px; width:20%; margin-top:10px; min-width:220px; border-left:solid; height:98%; padding-left:20px;line-height:26px;z-index:600000;">
+			<div style="display:block;overflow: hidden;white-space: nowrap;">
+				<span style="float:left;">STP:</span>
+				<span	style="float:right;">
 					<select id="json_sources" name="json_sources" style="width:130px;direction: rtl;"></select>
 				</span>
 			</div>
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Year:</span><span
-					style="float:right;">
-					<select id="years" name="years" style="width:130px;direction: rtl;"></select>
+			<div style="display:block;overflow: hidden;white-space: nowrap;">
+				<span style="float:left;">Day:</span>
+				<span	style="float:right;">
+					<select id="days" name="days" style="width:130px;direction: rtl;"></select>
 				</span>
 			</div>
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Total
-					biomass:</span><span style="float:right;">
+			<div style="display:block;overflow: hidden;white-space: nowrap;">
+				<span style="float:left;">Calls:</span><span style="float:right;">
 					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b00" value="1" />
 					<input type="radio" title="2: Food supergroups" onclick="change();" name="r1" id="b10" value="2" />
 					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b20" value="3" />
 					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b30" value="4" />
 				</span>
 			</div>
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Food
-					system:</span><span style="float:right;">
+			<!--
+			<div style="display:block;overflow: hidden;white-space: nowrap;">
+				<span style="float:left;">Food system:</span><span style="float:right;">
 					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b01" value="1" />
 					<input type="radio" title="2: Food supergroups" onclick="change();" name="r1" id="b11" value="2" />
 					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b21" value="3" />
 					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b31" value="4" />
 				</span>
-			</div>
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span
-					style="float:left;">Agri-system:</span><span style="float:right;">
+			</div> -->
+			<!--
+			<div style="display:block;overflow: hidden;white-space: nowrap;">
+				<span	style="float:left;">Agri-system:</span><span style="float:right;">
 					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b02" value="1" />
 					<input type="radio" title="2: Food supergroups" onclick="change();" name="r1" id="b12" value="2" />
 					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b22" value="3" />
 					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b32" value="4" />
 				</span>
-			</div>
+			</div> -->
+			<!--
 			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Food
 					weight:</span><span style="float:right;">
 					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b03" value="1" />
@@ -115,7 +89,8 @@
 					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b23" value="3" />
 					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b33" value="4" />
 				</span>
-			</div>
+			</div> -->
+
 			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Move nodes:</span>
 				<div style="float:right; padding-right:0; margin-right:0;">
 					<div style="font-size:20px;font-weight:bold;line-height:10px;">
@@ -127,6 +102,7 @@
 					</div>
 				</div>
 			</div>
+
 			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Density:</span>
 				<div style="float:right;">
 					<div id="pslider" title="Drag slider to set diagram node padding" class="dragdealer"
@@ -147,6 +123,7 @@
 					</div>
 				</div>
 			</div>
+
 			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Opacity:</span>
 				<div style="float:right;">
 					<div id="oslider" title="Drag slider to set diagram flow opacities" class="dragdealer"
@@ -167,52 +144,31 @@
 					</div>
 				</div>
 			</div>
-			<div class="acc"
-				style="display:block;overflow: hidden;white-space: nowrap; border-bottom:solid; padding-bottom:10px;">
-				<span style="float:left;">Breakdown:
-					<input type="checkbox" title="Toggle piechart" id="legend" onclick='updpievis()' checked /></span>
-				<span style="float:right;">Legend:
-					<input type="checkbox" title="Toggle piechart legend" id="legend2" onclick='updpieleg()' checked /></span>
+
+			<div class="acc" style="display:block;overflow: hidden;white-space: nowrap; border-bottom:solid; padding-bottom:10px;">
+				<span style="float:left;">
+					Breakdown: <input type="checkbox" title="Toggle piechart" id="legend" onclick='updpievis()' checked />
+				</span>
+				<span style="float:right;">
+					Legend: <input type="checkbox" title="Toggle piechart legend" id="legend2" onclick='updpieleg()' checked />
+				</span>
 			</div>
-			<div id="units" style="position:absolute;right:10px;bottom:30px;">
-				TWh
-			</div>
+			<div id="units" style="position:absolute;right:10px;bottom:30px;">TWh</div>
 		</div>
 
 		<!--PIE CHARTS-->
-
 		<div id="mypie" class="pielegend">
 			<svg style="width:100%;height:100%;"></svg>
 		</div>
+
 		<div id="mypie2" class="pielegend">
 			<svg style="width:100%;height:100%;"></svg>
 		</div>
 
 		<!--SANKEY DIAGRAM-->
-
 		<div id="chart" onmousewheel="scrollsankey(event.wheelDelta)" style="z-index:5;">
 
-			<!--EROEI MINI-SANKEY-->
-
-			<div style="display: block; float: right;  z-index: 3;  position: absolute; right: 5px; top: 43px;">
-				<table style="text-align:right;" cellpadding="0" cellspacing="0">
-					<tr>
-						<td rowspan="2" id="chart2"></td>
-						<td id="ER" class="pagetitle" style="font-size:25px; width:88px;">EROEI</td>
-					</tr>
-					<tr>
-						<td id="EROEI" class="pagetitle" style="font-size:35px;">2.00</td>
-					</tr>
-					<tr>
-						<td colspan="2" id="chart3">
-							<svg style="width:240px;height:40px;"></svg>
-						</td>
-					</tr>
-				</table>
-			</div>
-
 			<!--DATA QUALITY INFO-->
-
 			<div id="qualitywrap" style="position:absolute;left:40px;top:45px;text-align:center;" alt="" title="">
 				<table style="text-align:left; font-size:15px; margin:0px; padding:0px;" cellpadding="0" cellspacing="0"
 					class="pagetitle">
@@ -228,100 +184,28 @@
 		</div>
 
 		<!--TIME SLIDER-->
-
-		<div id="timeslider" title="Drag slider to set display year. Identical to mouse scroll." class="dragdealer"
-			style="position:fixed; bottom:20; left:40;">
-			<div class="handle red-bar"> <span class="value"></span>
+		<div id="timeslider" title="Drag slider to set display day. Identical to mouse scroll."
+			class="dragdealer" style="position:fixed; bottom:20; left:40;">
+			<div class="handle red-bar">
+				<span class="value"></span>
 			</div>
 		</div>
 
 		<!-- -------SCRIPTS--------- -->
-
 		<script src="js/sankey.js"></script>
 		<script src="js/food.js"></script>
-
 	</div>
 
-	<!--SCATTER WRAPPER-->
-
-	<div id="scatter" style="opacity:0;z-index:-1;padding-top:0px;visibility:hidden;text-align:center;">
-
-		<!--PLOT CONTROLS-->
-
-		<div id="plotcontrol"
-			style="text-align:left;float:right; right:0px;position:absolute; margin-right:10px; width:20%; margin-top:10px; min-width:220px; border-left:solid; height:98%; padding-left:20px;line-height:26px;">
-			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span>System energy input-output balance</span>
-				<br />
-				<span style="float:left;">Country:</span>
-				<span style="float:right;">
-					<select id="json_sources2" name="json_sources2" style="width:130px;direction: rtl;"></select>
-				</span>
-			</div>
-			<br />
-			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span>Evolution of system EROEI vs.:</span>
-				<br />
-				<span>Per capita GDP</span>
-				<span>
-					<input type="radio" title="Per capita GDP" name="r11" class="r11" value="eroei" checked />
-				</span>
-				<span>&nbsp;&nbsp;&nbsp;</span>
-				<span>Yield</span>
-				<span>
-					<input type="radio" title="Yield" name="r11" class="r11" value="groei" />
-				</span>
-				<br />
-				<span style="float:left;">Year:</span>
-				<span style="float:right;">
-					<button id="json_sources3_minus">&lt;</button><select id="json_sources3" name="json_sources3"
-						style="width:77px;direction: rtl;"></select><button id="json_sources3_plus">&gt;</button>
-				</span>
-				<br />
-				<span>lin-lin</span>
-				<span>
-					<input type="radio" title="lin-lin" name="r12" class="r12" value="0" />
-				</span>
-				<span>&nbsp;&nbsp;&nbsp;</span>
-				<span>log-lin</span>
-				<span>
-					<input type="radio" title="log-lin" name="r12" class="r12" value="1" />
-				</span>
-				<span>&nbsp;&nbsp;&nbsp;</span>
-				<span>log-log</span>
-				<span>
-					<input type="radio" title="log-log" name="r12" class="r12" value="2" checked />
-				</span>
-			</div>
-			<br />
-			<div style="display:block;overflow: hidden;white-space: nowrap;" class="button"
-				onclick='d3.select("#main").attr("src",datapath+"docs/plots/all_eroei.png");'>Evolution of EROEI vs. GDP</div>
-			<div style="display:block;overflow: hidden;white-space: nowrap;" class="button"
-				onclick='d3.select("#main").attr("src",datapath+"docs/plots/all_groei.png");'>Evolution of EROEI vs. Yield</div>
-			<br />
-			<br />
-			<div class="link2" style="display:block;overflow: hidden;white-space: nowrap;"
-				onclick="disp_content('#description','#&description')">Description</div>
-		</div>
-
-		<!--MAIN IMAGE PLACEHOLDER-->
-
-		<img src="favicon.png" style="position:relative;width:100px;margin-top:50px;margin-left:40px;" id="main" />
-
-		<!-- -------SCRIPTS--------- -->
-
-		<script src="js/scatter.js"></script>
-
-	</div>
-
-	<!--TEXT WRAPPER-->
-
-	<div id="description" class="nbembed" style="opacity:0;z-index:-1;padding-top:0px;visibility:hidden;">
-	
+	<!--THEME TOOLBAR-->
+	<div id="theme_toolbar">
+		<select id="theme_choice">
+			<option value="0" selected>Light</option>
+			<option value="1">Dark</option>
+		</select>
+		<span style="font-weight:normal">theme enabled</span>
 	</div>
 
 	<!--THEME SELECTOR-->
-
 	<script>
 		var themeid = 0;
 		var themes = ["#light", "#dark"];
@@ -338,9 +222,6 @@
 		var themetooltipborder = ["rgba(0,0,0,0.2)", "rgba(255,255,255,0.2)"];
 		var themehelpbg = ["rgba(255,255,255,0.8)", "rgba(0,0,0,0.9)"];
 		var themefavicon = ["favicon", "favicon2"];
-		var themeworldicon = ["world", "world2"];
-		var themescattericon = ["scatter", "scatter2"];
-		var themehelpicon = ["help", "help2"];
 
 		//set theme cell colors
 		themes.forEach(function (k, i) {
@@ -364,18 +245,15 @@
 			d3.select("body")
 				.style("background", themebg[k])
 				.style("color", themefont[k])
-				.style("fill", themefont[k])
-			d3.select("#imap")
-				.style("background", themebg[k])
-			d3.selectAll("#social a")
-				.style("color", themefont[k])
-			d3.selectAll(".pagetitle")
-				.style("color", themetitlefont[k])
+				.style("fill", themefont[k]);
+
+			d3.select("#imap").style("background", themebg[k]);
+			d3.selectAll(".pagetitle").style("color", themetitlefont[k]);
 			d3.selectAll(".acc").style("border-color", themebgacc[k]);
 			d3.selectAll("#plotcontrol").style("border-color", themebgacc[k]);
 			d3.selectAll("#description").style("border-color", themebgacc[k]);
 			d3.selectAll(".dragdealer").style("background", themebgacc[k]);
-			d3.selectAll("#json_sources, #years, #json_sources2, #json_sources3")
+			d3.selectAll("#json_sources, #days, #json_sources2, #json_sources3")
 				.style("background", themebgacc[k])
 				.style("color", themefont[k])
 				.style("border-color", themetooltipborder[k]);
@@ -390,29 +268,20 @@
 				.style("border-color", themetooltipborder[k]);
 			svg.style("font-weight", themesankeyfontw[k])
 				.style("text-shadow", "0 1px 0 " + themebg[k]);
-			svg2.style("font-weight", themesankeyfontw[k])
-				.style("text-shadow", "0 1px 0 " + themebg[k]);
+
 			d3.select("#ER").style("text-shadow", "0 2px 0 " + themebg[k]);
 			d3.select("#EROEI").style("text-shadow", "0 2px 0 " + themebg[k]);
 			d3.select("#favicon").attr("src", themefavicon[k] + ".png");
-			d3.select("#worldicon").attr("src", themeworldicon[k] + ".png");
-			d3.select("#scattericon").attr("src", themescattericon[k] + ".png");
-			d3.select("#helpicon").attr("src", themehelpicon[k] + ".png");
-
-			//scatter update
-			scrollscatter(1);
-			scrollscatter(-1);
-
-			//description update
-			//document.getElementById("idescription").src = "https://nbviewer.ipython.org/url/food.csaladen.es/ipython/description" + k + ".ipynb"
 		}
 
-		d3.select("#light").on("click", function () { theme(0) });
-		d3.select("#dark").on("click", function () { theme(1) });
+		d3.select("#theme_choice").on("input", function () {
+			theme(parseInt(d3.select(this).property('value')))
+		});
 
-		//initialize theme
 		theme(themeid);
 	</script>
 
+	<script src="js/checksize.js"></script>
+	
 </body>
 </html>
