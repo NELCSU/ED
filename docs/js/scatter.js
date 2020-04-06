@@ -14,7 +14,7 @@ by Sgouris Sgouridis, Ugo Bardi & Denes Csala
 //check if in dev mode and on local server
 var datapath = ((window.location.hostname == 'localhost') ?
 	'./' :
-	"https://nelcsu.github.io/ED/"
+	"https://raw.githubusercontent.com/NELCSU/ED/master/docs/"
 );
 //////////////////
 
@@ -26,7 +26,7 @@ var dropdown2 = d3.select("#json_sources2");
 var dropdown3 = d3.select("#json_sources3");
 var scrollscatter=function(a){};
 
-d3.json(datapath + "docs/json/countries.json", function(d) {
+d3.json(datapath + "json/countries.json", function(d) {
 	dropdown2.selectAll("option").remove();
     for (var key in d.countries) {
         dropdown2.append("option").text(d.countries[key]);

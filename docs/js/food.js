@@ -37,7 +37,7 @@ String.prototype.addLines = function () {
 //check if in dev mode and on local server
 var datapath = ((window.location.hostname == 'localhost') ?
 	'./' :
-	"https://nelcsu.github.io/ED/"
+	"https://raw.githubusercontent.com/NELCSU/ED/master/docs/"
 );
 //////////////////
 
@@ -328,7 +328,7 @@ var tiphide = function (d) {
 
 };
 
-d3.json(datapath + "docs/json/countries.json", function (d) {
+d3.json(datapath + "json/countries.json", function (d) {
 			dropdown.selectAll("option").remove();
 			for (var key in d.countries) {
 				dropdown.append("option").text(d.countries[key]);
@@ -340,7 +340,7 @@ d3.json(datapath + "docs/json/countries.json", function (d) {
 			}
 			dropdown.on("change", sourcechange);
 			var setyears = function () {
-				JSZipUtils.getBinaryContent(datapath + "docs/json/" + dropdown.node().value + ".zip", function (err, rawdata) {
+				JSZipUtils.getBinaryContent(datapath + "json/" + dropdown.node().value + ".zip", function (err, rawdata) {
 						var zip = new JSZip(rawdata);
 						var qdata = JSON.parse(zip.files[dropdown.node().value + "m.json"].asText());
 						var missing = qdata.missing;

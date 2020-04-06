@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "http": "http-server ./docs -a localhost -p 8000 -o",
+    "http": "http-server ./docs -a localhost -p 5000 -o --ssl --key private/key.pem --cert private/cert.pem",
     "test": "npm run http"
   },
   "repository": {
