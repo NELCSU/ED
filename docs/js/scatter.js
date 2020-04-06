@@ -14,7 +14,7 @@ by Sgouris Sgouridis, Ugo Bardi & Denes Csala
 //check if in dev mode and on local server
 var datapath = ((window.location.hostname == 'localhost') ?
 	'./' :
-	"https://raw.githubusercontent.com/NELCSU/ED/master/"
+	"https://github.com/NELCSU/ED/blob/master/"
 );
 //////////////////
 
