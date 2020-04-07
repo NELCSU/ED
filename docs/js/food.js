@@ -81,7 +81,7 @@ function setdays(filePath) {
 		dayselect.node().value = "0304"; // Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
 
 		// @ts-ignore
-		d3.select("#cid").text(STPList.node().value);
+		d3.select("#stp-in-title").text(STPList.node().value);
 
 		//<!--SANKEY DIAGRAM-->
 
@@ -133,7 +133,7 @@ function setdays(filePath) {
  */
 function data_quality_info (interpolation, missing, estimated) {
 	// @ts-ignore
-	d3.select("#yid").text(dayselect.node().value);
+	d3.select("#date-in-title").text(dayselect.node().value);
 
 	var interpolated = interpolation[dayselect.node().value];
 	// @ts-ignore

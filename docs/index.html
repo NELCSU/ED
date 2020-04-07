@@ -24,7 +24,7 @@
 	<!--TITLELBAR-->
 	<div id="titlebar" class="acc border-bottom">
 		<a href="index.html" title="Home"><img id="favicon" src="favicon.png" alt="Home" /></a>
-		<span id="titletext" class="pagetitle">Urgent Care COVID-19 Flows</span>
+		<span id="titletext" class="pagetitle th-fg-color">Urgent Care COVID-19 Flows</span>
 	</div>
 
 	<div id="loading" class="th-fg-color">Loading...</div>
@@ -33,9 +33,9 @@
 	<div id="content" style="opacity:0;visibility:hidden;">
 
 		<div id="titlebar-right">
-			<span class="pagetitle" id="cid"></span>
-			<span class="pagetitle" style="margin-left:5px; margin-right:5px;">|</span>
-			<span class="pagetitle" id="yid"></span>
+			<span class="pagetitle th-fg-color" id="stp-in-title"></span>
+			<span class="pagetitle th-fg-color" style="margin-left:5px; margin-right:5px;">|</span>
+			<span class="pagetitle th-fg-color" id="date-in-title"></span>
 		</div>
 
 		<!--SANKEY DIAGRAM CONTROLS-->
@@ -52,12 +52,14 @@
 					<select id="days" name="days" style="width:130px;direction: rtl;"></select>
 				</span>
 			</div>
+
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
 				<span style="float:left;">Scope:</span><span style="float:right;">
 					<input type="radio" title="System level" onclick="change();" name="r1" id="b00" value="1" />
 					<input type="radio" title="Provider level" onclick="change();" name="r1" id="b01" value="2" />
 				</span>
 			</div>
+
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
 				<span style="float:left;">Calls:</span><span style="float:right;">
 					<input type="radio" title="All calls" onclick="change();" name="r1" id="b10" value="1" />
@@ -66,24 +68,6 @@
 					<input type="radio" title="Primary care calls" onclick="change();" name="r1" id="b13" value="4" />
 				</span>
 			</div>
-			<!--
-			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span	style="float:left;">Agri-system:</span><span style="float:right;">
-					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b02" value="1" />
-					<input type="radio" title="2: Food supergroups" onclick="change();" name="r1" id="b12" value="2" />
-					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b22" value="3" />
-					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b32" value="4" />
-				</span>
-			</div> -->
-			<!--
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Food
-					weight:</span><span style="float:right;">
-					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b03" value="1" />
-					<input type="radio" title="2: Food supergroups" onclick="change();" name="r1" id="b13" value="2" />
-					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b23" value="3" />
-					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b33" value="4" />
-				</span>
-			</div> -->
 
 			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Move nodes:</span>
 				<div style="float:right; padding-right:0; margin-right:0;">
@@ -164,7 +148,7 @@
 			<!--DATA QUALITY INFO-->
 			<div id="qualitywrap" style="position:absolute;left:40px;top:45px;text-align:center;" alt="" title="">
 				<table style="text-align:left; font-size:15px; margin:0px; padding:0px;" cellpadding="0" cellspacing="0"
-					class="pagetitle">
+					class="pagetitle th-fg-color">
 					<tr>
 						<td>Data Availability</td>
 					</tr>
