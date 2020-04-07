@@ -526,7 +526,7 @@ d3.json(datapath + "json/stp.json", function (d) {
 					// @ts-ignore
 					d3.select("#ER").text("EROEI");
 					// @ts-ignore
-					d3.select("#units").text("TWh");
+					d3.select("#units").text("Calls");
 					supplyselected = false;
 				}
 
@@ -698,12 +698,12 @@ d3.json(datapath + "json/stp.json", function (d) {
 						if (d.value != 0) {
 							calo = format2(d.prod / (d.value * 0.00116222222 / 100));
 						} else calo = '--';
-						tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Weight</td><td>" + format(d.value) + "</td><td> ktonnes</td></tr><tr><td>Calls</td><td>" + format2(d.prod) + "</td><td> TWh</td></tr><tr><td>Caloric value</td><td>" + calo + "</td><td>kcal/100g</td></tr>";
+						tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format2(d.prod) + "</td><td> Calls</td></tr>";
 					} else {
 						if (d.prod != 0) {
 							calo = format2(d.value / (d.prod * 0.00116222222 / 100));
 						} else calo = '--';
-						tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format2(d.value) + "</td><td> TWh</td></tr><tr><td>Weight</td><td>" + format(d.prod) + "</td><td> ktonnes</td></tr><tr><td>Caloric value</td><td>" + calo + "</td><td>kcal/100g</td></tr>";
+						tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format2(d.value) + "</td><td> Calls</td></tr>";
 					}
 					tipshow(d);
 					// @ts-ignore
@@ -756,9 +756,9 @@ d3.json(datapath + "json/stp.json", function (d) {
 						tiptext = "<tr><td colspan=2 style='font-weight:bold;color:" + d.color + ";'>" + d.name + "</td></tr><tr><td>Incoming</td><td>" + format2(d3.sum(nodesource, function (d) {
 							return d.v;
 						// @ts-ignore
-						})) + " TWh</td></tr><tr><td>Outgoing</td><td>" + format2(d3.sum(nodetarget, function (d) {
+						})) + " Calls</td></tr><tr><td>Outgoing</td><td>" + format2(d3.sum(nodetarget, function (d) {
 							return d.v;
-						})) + " TWh</td></tr>";
+						})) + " Calls</td></tr>";
 					}
 					// @ts-ignore
 					var outin = format2(d3.sum(nodetarget, function (d) {
@@ -1008,9 +1008,9 @@ d3.json(datapath + "json/stp.json", function (d) {
 						tiptext = "<tr><td colspan=2 style='font-weight:bold;color:" + d.color + ";'>" + d.name + "</td></tr><tr><td>Incoming</td><td>" + format2(d3.sum(nodesource, function (d) {
 							return d.v;
 						// @ts-ignore
-						})) + " TWh</td></tr><tr><td>Outgoing</td><td>" + format2(d3.sum(nodetarget, function (d) {
+						})) + " Calls</td></tr><tr><td>Outgoing</td><td>" + format2(d3.sum(nodetarget, function (d) {
 							return d.v;
-						})) + " TWh</td></tr>";
+						})) + " Calls</td></tr>";
 					}
 					// @ts-ignore
 					var outin = format2(d3.sum(nodetarget, function (d) {

@@ -17,5 +17,10 @@
   "bugs": {
     "url": "https://github.com/NELCSU/ED/issues"
   },
-  "homepage": "https://github.com/NELCSU/ED#readme"
+  "homepage": "https://github.com/NELCSU/ED#readme",
+  "dependencies": {
+    "dragdealer": "^0.10.0",
+    "nvd3": "^1.8.6"
+  },
+  "devDependencies": {}
 }

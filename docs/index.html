@@ -12,11 +12,11 @@
 	<link href="css/index.css" rel="stylesheet" />
 	<link href="css/nv.d3.css" rel="stylesheet" />
 
-	<script src="js/dragdealer.js"></script>
-	<script src="js/d3.v3.min.js"></script>
-	<script src="js/nv.d3.min.js"></script>
-	<script src="js/jszip.min.js"></script>
-	<script src="js/JSZipUtils.min.js"></script>
+	<script src="js/lib/dragdealer.min.js"></script>
+	<script src="js/lib/d3.v3.min.js"></script>
+	<script src="js/lib/nv.d3.min.js"></script>
+	<script src="js/lib/jszip.min.js"></script>
+	<script src="js/lib/JSZipUtils.min.js"></script>
 </head>
 <body>
 
@@ -56,10 +56,10 @@
 			</div>
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
 				<span style="float:left;">Calls:</span><span style="float:right;">
-					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b00" value="1" />
-					<input type="radio" title="2: Food supergroups" onclick="change();" name="r1" id="b10" value="2" />
-					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b20" value="3" />
-					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b30" value="4" />
+					<input type="radio" title="System level" onclick="change();" name="r1" id="b00" value="1" />
+					<input type="radio" title="Provider level" onclick="change();" name="r1" id="b10" value="2" />
+					<!--<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b20" value="3" />
+					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b30" value="4" />-->
 				</span>
 			</div>
 			<!--
@@ -152,7 +152,7 @@
 					Legend: <input type="checkbox" title="Toggle piechart legend" id="legend2" onclick='updpieleg()' checked />
 				</span>
 			</div>
-			<div id="units" style="position:absolute;right:10px;bottom:30px;">TWh</div>
+			<div id="units" style="position:absolute;right:10px;bottom:30px;">Calls</div>
 		</div>
 
 		<!--PIE CHARTS-->
