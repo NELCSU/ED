@@ -5,6 +5,7 @@
 	<meta http-equiv="content-Type" content="text/html; charset=utf-8" />
 	<meta name="description" content="Urgent Care COVID-19 Flows" />
 	<meta name="keywords" content="NHS, COVID-19, urgent care" />
+
 	<title>Urgent Care COVID-19 Flows</title>
 
 	<link href="favicon.png" rel="shortcut icon" />
@@ -17,14 +18,12 @@
 	<script src="js/jszip.min.js"></script>
 	<script src="js/JSZipUtils.min.js"></script>
 </head>
-
 <body>
 
 	<!--TITLELBAR-->
-
 	<div id="titlebar" class="acc">
 		<img id="favicon" onclick="disp_content('#content',myhash);" src="favicon2.png" alt="Home" title="Home" />
-		<span id="titletext" class="pagetitle" title="Food Energy Flows">Urgent Care COVID-19 Flows</span>
+		<span id="titletext" class="pagetitle">Urgent Care COVID-19 Flows</span>
 	</div>
 
 	<!--LOADING-->
@@ -251,7 +250,6 @@
 			d3.selectAll(".pagetitle").style("color", themetitlefont[k]);
 			d3.selectAll(".acc").style("border-color", themebgacc[k]);
 			d3.selectAll("#plotcontrol").style("border-color", themebgacc[k]);
-			d3.selectAll("#description").style("border-color", themebgacc[k]);
 			d3.selectAll(".dragdealer").style("background", themebgacc[k]);
 			d3.selectAll("#json_sources, #days, #json_sources2, #json_sources3")
 				.style("background", themebgacc[k])
@@ -282,6 +280,6 @@
 	</script>
 
 	<script src="js/checksize.js"></script>
-	
+
 </body>
 </html>
