@@ -1,0 +1,57 @@
+body {
+  background: #ffffff;
+  color: #000000;
+  fill: #000000;
+}
+
+svg {
+  font-weight: normal;
+}
+
+.acc.border-bottom {
+  border-bottom: 1px solid #cccccc;
+}
+
+.acc.border-left {
+  border-left: 1px solid #cccccc;
+}
+
+.dragdealer {
+  background: #eeeeee;
+}
+
+.handle {
+  background: #ff6600;
+  color: #111111;
+}
+
+.nv-label text {
+  fill: #ff6600;
+}
+
+.nv-legend-text {
+  fill: #000000;
+}
+
+.nv-pie path {
+  stroke: #222222;
+}
+
+.pagetitle {
+  color: #ff6600;
+}
+
+.th-fg-color {
+  color: #ff6600;
+}
+
+.tooltip {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(0,0,0,0.2);
+}
+
+#stps, #days {
+  background: #eeeeee;
+  border-color: rgba(0,0,0,0.2);
+  color: #000000;
+}

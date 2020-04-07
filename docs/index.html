@@ -14,6 +14,7 @@
 
 	<script src="js/lib/dragdealer.min.js"></script>
 	<script src="js/lib/d3.v3.min.js"></script>
+	<!-- NV D3 library goes after D3 base library -->
 	<script src="js/lib/nv.d3.min.js"></script>
 	<script src="js/lib/jszip.min.js"></script>
 	<script src="js/lib/JSZipUtils.min.js"></script>
@@ -21,15 +22,12 @@
 <body>
 
 	<!--TITLELBAR-->
-	<div id="titlebar" class="acc">
-		<img id="favicon" onclick="disp_content('#content',myhash);" src="favicon2.png" alt="Home" title="Home" />
+	<div id="titlebar" class="acc border-bottom">
+		<a href="index.html" title="Home"><img id="favicon" src="favicon.png" alt="Home" /></a>
 		<span id="titletext" class="pagetitle">Urgent Care COVID-19 Flows</span>
 	</div>
 
-	<!--LOADING-->
-	<div id="loading" class="pagetitle" style="font-size:75px;z-index:0;position:absolute;top:120px;left:100px;">
-		Loading...
-	</div>
+	<div id="loading" class="th-fg-color">Loading...</div>
 
 	<!--PAGE WRAPPER-->
 	<div id="content" style="opacity:0;visibility:hidden;">
@@ -41,11 +39,11 @@
 		</div>
 
 		<!--SANKEY DIAGRAM CONTROLS-->
-		<div id="sourcecontrol" class="acc" style="float:right; margin-right:10px; width:20%; margin-top:10px; min-width:220px; border-left:solid; height:98%; padding-left:20px;line-height:26px;z-index:600000;">
+		<div id="sourcecontrol" class="acc border-left" style="float:right; margin-right:10px; width:20%; margin-top:10px; min-width:220px; height:98%; padding-left:20px;line-height:26px;z-index:600000;">
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
 				<span style="float:left;">STP:</span>
 				<span	style="float:right;">
-					<select id="json_sources" name="json_sources" style="width:130px;direction: rtl;"></select>
+					<select id="stps" name="stps" style="width:130px;direction: rtl;"></select>
 				</span>
 			</div>
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
@@ -55,22 +53,19 @@
 				</span>
 			</div>
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span style="float:left;">Calls:</span><span style="float:right;">
+				<span style="float:left;">Scope:</span><span style="float:right;">
 					<input type="radio" title="System level" onclick="change();" name="r1" id="b00" value="1" />
-					<input type="radio" title="Provider level" onclick="change();" name="r1" id="b10" value="2" />
-					<!--<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b20" value="3" />
-					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b30" value="4" />-->
+					<input type="radio" title="Provider level" onclick="change();" name="r1" id="b01" value="2" />
 				</span>
 			</div>
-			<!--
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span style="float:left;">Food system:</span><span style="float:right;">
-					<input type="radio" title="1: Food hypergroups" onclick="change();" name="r1" id="b01" value="1" />
-					<input type="radio" title="2: Food supergroups" onclick="change();" name="r1" id="b11" value="2" />
-					<input type="radio" title="3: FAO food groups" onclick="change();" name="r1" id="b21" value="3" />
-					<input type="radio" title="4: FAO crop groups" onclick="change();" name="r1" id="b31" value="4" />
+				<span style="float:left;">Calls:</span><span style="float:right;">
+					<input type="radio" title="All calls" onclick="change();" name="r1" id="b10" value="1" />
+					<input type="radio" title="COVID-12 calls" onclick="change();" name="r1" id="b11" value="2" />
+					<input type="radio" title="Non-COVID-19 calls" onclick="change();" name="r1" id="b12" value="3" />
+					<input type="radio" title="Primary care calls" onclick="change();" name="r1" id="b13" value="4" />
 				</span>
-			</div> -->
+			</div>
 			<!--
 			<div style="display:block;overflow: hidden;white-space: nowrap;">
 				<span	style="float:left;">Agri-system:</span><span style="float:right;">
@@ -144,7 +139,7 @@
 				</div>
 			</div>
 
-			<div class="acc" style="display:block;overflow: hidden;white-space: nowrap; border-bottom:solid; padding-bottom:10px;">
+			<div class="acc border-bottom" style="display:block;overflow: hidden;white-space: nowrap; padding-bottom:10px;">
 				<span style="float:left;">
 					Breakdown: <input type="checkbox" title="Toggle piechart" id="legend" onclick='updpievis()' checked />
 				</span>
@@ -152,7 +147,6 @@
 					Legend: <input type="checkbox" title="Toggle piechart legend" id="legend2" onclick='updpieleg()' checked />
 				</span>
 			</div>
-			<div id="units" style="position:absolute;right:10px;bottom:30px;">Calls</div>
 		</div>
 
 		<!--PIE CHARTS-->
@@ -183,103 +177,19 @@
 		</div>
 
 		<!--TIME SLIDER-->
-		<div id="timeslider" title="Drag slider to set display day. Identical to mouse scroll."
-			class="dragdealer" style="position:fixed; bottom:20; left:40;">
+		<div id="timeslider" title="Scroll through available days in the data" class="dragdealer">
 			<div class="handle red-bar">
 				<span class="value"></span>
 			</div>
 		</div>
-
-		<!-- -------SCRIPTS--------- -->
-		<script src="js/sankey.js"></script>
-		<script src="js/food.js"></script>
 	</div>
 
-	<!--THEME TOOLBAR-->
-	<div id="theme_toolbar">
-		<select id="theme_choice">
-			<option value="0" selected>Light</option>
-			<option value="1">Dark</option>
-		</select>
-		<span style="font-weight:normal">theme enabled</span>
-	</div>
+	<script src="js/sankey.js"></script>
+	<script src="js/food.js"></script>
 
-	<!--THEME SELECTOR-->
-	<script>
-		var themeid = 0;
-		var themes = ["#light", "#dark"];
-		var themebg = ["#fff", "#111"];
-		var themebgacc = ["#eee", "#222"];
-		var themefont = ["#000", "#aa8"];
-		var themetitlefont = ["#f60", "#aa8"];
-		var themesankeyfont = ["#000", "#aa8"];
-		var themesankeyfontw = ["normal", "bold"];
-		var themepiefont = ["#000", "#111"];
-		var themecolor = ["#f60", "#aa8"];
-		var themeacc = ["#f80", "#aa6"];
-		var themetooltipbg = ["rgba(255,255,255,0.9)", "rgba(0,0,0,0.9)"];
-		var themetooltipborder = ["rgba(0,0,0,0.2)", "rgba(255,255,255,0.2)"];
-		var themehelpbg = ["rgba(255,255,255,0.8)", "rgba(0,0,0,0.9)"];
-		var themefavicon = ["favicon", "favicon2"];
-
-		//set theme cell colors
-		themes.forEach(function (k, i) {
-			d3.select(k)
-				.style("background", themebg[i])
-				.style("color", themefont[i])
-		})
-
-		var piecolor = function (k) {
-			d3.selectAll(".nv-label text")
-				.style("fill", themepiefont[k])
-			d3.selectAll(".nv-pie path")
-				.style("stroke", themebgacc[k])
-		}
-
-		var theme = function (k) {
-			themeid = k;
-
-			//sankey update
-			piecolor(k);
-			d3.select("body")
-				.style("background", themebg[k])
-				.style("color", themefont[k])
-				.style("fill", themefont[k]);
-
-			d3.select("#imap").style("background", themebg[k]);
-			d3.selectAll(".pagetitle").style("color", themetitlefont[k]);
-			d3.selectAll(".acc").style("border-color", themebgacc[k]);
-			d3.selectAll("#plotcontrol").style("border-color", themebgacc[k]);
-			d3.selectAll(".dragdealer").style("background", themebgacc[k]);
-			d3.selectAll("#json_sources, #days, #json_sources2, #json_sources3")
-				.style("background", themebgacc[k])
-				.style("color", themefont[k])
-				.style("border-color", themetooltipborder[k]);
-			d3.selectAll(".handle")
-				.style("color", themebg[k])
-				.style("background", themecolor[k])
-			d3.selectAll(".tooltip")
-				.style("background", themetooltipbg[k])
-				.style("border-color", themetooltipborder[k]);
-			d3.selectAll(".help")
-				.style("background", themehelpbg[k])
-				.style("border-color", themetooltipborder[k]);
-			svg.style("font-weight", themesankeyfontw[k])
-				.style("text-shadow", "0 1px 0 " + themebg[k]);
-
-			d3.select("#ER").style("text-shadow", "0 2px 0 " + themebg[k]);
-			d3.select("#EROEI").style("text-shadow", "0 2px 0 " + themebg[k]);
-			d3.select("#favicon").attr("src", themefavicon[k] + ".png");
-		}
-
-		d3.select("#theme_choice").on("input", function () {
-			theme(parseInt(d3.select(this).property('value')))
-		});
-
-		theme(themeid);
-	</script>
+	<div id="theme_toolbar"></div>
+	<script src="js/theme.js"></script>
 
 	<script src="js/checksize.js"></script>
-
 </body>
 </html>

@@ -2,11 +2,15 @@ html,
 body {
   height: 100%;
   font-family: "Trebuchet MS", "Open Sans", "Segoe UI light", "Verdana", "Tahoma", "Helvetica", sans-serif;
-  overflow: hidden;
   margin: 0;
+  overflow: hidden;
   padding: 0;
-  background: #111;
-  color: #aa8;
+}
+
+#timeslider {
+  bottom: 20;
+  left: 40;
+  position: fixed;
 }
 
 #titlebar {
@@ -145,13 +149,22 @@ option:hover {
   width: -webkit-calc(80% - 90px);
   width: calc(80% - 90px);
   height: 30px;
-  border-bottom: solid #111;
-  ;
   padding-bottom: 5px;
   margin-left: 40px;
   margin-top: 5px;
   position: fixed;
   z-index: 9;
+}
+
+#loading {
+  bottom: 50%;
+  font-size: 75px;
+  font-weight: bold;
+  left: 100px;
+  position: absolute;
+  text-align: center;
+  width: 100%;
+  z-index: 0;
 }
 
 #titlebar-right {
@@ -216,4 +229,10 @@ div.tooltip {
 .button:hover {
   text-decoration: underline;
   cursor: pointer;
+}
+
+.node-label {
+  fill: #000000;
+  font-weight: bold;
+  text-anchor: middle;
 }
