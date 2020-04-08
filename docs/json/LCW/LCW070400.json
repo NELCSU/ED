@@ -1,0 +1,264 @@
+{
+  "nodes": [{
+    "layer": 1,
+    "name": "999 CAD",
+    "fill": "#8DD3C7"
+  }, {
+    "layer": 1,
+    "name": "111 Online",
+    "fill": "#FFFFB3"
+  }, {
+    "layer": 1,
+    "name": "111",
+    "fill": "#BEBADA"
+  }, {
+    "layer": 2,
+    "name": "National Covid IVR",
+    "fill": "#FB8072"
+  }, {
+    "layer": 2,
+    "name": "National CRS",
+    "fill": "#FB8072"
+  }, {
+    "layer": 2,
+    "name": "National Covid CAS",
+    "fill": "#FB8072"
+  }, {
+    "layer": 3,
+    "name": "London IVR",
+    "fill": "#80B1D3"
+  }, {
+    "layer": 3,
+    "name": "SMILE",
+    "fill": "#FDB462"
+  }, {
+    "layer": 4,
+    "name": "Covid Response Service DST",
+    "fill": "#B3DE69"
+  }, {
+    "layer": 4,
+    "name": "Service Advisors",
+    "fill": "#B3DE69"
+  }, {
+    "layer": 5,
+    "name": "Health Advisors",
+    "fill": "#B3DE69"
+  }, {
+    "layer": 5,
+    "name": "Covid Cat. 3 Self-care",
+    "fill": "#FCCDE5"
+  }, {
+    "layer": 6,
+    "name": "Clinical Advisors",
+    "fill": "#B3DE69"
+  }, {
+    "layer": 7,
+    "name": "In-Hours GP",
+    "fill": "#D9D9D9"
+  }, {
+    "layer": 7,
+    "name": "Covid-19 Symptomatic Queue",
+    "fill": "#BC80BD"
+  }, {
+    "layer": 7,
+    "name": "Pathways DoS Referral",
+    "fill": "#CCEBC5"
+  }, {
+    "layer": 8,
+    "name": "Covid Downstream Services",
+    "fill": "#FFED6F"
+  }],
+  "links": [{
+    "source": 0,
+    "target": 14,
+    "value": 500,
+    "supply": [{
+      "l": "Covid-19",
+      "v": 500
+    }]
+  }, {
+    "source": 2,
+    "target": 3,
+    "value": 5000,
+    "supply": [{
+      "l": "Calls",
+      "v": 5000
+    }]
+  }, {
+    "source": 3,
+    "target": 4,
+    "value": 1000,
+    "supply": [{
+      "l": "Calls",
+      "v": 1000
+    }]
+  }, {
+    "source": 4,
+    "target": 5,
+    "value": 1000,
+    "supply": [{
+      "l": "Covid-19",
+      "v": 1000
+    }]
+  }, {
+    "source": 5,
+    "target": 16,
+    "value": 800,
+    "supply": [{
+      "l": "Covid-19",
+      "v": 800
+    }]
+  }, {
+    "source": 3,
+    "target": 6,
+    "value": 4000,
+    "supply": [{
+      "l": "Worsening Caller",
+      "v": 120
+    }, {
+      "l": "Admin Caller",
+      "v": 320
+    }, {
+      "l": "CMC",
+      "v": 40
+    }, {
+      "l": "Star line",
+      "v": 120
+    }, {
+      "l": "Dental",
+      "v": 360
+    }, {
+      "l": "Covid-19",
+      "v": 3040
+    }]
+  }, {
+    "source": 6,
+    "target": 7,
+    "value": 180,
+    "supply": [{
+      "l": "Dental",
+      "v": 180
+    }]
+  }, {
+    "source": 6,
+    "target": 12,
+    "value": 160,
+    "supply": [{
+      "l": "CMC",
+      "v": 40
+    }, {
+      "l": "Worsening Caller",
+      "v": 120
+    }]
+  }, {
+    "source": 6,
+    "target": 9,
+    "value": 800,
+    "supply": [{
+      "l": "Star Line",
+      "v": 120
+    }, {
+      "l": "Admin Caller",
+      "v": 320
+    }, {
+      "l": "Dental",
+      "v": 360
+    }]
+  }, {
+    "source": 6,
+    "target": 8,
+    "value": 3040,
+    "supply": [{
+      "l": "Covid-19",
+      "v": 3040
+    }]
+  }, {
+    "source": 8,
+    "target": 0,
+    "value": 400,
+    "supply": [{
+      "l": "999",
+      "v": 400
+    }]
+  }, {
+    "source": 8,
+    "target": 10,
+    "value": 200,
+    "supply": [{
+      "l": "Calls",
+      "v": 200
+    }]
+  }, {
+    "source": 8,
+    "target": 12,
+    "value": 200,
+    "supply": [{
+      "l": "Calls",
+      "v": 200
+    }]
+  }, {
+    "source": 8,
+    "target": 13,
+    "value": 200,
+    "supply": [{
+      "l": "Calls",
+      "v": 200
+    }]
+  }, {
+    "source": 8,
+    "target": 11,
+    "value": 100,
+    "supply": [{
+      "l": "Covid-19",
+      "v": 100
+    }]
+  }, {
+    "source": 9,
+    "target": 7,
+    "value": 90,
+    "supply": [{
+      "l": "Dental",
+      "v": 90
+    }]
+  }, {
+    "source": 9,
+    "target": 15,
+    "value": 600,
+    "supply": [{
+      "l": "Calls",
+      "v": 600
+    }]
+  }, {
+    "source": 10,
+    "target": 15,
+    "value": 200,
+    "supply": [{
+      "l": "Calls",
+      "v": 200
+    }]
+  }, {
+    "source": 12,
+    "target": 0,
+    "value": 100,
+    "supply": [{
+      "l": "999",
+      "v": 100
+    }]
+  }, {
+    "source": 12,
+    "target": 15,
+    "value": 200,
+    "supply": [{
+      "l": "Calls",
+      "v": 200
+    }]
+  }, {
+    "source": 14,
+    "target": 16,
+    "value": 200,
+    "supply": [{
+      "l": "Covid-19",
+      "v": 200
+    }]
+  }]
+}

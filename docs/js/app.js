@@ -30,7 +30,7 @@ function addSpaces(s) {	return s.replace(/-/g, " "); }
  * @param {string} day 
  */
 function getScreenDate(day) {
-	var today = new Date(new Date().getFullYear(), parseInt(choice.day.substr(0, 2)), parseInt(choice.day.substr(2, 2)));
+	var today = new Date(new Date().getFullYear(), parseInt(choice.day.substr(2, 2)) - 1, parseInt(choice.day.substr(0, 2)));
 	var strDate = today.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
 	return strDate;
 }
@@ -52,10 +52,16 @@ function format(v) {
 	return v < 1 ? format2(v) : v < 10 ? format1(v) : format0(v);
 }
 
+/**
+ * Select n characters from the right side of string s
+ * @param {string} s 
+ * @param {number} n 
+ */
+function right(s, n) {
+	return s.slice(-1 * n);
+}
+
 // #######################
-
-
-
 
 
 //check if in dev mode and on local server
@@ -95,7 +101,7 @@ function scrollsankey (a) {
  * 
  * @param {string} filePath 
  */
-function setdays(filePath) {
+function initDayList(filePath) {
 	// @ts-ignore
 	JSZipUtils.getBinaryContent(filePath, function (err, rawdata) {
 		// @ts-ignore
@@ -124,11 +130,13 @@ function setdays(filePath) {
 							if (!prevday) {
 								prevday = key;
 							}
-							day.append("option").text(key);
+							day.append("option")
+								.property("value", key)
+								.text(getScreenDate(key));
 						}
 						// @ts-ignore
 						var toSelect = "0" + Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
-						toSelect = toSelect.slice(-4);
+						toSelect = right(toSelect, 4);
 						day.node().value = toSelect;
 						// @ts-ignore
 						var stp = d3.select("#stp");
@@ -157,7 +165,7 @@ function setdays(filePath) {
 									var firstValue = parseInt(day.node().options[0].text);
 									var lastValue = parseInt(day.node().options[day.node().length - 1].text);
 									var newValue = "0" + (firstValue + Math.round(a * (lastValue - firstValue)));
-									newValue = newValue.slice(-4);
+									newValue = right(newValue, -4);
 									// @ts-ignore
 									d3.select("#timeslider")
 										.select(".value")
@@ -918,7 +926,7 @@ function initSTPList(d) {
 	}
 
 	stp.on("change", function() {
-		setdays(datapath + "json/" + stp.node().value + ".zip");
+		initDayList(datapath + "json/" + stp.node().value + ".zip");
 	});
 
 	stp.node().dispatchEvent(new Event("change"));

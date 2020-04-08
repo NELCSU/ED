@@ -1,0 +1,34 @@
+{
+  "interpolated": {
+    "0704": ["Immediate threats to life", "Breathing Problems; Breathlessness or Wheeze", "Non-trauma Emergency", "Entry pathway", "Chest and Upper Back Pain", "NHS Pathways in House Clinician"]
+  },
+  "eroei": [{
+    "0704": 2.9841
+  }, {
+    "0704": 1.4753
+  }, {
+    "0704": 0.957
+  }, {
+    "0704": 39.5234
+  }],
+  "eroei_raw": [{
+    "0704": 2.9841
+  }, {
+    "0704": 1.4753
+  }, {
+    "0704": 0.957
+  }, {
+    "0704": 39.5234
+  }],
+  "aec": [{
+    "0704": 2.9841
+  }, {
+    "0704": 1.4753
+  }, {
+    "0704": 0.957
+  }, {
+    "0704": 39.5234
+  }],
+  "estimated": [{}],
+  "missing": [{}]
+}
