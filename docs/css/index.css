@@ -234,3 +234,22 @@ div.tooltip {
   font-weight: bold;
   text-anchor: middle;
 }
+
+#miniDQChart {
+  left: 40px;
+  position: absolute;
+  text-align: center;
+  top: 45px;
+}
+
+#quality {
+  font-size: 33px;
+  line-height: 12px;
+}
+
+.data-quality {
+  font-size: 15px;
+  margin: 0px;
+  padding: 0px;
+  text-align: left;
+}

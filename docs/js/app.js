@@ -43,13 +43,21 @@ function stripSpaces(s) { return s.replace(/\s/g, "-"); }
 
 // @ts-ignore
 var format2 = d3.format(",.2f"), format1 = d3.format(",.1f"), format0 = d3.format(",.0f");
-
 /**
  * 
  * @param {number} v 
  */
 function format(v) {
 	return v < 1 ? format2(v) : v < 10 ? format1(v) : format0(v);
+}
+
+/**
+ * Select n characters from the left side of string s
+ * @param {string} s 
+ * @param {number} n 
+ */
+function left(s, n) {
+	return s.slice(0, Math.abs(n));
 }
 
 /**
@@ -60,7 +68,6 @@ function format(v) {
 function right(s, n) {
 	return s.slice(-1 * n);
 }
-
 // #######################
 
 
@@ -70,15 +77,7 @@ var datapath = window.location.hostname === "localhost"
 	: "https://raw.githubusercontent.com/NELCSU/ED/master/docs/";
 
 // @ts-ignore
-var missing;
-// @ts-ignore
-var estimated;
-// @ts-ignore
-var interpolatedall;
-// @ts-ignore
-var zip;
-// @ts-ignore
-var color = d3.scale.category20();
+var zip, timedragdealer;
 
 /**
  * 
@@ -94,184 +93,34 @@ function scrollsankey (a) {
 		} else {
 			dayIndex = Math.max(1, dayIndex - 1);
 		}
+		// @ts-ignore
 		timedragdealer.setValue((dayIndex - 1) / (len - 1), 0, false);
 	}
 };
 
 /**
- * 
- * @param {number[][]} interpolation 
- * @param {number[]} missing
- * @param {number[]} estimated
+ * Scans for first valid file and select corresponding call menu choice
+ * @param {*} fileList 
+ * @param {*} filename 
  */
-function data_quality_info (interpolation, missing, estimated) {
-	// @ts-ignore
-	var day = d3.select("#day");
-
-	var interpolated = interpolation[day.node().value];
-	// @ts-ignore
-	var quality = d3.select("#quality").style("color", "#2a2");
-
-	var qualitytooltip = "<table style='font-size:12px;'><tr><td style='border-bottom:solid 1px #888;'>Data availability for <b>" + day.node().value + ": </b>";
-	if ((interpolated.length < 1) && (missing.length < 1) && (estimated.length < 1)) {
-		quality.text("▪▪▪▪▪▪▪▪▪▪");
-		qualitytooltip += "<b style='color:#2a2;'>Complete</b></td></tr><tr><td>All data is available in the database.</td></tr>";
-	} else {
-		if ((interpolated.length + estimated.length < 3) && (missing.length < 3)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▪▪▫");
-			qualitytooltip += "<b style='color:#2a2;'>Very High</b></td></tr>";
+function setDefaultCall(fileList, filename) {
+	var calls = Array.from(document.querySelectorAll("input[name='r1']"));
+	var choices = new Map();
+	calls.forEach(function(call) {
 		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 5) && (missing.length < 1)) {
+		choices.set(call.value, call.title);
+	});
+	
+	var files = Object.keys(fileList);
+	for (var i = 0; i < files.length; i++) {
+		var key = right(files[i], 7);
+		key = left(key, 2);
+		if (choices.has(key)) {
 			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▪▪▫");
-			qualitytooltip += "<b style='color:#2a2;'>Very High</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 7) && (missing.length < 1)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▪▫▫");
-			qualitytooltip += "<b style='color:#2a2;'>High</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 5) && (missing.length < 3)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▪▫▫");
-			qualitytooltip += "<b style='color:#2a2;'>High</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 3) && (missing.length < 5)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▪▫▫");
-			qualitytooltip += "<b style='color:#2a2;'>High</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 5) & (missing.length < 5)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▫▫▫").style("color", "#f60");
-			qualitytooltip += "<b style='color:#f60;'>Medium</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 7) & (missing.length < 3)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▫▫▫").style("color", "#f60");
-			qualitytooltip += "<b style='color:#f60;'>Medium</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 9) & (missing.length < 1)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▪▫▫▫").style("color", "#f60");
-			qualitytooltip += "<b style='color:#f60;'>Medium</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 11) & (missing.length < 1)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▫▫▫▫").style("color", "#f60");
-			qualitytooltip += "<b style='color:#f60;'>Medium</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 9) & (missing.length < 3)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▫▫▫▫").style("color", "#f60");
-			qualitytooltip += "<b style='color:#f60;'>Medium</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 7) & (missing.length < 5)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▫▫▫▫").style("color", "#f60");
-			qualitytooltip += "<b style='color:#f60;'>Medium</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 5) & (missing.length < 7)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▪▫▫▫▫").style("color", "#f60");
-			qualitytooltip += "<b style='color:#f60;'>Medium</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 13) & (missing.length < 1)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Fair</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 11) & (missing.length < 3)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Fair</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 9) & (missing.length < 5)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▪▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'" + ">Fair</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 9) & (missing.length < 7)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Fair</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 11) & (missing.length < 5)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Fair</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 13) & (missing.length < 3)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Fair</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 15) & (missing.length < 1)) {
-			// @ts-ignore
-			quality.text("▪▪▪▪▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Fair</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 17) & (missing.length < 1)) {
-			// @ts-ignore
-			quality.text("▪▪▪▫▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Low</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 15) & (missing.length < 3)) {
-			// @ts-ignore
-			quality.text("▪▪▪▫▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'>Low</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 13) & (missing.length < 5)) {
-			// @ts-ignore
-			quality.text("▪▪▪▫▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip +=  "<b style='color:#D90000;'>Low</b></td></tr>";
-		// @ts-ignore
-		} else if ((interpolated.length + estimated.length < 11) & (missing.length < 7)) {
-			// @ts-ignore
-			quality.text("▪▪▪▫▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'" + ">Low</b></td></tr>";
-		} else {
-			// @ts-ignore
-			quality.text("▪▪▫▫▫▫▫▫▫▫").style("color", "#D90000");
-			qualitytooltip += "<b style='color:#D90000;'" + ">Low</b></td></tr>";
-		}
-
-		if (missing.length > 0) {
-			qualitytooltip += "<tr><td><b>Missing data:</b></td></tr><tr><td>";
-			qualitytooltip += JSON.stringify(missing)
-				.replace(/\"/g, "")
-				.replace(/\,/g, "</td></tr><tr><td>")
-				.replace(/\[/g, "")
-				.replace(/\]/g, "") + "</td></tr>";
-		}
-
-		if (estimated.length > 0) {
-			qualitytooltip += "<tr><td><b>Estimated data:</b></td></tr><tr><td>";
-			qualitytooltip += JSON.stringify(estimated)
-				.replace(/\"/g, "")
-				.replace(/\,/g, "</td></tr><tr><td>")
-				.replace(/\[/g, "")
-				.replace(/\]/g, "") + "</td></tr>";
-		}
-
-		if (interpolated.length > 0) {
-			qualitytooltip += "<tr><td><b>Interpolated data:</b></td></tr><tr><td>";
-			qualitytooltip += JSON.stringify(interpolated)
-				.replace(/\"/g, "")
-				.replace(/\,/g, "</td></tr><tr><td>")
-				.replace(/\[/g, "")
-				.replace(/\]/g, "") + "</td></tr>";
+			document.getElementById("b" + key).checked = true;
+			break;
 		}
 	}
-	qualitytooltip = qualitytooltip + "</table>";
-	// @ts-ignore
-	d3.select("#qualitywrap")
-		.on("mouseover", function () {
-			tiptext = qualitytooltip;
-			tipshow(null);
-		})
-		.on("mouseout", tiphide);
 }
 
 function change () {
@@ -295,9 +144,6 @@ function change () {
 
 	// @ts-ignore
 	padding = paddingmultiplier * (1 - densityslider.getValue()[0]) + 3;
-
-	// @ts-ignore
-	data_quality_info(interpolatedall, missing, estimated);
 
 	var pietooltip = 0;
 
@@ -329,11 +175,7 @@ function change () {
 				.attr("d", path(2));
 
 			// @ts-ignore
-			linkCollection.attr("fill", function (i) {
-				return i.source.fill
-					? i.source.fill
-					: i.source.color = color(i.source.name.replace(/ .*/, ""));
-			})
+			linkCollection.attr("fill", function (i) { return i.source.fill; })
 			.attr("opacity", lowopacity)
 			// @ts-ignore
 			.on("mouseover", function (d) { mouseOverLink(this, d); })
@@ -345,7 +187,7 @@ function change () {
 				d3.select(this).style('opacity', lowopacity);
 				// @ts-ignore
 				window.clearTimeout(pietooltip);
-				tiphide(d);
+				window.dispatchEvent(new CustomEvent("hide-tip", { detail: d }));
 			});
 
 			var nodeCollection = svg.append("g")
@@ -368,11 +210,7 @@ function change () {
 				// @ts-ignore
 				.attr("width", sankey.nodeWidth())
 				// @ts-ignore
-				.style("fill", function (i) {
-					return i.fill
-						? i.color = i.fill
-						: i.color = color(i.name.replace(/ .*/, ""));
-				})
+				.style("fill", function (i) { return i.color = i.fill; })
 				// @ts-ignore
 				.style("stroke", function (i) {	return d3.rgb(i.color).darker(2);	})
 				// @ts-ignore
@@ -387,7 +225,7 @@ function change () {
 							.transition()
 							.style('opacity', lowopacity);
 					window.clearTimeout(pietooltip);
-					tiphide(null);
+					window.dispatchEvent(new CustomEvent("hide-tip", { detail: d }));
 				})
 				// @ts-ignore
 				.on("dblclick", function (d) {
@@ -471,9 +309,9 @@ function mouseOverLink (a, d) {
 	// @ts-ignore
 	d3.select(a).style('opacity', highopacity);
 
-	tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format(d.value) + "</td><td> Calls</td></tr>";
+	var tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format(d.value) + "</td><td> Calls</td></tr>";
 	
-	tipshow(d);
+	window.dispatchEvent(new CustomEvent("show-tip", { detail: tiptext }));
 	// @ts-ignore
 	pietooltip = setTimeout(function () {
 		// @ts-ignore
@@ -524,7 +362,7 @@ function mouseOverNode(d) {
 		nodetarget = eval('[{\"l\":\"None\", \"v\":0}]');
 	}
 
-	tiptext = "<tr><td colspan=2 style='font-weight:bold;color:" + d.color + ";'>" + d.name;
+	var tiptext = "<tr><td colspan=2 style='font-weight:bold;color:" + d.color + ";'>" + d.name;
 	tiptext += "</td></tr><tr><td>Incoming</td><td>";
 	// @ts-ignore
 	tiptext += format(d3.sum(nodesource, function (d) { return d.v; }));
@@ -542,7 +380,7 @@ function mouseOverNode(d) {
 	}
 	tiptext += "<tr><td>OUT / IN</td><td>" + outin + "</td></tr>";
 
-	tipshow(null);
+	window.dispatchEvent(new CustomEvent("show-tip", { detail: tiptext }));
 
 	// @ts-ignore
 	pietooltip = setTimeout(function () {
@@ -673,17 +511,6 @@ var padding = 28;
 var paddingmultiplier = 50;
 var lowopacity = 0.3;
 var highopacity = 0.7;
-// @ts-ignore
-
-// @ts-ignore
-var sizecorrection = Math.max(0, 220 - parseInt(window.innerWidth * 0.2));
-
-// @ts-ignore
-d3.select("#chart").style("width", document.getElementById("chart").offsetWidth - sizecorrection);
-// @ts-ignore
-d3.select("#titlebar").style("width", document.getElementById("titlebar").offsetWidth - sizecorrection);
-// @ts-ignore
-d3.select("#timeslider").style("width", document.getElementById("titlebar").offsetWidth);
 var margin = {
 	top: 70,
 	right: 10,
@@ -714,11 +541,8 @@ if (choice.call) {
 	document.getElementById("b" + choice.call).checked = true;
 }
 
-var firstgo = true;
 // @ts-ignore
 var sankey2 = d3.sankey().nodeWidth(10).nodePadding(1).size([125, 50]);
-// @ts-ignore
-var timedragdealer = new Dragdealer();
 
 document.addEventListener("keydown", function (event) {
 	if ((event.keyCode == 27) || (event.keyCode >= 33 && event.keyCode <= 34) || (event.keyCode >= 37 && event.keyCode <= 40)) {
@@ -744,73 +568,7 @@ document.addEventListener("keydown", function (event) {
 		event.preventDefault();
 	}
 }, false);
-var tiptext = "no data";
 var coordinates = [0, 0];
-
-// Define div for tooltips
-// @ts-ignore
-var tooltipdiv = d3.select("body")
-	.append("div")
-	.attr("class", "tooltip")
-	.style("opacity", 0)
-	.on("mouseover", function () {
-		tooltipdiv.transition()
-			.delay(300)
-			.duration(200)
-			.style("opacity", 1)
-			.style("z-index", 10);
-	})
-	.on("mouseout", function () {
-		tooltipdiv.transition()
-			.delay(300)
-			.duration(200)
-			.style("opacity", 0)
-			.style("z-index", -10);
-	})
-	.on("click", function () {
-		tooltipdiv.transition()
-			.duration(200)
-			.style("opacity", 0)
-			.style("z-index", -10);
-	})
-	.attr("onmousewheel", "scrollsankey(event.wheelDelta)");
-
-// @ts-ignore
-var old;
-
-/**
- * 
- * @param {any} d 
- */
-function tipshow (d) {
-	tooltipdiv.transition()
-		.delay(300)
-		.duration(200)
-		.style("opacity", 1)
-		.style("z-index", 10);
-
-	// @ts-ignore
-	if (!d || d != old) {
-		tooltipdiv.html('<table style="text-align:center;">' + tiptext + '</table>')
-			// @ts-ignore
-			.style("left", (d3.event.pageX + 30) + "px")
-			// @ts-ignore
-			.style("top", (d3.event.pageY - 30) + "px");
-	}
-};
-
-/**
- * 
- * @param {any | undefined} d 
- */
-function tiphide (d) {
-	old = d;
-	tooltipdiv.transition()
-		.delay(300)
-		.duration(200)
-		.style("opacity", 0)
-		.style("z-index", -10);
-};
 
 /**
  * 
@@ -835,9 +593,7 @@ function initDayList(filePath) {
 					// @ts-ignore
 					.then(function (content) {
 						var qdata = JSON.parse(content);
-						missing = qdata.missing;
-						estimated = qdata.estimated;
-						interpolatedall = qdata.interpolated;
+						var interpolatedall = qdata.interpolated;
 						// @ts-ignore
 						var day = d3.select("#day");
 						day.selectAll("option").remove();
@@ -854,6 +610,16 @@ function initDayList(filePath) {
 						var toSelect = "0" + Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
 						toSelect = right(toSelect, 4);
 						day.node().value = toSelect;
+
+						setDefaultCall(zipfile.files, filename);
+
+						window.dispatchEvent(new CustomEvent("data-quality", { detail: {
+							day: day.node().value,
+							estimated: qdata.estimated,
+							interpolated: qdata.interpolated, 
+							missing: qdata.missing, 
+						}}));
+
 						// @ts-ignore
 						var stp = d3.select("#stp");
 						// @ts-ignore
@@ -868,10 +634,13 @@ function initDayList(filePath) {
 							d3.select("#timeslider")
 								.select(".value")
 								.text(getScreenDate(day.node().value));
+							
+							// @ts-ignore
 							timedragdealer.setValue((dayIndex - 1) / (day.node().length - 1), 0, false);
 						}
 
-						if (firstgo) { //initialize timeslider on first iteration
+						// @ts-ignore
+						if (!timedragdealer) { //initialize timeslider on first iteration
 							// @ts-ignore
 							timedragdealer = new Dragdealer("timeslider", {
 								x: 0,
@@ -894,12 +663,12 @@ function initDayList(filePath) {
 									change();
 								}
 							});
-							firstgo = false;
 						}
 						//reset step scale on other iterations
 						var x = [];
 						var i = 0;
 						while (x.push(i++/(day.node().length-1)) < day.node().length);
+						// @ts-ignore
 						timedragdealer.stepRatios = x;
 						daychange(); //initialize & trigger change in main sankey
 					});

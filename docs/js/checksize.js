@@ -8,6 +8,15 @@ function checksize() {
     alert("The recommended minimum resolution is 800 x 600.\n Yours is " + window.innerWidth + " x " + window.innerHeight + ".");
   }
 
+  // @ts-ignore
+  var sizecorrection = Math.max(0, 220 - parseInt(window.innerWidth * 0.2));
+  // @ts-ignore
+  d3.select("#chart").style("width", document.getElementById("chart").offsetWidth - sizecorrection);
+  // @ts-ignore
+  d3.select("#titlebar").style("width", document.getElementById("titlebar").offsetWidth - sizecorrection);
+  // @ts-ignore
+  d3.select("#timeslider").style("width", document.getElementById("titlebar").offsetWidth);
+
   setTimeout(function () {
     var loading = document.getElementById("loading");
     if (loading) {
