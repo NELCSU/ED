@@ -277,7 +277,13 @@ function data_quality_info (interpolation, missing, estimated) {
 function change () {
 	setQueryHash();
 	var choice = getQueryHash();
-	window.dispatchEvent(new CustomEvent("call-selection", { detail: { text: choice.call, value: choice.call }}));
+	var calls = document.querySelector("input[name='r1']:checked");
+	var callText = choice.call;
+	if (calls) {
+		// @ts-ignore
+		callText = calls.title;
+	}
+	window.dispatchEvent(new CustomEvent("call-selection", { detail: { text: callText, value: choice.call }}));
 	window.dispatchEvent(new CustomEvent("day-selection", { detail: { text: getScreenDate(choice.day), value: choice.day }}));
 
 	// @ts-ignore
