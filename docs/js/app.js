@@ -75,7 +75,8 @@ var missing;
 var estimated;
 // @ts-ignore
 var interpolatedall;
-var zip = { files: {} };
+// @ts-ignore
+var zip;
 // @ts-ignore
 var color = d3.scale.category20();
 
@@ -96,100 +97,6 @@ function scrollsankey (a) {
 		timedragdealer.setValue((dayIndex - 1) / (len - 1), 0, false);
 	}
 };
-
-/**
- * 
- * @param {string} filePath 
- */
-function initDayList(filePath) {
-	// @ts-ignore
-	JSZipUtils.getBinaryContent(filePath, function (err, rawdata) {
-		// @ts-ignore
-		JSZip.loadAsync(rawdata)
-			// @ts-ignore
-			.then(function(zip) {
-				var stp = document.getElementById("stp");
-				var filename = "";
-				if (stp) {
-					// @ts-ignore
-					filename = stp.options[stp.selectedIndex].value;
-				}
-				zip.file(filename + "m.json")
-					.async("string")
-					// @ts-ignore
-					.then(function (content) {
-						var qdata = JSON.parse(content);
-						missing = qdata.missing;
-						estimated = qdata.estimated;
-						interpolatedall = qdata.interpolated;
-						// @ts-ignore
-						var day = d3.select("#day");
-						day.selectAll("option").remove();
-						var prevday;
-						for (var key in interpolatedall) {
-							if (!prevday) {
-								prevday = key;
-							}
-							day.append("option")
-								.property("value", key)
-								.text(getScreenDate(key));
-						}
-						// @ts-ignore
-						var toSelect = "0" + Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
-						toSelect = right(toSelect, 4);
-						day.node().value = toSelect;
-						// @ts-ignore
-						var stp = d3.select("#stp");
-						// @ts-ignore
-						window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
-						
-						day.on("change", daychange);
-
-						function daychange() {
-							window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
-							dayIndex = day.node().value - day.node().options[0].value + 1;
-							// @ts-ignore
-							d3.select("#timeslider")
-								.select(".value")
-								.text(getScreenDate(day.node().value));
-							timedragdealer.setValue((dayIndex - 1) / (day.node().length - 1), 0, false);
-						}
-
-						if (firstgo) { //initialize timeslider on first iteration
-							// @ts-ignore
-							timedragdealer = new Dragdealer("timeslider", {
-								x: 0,
-								steps: 100, //day.node().length,
-								// @ts-ignore
-								animationCallback: function (a, b) {
-									var firstValue = parseInt(day.node().options[0].text);
-									var lastValue = parseInt(day.node().options[day.node().length - 1].text);
-									var newValue = "0" + (firstValue + Math.round(a * (lastValue - firstValue)));
-									newValue = right(newValue, -4);
-									// @ts-ignore
-									d3.select("#timeslider")
-										.select(".value")
-										.text(getScreenDate(newValue));
-								},
-								// @ts-ignore
-								callback: function (a, b) {
-									dayIndex = Math.round(a * (day.node().length - 1)) + 1;
-									day.node().selectedIndex = dayIndex - 1;
-									change(zip);
-								}
-							});
-							firstgo = false;
-						}
-						//reset step scale on other iterations
-						var x = [];
-						var i = 0;
-						while (x.push(i++/(day.node().length-1)) < day.node().length);
-						timedragdealer.stepRatios = x;
-						daychange(); //initialize & trigger change in main sankey
-					});
-			});
-	});
-}
 
 /**
  * 
@@ -367,20 +274,10 @@ function data_quality_info (interpolation, missing, estimated) {
 		.on("mouseout", tiphide);
 }
 
-/**
- * @param {any} zip
- */
-function change (zip) {
+function change () {
 	setQueryHash();
-
 	var choice = getQueryHash();
-
-	var calls = document.querySelector("input[name='r1']:checked");
-	if (calls) {
-		// @ts-ignore
-		window.dispatchEvent(new CustomEvent("call-selection", { detail: { text: calls.title, value: calls.value }}));
-	}
-
+	window.dispatchEvent(new CustomEvent("call-selection", { detail: { text: choice.call, value: choice.call }}));
 	window.dispatchEvent(new CustomEvent("day-selection", { detail: { text: getScreenDate(choice.day), value: choice.day }}));
 
 	// @ts-ignore
@@ -908,6 +805,101 @@ function tiphide (d) {
 		.style("opacity", 0)
 		.style("z-index", -10);
 };
+
+/**
+ * 
+ * @param {string} filePath 
+ */
+function initDayList(filePath) {
+	// @ts-ignore
+	JSZipUtils.getBinaryContent(filePath, function (err, rawdata) {
+		// @ts-ignore
+		JSZip.loadAsync(rawdata)
+			// @ts-ignore
+			.then(function(zipfile) {
+				var stp = document.getElementById("stp");
+				var filename = "";
+				if (stp) {
+					// @ts-ignore
+					filename = stp.options[stp.selectedIndex].value;
+				}
+				zip = zipfile;
+				zipfile.file(filename + "m.json")
+					.async("string")
+					// @ts-ignore
+					.then(function (content) {
+						var qdata = JSON.parse(content);
+						missing = qdata.missing;
+						estimated = qdata.estimated;
+						interpolatedall = qdata.interpolated;
+						// @ts-ignore
+						var day = d3.select("#day");
+						day.selectAll("option").remove();
+						var prevday;
+						for (var key in interpolatedall) {
+							if (!prevday) {
+								prevday = key;
+							}
+							day.append("option")
+								.property("value", key)
+								.text(getScreenDate(key));
+						}
+						// @ts-ignore
+						var toSelect = "0" + Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
+						toSelect = right(toSelect, 4);
+						day.node().value = toSelect;
+						// @ts-ignore
+						var stp = d3.select("#stp");
+						// @ts-ignore
+						window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
+						
+						day.on("change", daychange);
+
+						function daychange() {
+							window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
+							dayIndex = day.node().value - day.node().options[0].value + 1;
+							// @ts-ignore
+							d3.select("#timeslider")
+								.select(".value")
+								.text(getScreenDate(day.node().value));
+							timedragdealer.setValue((dayIndex - 1) / (day.node().length - 1), 0, false);
+						}
+
+						if (firstgo) { //initialize timeslider on first iteration
+							// @ts-ignore
+							timedragdealer = new Dragdealer("timeslider", {
+								x: 0,
+								steps: 100, //day.node().length,
+								// @ts-ignore
+								animationCallback: function (a, b) {
+									var firstValue = parseInt(day.node().options[0].value);
+									var lastValue = parseInt(day.node().options[day.node().length - 1].value);
+									var newValue = "0" + (firstValue + Math.round(a * (lastValue - firstValue)));
+									newValue = right(newValue, -4);
+									// @ts-ignore
+									d3.select("#timeslider")
+										.select(".value")
+										.text(getScreenDate(newValue));
+								},
+								// @ts-ignore
+								callback: function (a, b) {
+									dayIndex = Math.round(a * (day.node().length - 1)) + 1;
+									day.node().selectedIndex = dayIndex - 1;
+									change();
+								}
+							});
+							firstgo = false;
+						}
+						//reset step scale on other iterations
+						var x = [];
+						var i = 0;
+						while (x.push(i++/(day.node().length-1)) < day.node().length);
+						timedragdealer.stepRatios = x;
+						daychange(); //initialize & trigger change in main sankey
+					});
+			});
+	});
+}
 
 /**
  * Updates the STP user control
