@@ -1,6 +1,5 @@
 <!DOCTYPE xhtml>
 <html xmlns="https://www.w3.org/1999/xhtml">
-
 <head>
 	<meta http-equiv="content-Type" content="text/html; charset=utf-8" />
 	<meta name="description" content="Urgent Care COVID-19 Flows" />
@@ -17,7 +16,7 @@
 	<!-- NV D3 library goes after D3 base library -->
 	<script src="js/lib/nv.d3.min.js"></script>
 	<script src="js/lib/jszip.min.js"></script>
-	<script src="js/lib/JSZipUtils.min.js"></script>
+	<script src="js/lib/jszip-utils.min.js"></script>
 </head>
 <body>
 
@@ -32,114 +31,114 @@
 	<!--PAGE WRAPPER-->
 	<div id="content" style="opacity:0;visibility:hidden;">
 
-		<div id="titlebar-right">
-			<span class="pagetitle th-fg-color" id="stp-in-title"></span>
-			<span class="pagetitle th-fg-color" style="margin-left:5px; margin-right:5px;">|</span>
-			<span class="pagetitle th-fg-color" id="date-in-title"></span>
-		</div>
+		<div id="titlebar-right"><!-- see titlebar.js --></div>
 
 		<!--SANKEY DIAGRAM CONTROLS-->
-		<div id="sourcecontrol" class="acc border-left" style="float:right; margin-right:10px; width:20%; margin-top:10px; min-width:220px; height:98%; padding-left:20px;line-height:26px;z-index:600000;">
-			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span style="float:left;">STP:</span>
-				<span	style="float:right;">
-					<select id="stps" name="stps" style="width:130px;direction: rtl;"></select>
-				</span>
-			</div>
-			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span style="float:left;">Day:</span>
-				<span	style="float:right;">
-					<select id="days" name="days" style="width:130px;direction: rtl;"></select>
-				</span>
-			</div>
-
-			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span style="float:left;">Scope:</span><span style="float:right;">
-					<input type="radio" title="System level" onclick="change();" name="r1" id="b00" value="1" />
-					<input type="radio" title="Provider level" onclick="change();" name="r1" id="b01" value="2" />
-				</span>
-			</div>
-
-			<div style="display:block;overflow: hidden;white-space: nowrap;">
-				<span style="float:left;">Calls:</span><span style="float:right;">
-					<input type="radio" title="All calls" onclick="change();" name="r1" id="b10" value="1" />
-					<input type="radio" title="COVID-12 calls" onclick="change();" name="r1" id="b11" value="2" />
-					<input type="radio" title="Non-COVID-19 calls" onclick="change();" name="r1" id="b12" value="3" />
-					<input type="radio" title="Primary care calls" onclick="change();" name="r1" id="b13" value="4" />
-				</span>
-			</div>
-
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Move nodes:</span>
-				<div style="float:right; padding-right:0; margin-right:0;">
-					<div style="font-size:20px;font-weight:bold;line-height:10px;">
-						<input title="Enable horizontal node dragging" type="checkbox" id="xmove">
-						<label for="xmove">↔</label>
-						<img alt="" style="width:5px;height:0px;">
-						<input title="Enable vertical node dragging" type="checkbox" id="ymove" checked>
-						<label for="ymove">↕</label>
-					</div>
+		<div class="panel-right acc border-left">
+			<div class="panel-right-settings">
+				<div style="display:block;overflow: hidden;white-space: nowrap;">
+					<span style="float:left;">STP:</span>
+					<span	style="float:right;">
+						<select id="stp" style="width:130px;direction: rtl;"></select>
+					</span>
 				</div>
-			</div>
 
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Density:</span>
-				<div style="float:right;">
-					<div id="pslider" title="Drag slider to set diagram node padding" class="dragdealer"
-						style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
-						<div class="handle orange-bar">↔
-							<script>
-								var densityslider = new Dragdealer("pslider", {
-									x: 0.5,
-									steps: 5,
-									snap: true,
-									callback: function (a, b) {
-										padding = paddingmultiplier * (1 - a) + 3;
-										change()
-									}
-								});
-							</script>
+				<div style="display:block;overflow: hidden;white-space: nowrap;">
+					<span style="float:left;">Day:</span>
+					<span	style="float:right;">
+						<select id="day" style="width:130px;direction: rtl;"></select>
+					</span>
+				</div>
+
+				<div style="display:block;overflow: hidden;white-space: nowrap;">
+					<span style="float:left;">Scope:</span><span style="float:right;">
+						<input type="radio" title="System level" onclick="change();" name="r1" id="b00" value="00" checked />
+						<input type="radio" title="Provider level" onclick="change();" name="r1" id="b01" value="01" />
+					</span>
+				</div>
+
+				<div style="display:block;overflow: hidden;white-space: nowrap;">
+					<span style="float:left;">Calls:</span><span style="float:right;">
+						<input type="radio" title="All calls" onclick="change();" name="r1" id="b10" value="10" />
+						<input type="radio" title="COVID-12 calls" onclick="change();" name="r1" id="b11" value="11" />
+						<input type="radio" title="Non-COVID-19 calls" onclick="change();" name="r1" id="b12" value="12" />
+						<input type="radio" title="Primary care calls" onclick="change();" name="r1" id="b13" value="13" />
+					</span>
+				</div>
+
+				<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Move nodes:</span>
+					<div style="float:right; padding-right:0; margin-right:0;">
+						<div style="font-size:20px;font-weight:bold;line-height:10px;">
+							<input title="Enable horizontal node dragging" type="checkbox" id="xmove">
+							<label for="xmove">↔</label>
+							<img alt="" style="width:5px;height:0px;">
+							<input title="Enable vertical node dragging" type="checkbox" id="ymove" checked>
+							<label for="ymove">↕</label>
 						</div>
 					</div>
 				</div>
-			</div>
 
-			<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Opacity:</span>
-				<div style="float:right;">
-					<div id="oslider" title="Drag slider to set diagram flow opacities" class="dragdealer"
-						style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
-						<div class="handle orange-bar">↔
-							<script>
-								new Dragdealer("oslider", {
-									x: 0.25,
-									steps: 5,
-									snap: true,
-									callback: function (a, b) {
-										lowopacity = 0.1 + 0.8 * a;
-										change()
-									}
-								});
-							</script>
+				<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Density:</span>
+					<div style="float:right;">
+						<div id="pslider" title="Drag slider to set diagram node padding" class="dragdealer"
+							style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
+							<div class="handle orange-bar">↔
+								<script>
+									var densityslider = new Dragdealer("pslider", {
+										x: 0.5,
+										steps: 5,
+										snap: true,
+										callback: function (a, b) {
+											padding = paddingmultiplier * (1 - a) + 3;
+											change()
+										}
+									});
+								</script>
+							</div>
 						</div>
 					</div>
 				</div>
+	
+				<div style="display:block;overflow: hidden;white-space: nowrap;"><span style="float:left;">Opacity:</span>
+					<div style="float:right;">
+						<div id="oslider" title="Drag slider to set diagram flow opacities" class="dragdealer"
+							style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
+							<div class="handle orange-bar">↔
+								<script>
+									new Dragdealer("oslider", {
+										x: 0.25,
+										steps: 5,
+										snap: true,
+										callback: function (a, b) {
+											lowopacity = 0.1 + 0.8 * a;
+											change()
+										}
+									});
+								</script>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="acc border-bottom" style="display:block;overflow: hidden;white-space: nowrap; padding-bottom:10px;">
+					<span style="float:left;">
+						Breakdown: <input type="checkbox" title="Toggle piechart" id="ctrlBreakdown" checked />
+					</span>
+					<span style="float:right;">
+						Legend: <input type="checkbox" title="Toggle piechart legend" id="ctrlLegend" onclick='updpieleg()' checked />
+					</span>
+				</div>
 			</div>
 
-			<div class="acc border-bottom" style="display:block;overflow: hidden;white-space: nowrap; padding-bottom:10px;">
-				<span style="float:left;">
-					Breakdown: <input type="checkbox" title="Toggle piechart" id="legend" onclick='updpievis()' checked />
-				</span>
-				<span style="float:right;">
-					Legend: <input type="checkbox" title="Toggle piechart legend" id="legend2" onclick='updpieleg()' checked />
-				</span>
+			<div class="panel-right-charts">
+				<div class="piechart primary">
+					<svg style="width:100%;height:100%;"></svg>
+				</div>
+		
+				<div class="piechart secondary">
+					<svg style="width:100%;height:100%;"></svg>
+				</div>
 			</div>
-		</div>
-
-		<!--PIE CHARTS-->
-		<div id="mypie" class="pielegend">
-			<svg style="width:100%;height:100%;"></svg>
-		</div>
-
-		<div id="mypie2" class="pielegend">
-			<svg style="width:100%;height:100%;"></svg>
 		</div>
 
 		<!--SANKEY DIAGRAM-->
@@ -168,8 +167,9 @@
 		</div>
 	</div>
 
+	<script src="js/titlebar.js"></script>
 	<script src="js/sankey.js"></script>
-	<script src="js/food.js"></script>
+	<script src="js/app.js"></script>
 
 	<div id="theme_toolbar"></div>
 	<script src="js/theme.js"></script>

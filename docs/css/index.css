@@ -22,7 +22,7 @@ body {
   width: 100%;
 }
 
-#titletext { 
+#titletext {
   margin-left: 10px;
 }
 
@@ -39,30 +39,32 @@ body {
   cursor: pointer;
 }
 
-#mypie {
-  position: fixed;
-  top: 285px;
-  right: 0px;
-  z-index: 8;
-  font-size: 13px;
-  font-weight: bold;
-  width: 20%;
+.panel-right {
+  float: right;
   height: 100%;
-  padding-left: 0px;
-  padding-bottom: 35px;
-  margin-left: 0px;
+  line-height: 26px;
   margin-right: 10px;
+  margin-top: 10px;
+  min-width: 220px;
+  padding-left: 20px;
+  width: 20%;
+  z-index: 600000;
 }
 
-#mypie2 {
-  position: fixed;
-  top: 285px;
-  right: 0px;
-  z-index: 7;
-  font-size: 13px;
-  font-weight: bold;
-  padding-left: 0px;
-  margin-left: 0px;
+.panel-right-settings {
+  height: 30%;
+  width: 100%;
+}
+
+.panel-right-charts {
+  font-size: 0.9em;
+  height: 70%;
+  width: 100%;
+}
+
+.piechart {
+  height: 50%;
+  width: 100%;
 }
 
 .centerpielabel {
