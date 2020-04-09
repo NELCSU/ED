@@ -8,11 +8,20 @@ svg {
   font-weight: bold;
 }
 
-.acc.border-bottom {
-  border-bottom: 1px solid #444444;
+.panel-right {
+  background-color: #111111;
 }
 
-.acc.border-left {
+.panel-right-control {
+  background-color: #444444;
+  color: #aaaa88;
+}
+
+.border {
+  border: 1px solid #444444;
+}
+
+.border-left {
   border-left: 1px solid #444444;
 }
 
@@ -46,7 +55,7 @@ svg {
   border-color: rgba(255,255,255,0.2);
 }
 
-#stp, #day {
+select {
   background: #222222;
   border-color: rgba(255,255,255,0.2);
   color: #aaaa88;

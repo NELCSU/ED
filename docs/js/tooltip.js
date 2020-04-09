@@ -1,7 +1,7 @@
 // @ts-ignore
 var old;
 // @ts-ignore
-var tooltipdiv;
+var tooltipdiv, tooltiptext, tooltipcharts;
 
 /**
  * 
@@ -23,6 +23,15 @@ function tiphide (d) {
  */
 function tipshow (d) {
   // @ts-ignore
+  if (d3.event.pageX > window.innerWidth * 0.5) {
+    // @ts-ignore
+    tooltipdiv.classed("right", false).classed("left", true);
+  } else {
+    // @ts-ignore
+    tooltipdiv.classed("right", true).classed("left", false);
+  }
+
+  // @ts-ignore
 	tooltipdiv.transition()
 		.delay(300)
 		.duration(200)
@@ -32,11 +41,7 @@ function tipshow (d) {
 	// @ts-ignore
 	if (d != old) {
     // @ts-ignore
-		tooltipdiv.html('<table style="text-align:center;">' + d + '</table>')
-			// @ts-ignore
-			.style("left", (d3.event.pageX + 30) + "px")
-			// @ts-ignore
-			.style("top", (d3.event.pageY - 30) + "px");
+		tooltiptext.html('<table style="text-align:center;">' + d + '</table>');
 	}
 };
 
@@ -44,32 +49,33 @@ function initTooltip() {
   // @ts-ignore
   tooltipdiv = d3.select("body")
     .append("div")
-    .attr("class", "tooltip")
+    .attr("class", "tooltip left")
     .style("opacity", 0)
-    .on("mouseover", function () {
-      // @ts-ignore
-      tooltipdiv.transition()
-        .delay(300)
-        .duration(200)
-        .style("opacity", 1)
-        .style("z-index", 10);
-    })
-    .on("mouseout", function () {
-      // @ts-ignore
-      tooltipdiv.transition()
-        .delay(300)
-        .duration(200)
-        .style("opacity", 0)
-        .style("z-index", -10);
-    })
     .on("click", function () {
       // @ts-ignore
       tooltipdiv.transition()
         .duration(200)
         .style("opacity", 0)
         .style("z-index", -10);
-    })
-    .attr("onmousewheel", "scrollsankey(event.wheelDelta)");
+    });
+
+  tooltiptext = tooltipdiv.append("div")
+    .classed("tooltip message", true);
+
+  tooltipcharts = tooltipdiv.append("div")
+    .classed("tooltip charts", true);
+   
+  tooltipcharts.append("div")
+    .classed("piechart primary", true)
+    .append("svg")
+      .style("width", "200px")
+      .style("height", "200px");
+
+  tooltipcharts.append("div")
+    .classed("piechart secondary", true)
+    .append("svg")
+      .style("width", "200px")
+      .style("height", "200px");
 
   window.addEventListener("show-tip", function(e) {
     // @ts-ignore

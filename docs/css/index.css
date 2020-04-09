@@ -11,6 +11,7 @@ body {
   bottom: 20;
   left: 40;
   position: fixed;
+  width: 85%;
 }
 
 #titlebar {
@@ -18,8 +19,14 @@ body {
   display: flex;
   flex-direction: row;
   flex-wrap: none;
-  justify-content: flex-start;
-  width: 100%;
+  height: 30px;
+  justify-content: space-between;
+  margin-left: 40px;
+  margin-top: 5px;
+  padding-bottom: 5px;
+  position: fixed;
+  width: 80%;
+  z-index: 9;
 }
 
 #titletext {
@@ -27,44 +34,53 @@ body {
 }
 
 #chart {
-  height: 99%;
   float: left;
+  height: 99%;
   position: absolute;
-  width: -moz-calc(80% - 45px);
-  width: -webkit-calc(80% - 45px);
-  width: calc(80% - 45px);
+  width: 90%;
 }
 
 #chart3 {
   cursor: pointer;
 }
 
+.flex-center {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
 .panel-right {
-  float: right;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
   line-height: 26px;
-  margin-right: 10px;
-  margin-top: 10px;
   min-width: 220px;
-  padding-left: 20px;
+  padding: 15px;
+  position: fixed;
+  right: 0px;
+  top: 35px;
+  transition: all 500ms;
   width: 20%;
   z-index: 600000;
 }
 
-.panel-right-settings {
-  height: 30%;
-  width: 100%;
+.panel-right.ready {
+  transform: translateX(100%);
 }
 
-.panel-right-charts {
-  font-size: 0.9em;
-  height: 70%;
-  width: 100%;
-}
-
-.piechart {
-  height: 50%;
-  width: 100%;
+.panel-right-control {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-weight: bold;
+  height: 30px;
+  justify-content: center;
+  position: fixed;
+  right: 0px;
+  top: 5px;
+  width: 15%;
+  z-index: 600001;
 }
 
 .centerpielabel {
@@ -86,18 +102,6 @@ a:focus,
 .link2:hover {
   text-decoration: underline;
   cursor: pointer;
-}
-
-#theme_toolbar {
-  position: fixed;
-  bottom: 5;
-  right: 0;
-  text-decoration: none;
-  padding: 3px;
-  padding-top: 1px;
-  z-index: 800;
-  white-space: nowrap;
-  overflow: hidden;
 }
 
 .pagetitle {
@@ -142,18 +146,6 @@ option:hover {
   cursor: pointer;
 }
 
-#titlebar {
-  width: -moz-calc(80% - 90px);
-  width: -webkit-calc(80% - 90px);
-  width: calc(80% - 90px);
-  height: 30px;
-  padding-bottom: 5px;
-  margin-left: 40px;
-  margin-top: 5px;
-  position: fixed;
-  z-index: 9;
-}
-
 #loading {
   bottom: 50%;
   font-size: 75px;
@@ -163,18 +155,6 @@ option:hover {
   text-align: center;
   width: 100%;
   z-index: 0;
-}
-
-#titlebar-right {
-  right: -moz-calc(20% + 50px);
-  right: -webkit-calc(20% + 50px);
-  right: calc(20% + 50px);
-  height: 30px;
-  padding-bottom: 5px;
-  margin-left: 40px;
-  margin-top: 5px;
-  position: fixed;
-  z-index: 9;
 }
 
 .dragdealer {
@@ -214,19 +194,40 @@ option:hover {
   box-shadow: 0 0 15px #667;
 }
 
-div.tooltip {
-  line-height: 1;
+.tooltip {
+  border: 1px solid;
   font-weight: bold;
   font-size: 12px;
+  line-height: 1;
   padding: 4px;
+  width: 300px;
   z-index: 2000;
-  position: absolute;
-  border: 1px solid;
+}
+
+.tooltip.left {
+  left: 5px;
+  position: fixed;
+  top: 12%;
+}
+
+.tooltip.right {
+  position: fixed;
+  right: 5px;
+  top: 12%;
+}
+
+.tooltip.charts {
+  font-size: 0.9em;
+  z-index: 100000;
 }
 
 .button:hover {
   text-decoration: underline;
   cursor: pointer;
+}
+
+.hide {
+  display: none;
 }
 
 .node-label {
@@ -252,4 +253,29 @@ div.tooltip {
   margin: 0px;
   padding: 0px;
   text-align: left;
+}
+
+.dev-mode {
+  background-color: yellow;
+  bottom: 0px;
+  color: #000;
+  font-size: 0.7em;
+  font-weight: bold;
+  left: 0px;
+  opacity: 0.9;
+  padding: 5px;
+  position: fixed;
+  text-align: center;
+  width: 100%;
+  z-index: 1;
+}
+
+.call-options {
+  display: flex;
+  flex-flow: column;
+}
+
+select {
+  direction: rtl;
+  width: 130px;
 }

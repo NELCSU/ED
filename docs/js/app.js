@@ -427,77 +427,52 @@ function getQueryHash() {
 // @ts-ignore
 function updatepie(data, placeholder, placelabel1, placelabel2, pievalue) {
 	// @ts-ignore
-	if (document.getElementById("ctrlBreakdown").checked) {
+	nv.addGraph(function () {
 		// @ts-ignore
-		nv.addGraph(function () {
+		var chart = nv.models.pieChart()
 			// @ts-ignore
-			var chart = nv.models.pieChart()
-				// @ts-ignore
-				.x(function (d) { return d.l; })
-				// @ts-ignore
-				.y(function (d) { return d.v; })
-				.showLabels(true) //Display pie labels
-				.labelThreshold(0.05) //Configure the minimum slice size for labels to show up
-				.labelType("percent") //Configure what type of data to show in the label. Can be "key", "value" or "percent"
-				.donut(true) //Turn on Donut mode.
-				.donutRatio(0.35); //Configure how big you want the donut hole size to be.
-
-			var svg =	placeholder.select("svg");
-
+			.x(function (d) { return d.l; })
 			// @ts-ignore
-			svg.selectAll(".centerpielabel").remove();
+			.y(function (d) { return d.v; })
+			.showLabels(true) //Display pie labels
+			.labelThreshold(0.05) //Configure the minimum slice size for labels to show up
+			.labelType("percent") //Configure what type of data to show in the label. Can be "key", "value" or "percent"
+			.donut(true) //Turn on Donut mode.
+			.donutRatio(0.35); //Configure how big you want the donut hole size to be.
 
-			// @ts-ignore
-			svg
-				.append("text")
-				.attr("x", parseInt(placeholder.style("width")) / 2)
-				.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 - 10)
-				.attr("class", "centerpielabel")
-				.text(placelabel1);
+		var svg =	placeholder.select("svg");
 
-			// @ts-ignore
-			svg.append("text")
-				.attr("x", parseInt(placeholder.style("width")) / 2)
-				.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 + 4)
-				.attr("class", "centerpielabel")
-				.text(placelabel2);
+		// @ts-ignore
+		svg.selectAll(".centerpielabel").remove();
 
-			var pietext = format(pievalue);
-			// @ts-ignore
-			svg.append("text")
-				.attr("x", parseInt(placeholder.style("width")) / 2)
-				.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 + 18)
-				.attr("class", "centerpielabel")
-				.text(pietext);
+		// @ts-ignore
+		svg
+			.append("text")
+			.attr("x", parseInt(placeholder.style("width")) / 2)
+			.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 - 10)
+			.attr("class", "centerpielabel")
+			.text(placelabel1);
 
-			// @ts-ignore
-			svg.datum(data).transition().duration(350).call(chart);
-			return chart;
-		});
-	}
+		// @ts-ignore
+		svg.append("text")
+			.attr("x", parseInt(placeholder.style("width")) / 2)
+			.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 + 4)
+			.attr("class", "centerpielabel")
+			.text(placelabel2);
+
+		var pietext = format(pievalue);
+		// @ts-ignore
+		svg.append("text")
+			.attr("x", parseInt(placeholder.style("width")) / 2)
+			.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 + 18)
+			.attr("class", "centerpielabel")
+			.text(pietext);
+
+		// @ts-ignore
+		svg.datum(data).transition().duration(350).call(chart);
+		return chart;
+	});
 }
-
-function updpieleg() {
-	// @ts-ignore
-	if (document.getElementById("ctrlLegend").checked) {
-		// @ts-ignore
-		d3.selectAll(".nv-legend").style("display", "inline");
-	} else {
-		// @ts-ignore
-		d3.selectAll(".nv-legend").style("display", "none");
-	}
-}
-
-function toggleBreakdown() {
-	var breakdown = document.getElementById("ctrlBreakdown");
-	if (breakdown) {
-		// @ts-ignore
-		document.getElementById("ctrlLegend").disabled = !breakdown.checked;
-		// @ts-ignore
-		d3.selectAll(".piecharts svg").style("display", breakdown.checked ? null : "none");
-	}
-}
-document.getElementById("ctrlBreakdown")?.addEventListener("click", toggleBreakdown);
 
 /**
  * 
@@ -647,16 +622,46 @@ function initSTPList(config) {
  * @param {any} config 
  */
 function initCallList(config) {
-	var calls = Array.from(document.querySelectorAll("input[name='r1']"));
-	calls.forEach(function(call) {
-		call.addEventListener("click", function() {
-			userSelectionChange(config);
-		})
-	});
 	var choice = getQueryHash();
-	if (choice.call) {
+	var parent = document.querySelector(".call-options");
+	if (parent) {
+		parent.innerHTML = "";
 		// @ts-ignore
-		document.getElementById("b" + choice.call).checked = true;
+		var group = "", grpdiv, label, control;
+		// @ts-ignore
+		config.calls.forEach(function(call) {
+			if (group !== call.group) {
+				group = call.group;
+				grpdiv = document.createElement("div");
+				// @ts-ignore
+				parent.appendChild(grpdiv);
+
+				label = document.createElement("span");
+				label.style.float = "left";
+				label.textContent = group;
+				// @ts-ignore
+				grpdiv.appendChild(label);
+
+				control = document.createElement("span");
+				control.style.float = "right";
+				// @ts-ignore
+				grpdiv.appendChild(control);
+			}
+			var option = document.createElement("input");
+			option.type = "radio";
+			option.id = call.id;
+			option.value = call.value;
+			option.name = call.name;
+			option.title = call.title;
+			if (choice.call === option.value) {
+				option.checked = true;
+			}
+			option.addEventListener("click", function() {
+				userSelectionChange(config);
+			});
+			// @ts-ignore
+			control.appendChild(option);
+		});
 	}
 }
 
@@ -730,6 +735,7 @@ var datapath = window.location.hostname === "localhost"
 // @ts-ignore
 d3.json(datapath + "config.json", function(d) {
 	var config = d;
+	config.environment = window.location.hostname === "localhost" ? "DEVELOPMENT" : "PRODUCTION";
 	config.datapath = datapath;
 	config.paddingmultiplier = 50;
 	initCallList(config);
@@ -740,5 +746,11 @@ d3.json(datapath + "config.json", function(d) {
 	var stp = document.getElementById("stp");
 	if (stp) {
 		stp.dispatchEvent(new Event("change"));
+	}
+	if (config.environment === "DEVELOPMENT") {
+		var dev = document.querySelector(".dev-mode");
+		if (dev) {
+			dev.classList.remove("hide");
+		}
 	}
 });

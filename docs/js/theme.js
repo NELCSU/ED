@@ -37,18 +37,16 @@ function changeStyle(i) {
  * Creates user control
  */
 function createSelection() {
-  var select = document.createElement("select");
-  select.id = "theme_choice";
-  select.title = "Select a color scheme for this page";
-  themeLabels.forEach(function(label, n) {
-    var opt = document.createElement("option");
-    opt.value = "" + n;
-    opt.text = label;
-    select.appendChild(opt);
-  });
-  var parent = document.getElementById("theme_toolbar");
-  if (parent) {
-    parent.appendChild(select);
+  var select = document.getElementById("theme_choice");
+  if (select) {
+    select.title = "Select a color scheme for this page";
+    themeLabels.forEach(function(label, n) {
+      var opt = document.createElement("option");
+      opt.value = "" + n;
+      opt.text = label;
+      // @ts-ignore
+      select.appendChild(opt);
+    });
     select.addEventListener("input", function() {
       var i = getThemeId();
       changeStyle(i);
