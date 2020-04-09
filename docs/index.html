@@ -52,17 +52,17 @@
 
 				<div style="display:block;overflow: hidden;white-space: nowrap;">
 					<span style="float:left;">Scope:</span><span style="float:right;">
-						<input type="radio" title="System level" onclick="change();" name="r1" id="b00" value="00" />
-						<input type="radio" title="Provider level" onclick="change();" name="r1" id="b01" value="01" />
+						<input type="radio" title="System level" name="r1" id="b00" value="00" />
+						<input type="radio" title="Provider level" name="r1" id="b01" value="01" />
 					</span>
 				</div>
 
 				<div style="display:block;overflow: hidden;white-space: nowrap;">
 					<span style="float:left;">Calls:</span><span style="float:right;">
-						<input type="radio" title="All calls" onclick="change();" name="r1" id="b10" value="10" />
-						<input type="radio" title="COVID-12 calls" onclick="change();" name="r1" id="b11" value="11" />
-						<input type="radio" title="Non-COVID-19 calls" onclick="change();" name="r1" id="b12" value="12" />
-						<input type="radio" title="Primary care calls" onclick="change();" name="r1" id="b13" value="13" />
+						<input type="radio" title="All calls" name="r1" id="b10" value="10" />
+						<input type="radio" title="COVID-12 calls" name="r1" id="b11" value="11" />
+						<input type="radio" title="Non-COVID-19 calls" name="r1" id="b12" value="12" />
+						<input type="radio" title="Primary care calls" name="r1" id="b13" value="13" />
 					</span>
 				</div>
 
@@ -82,19 +82,7 @@
 					<div style="float:right;">
 						<div id="pslider" title="Drag slider to set diagram node padding" class="dragdealer"
 							style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
-							<div class="handle orange-bar">↔
-								<script>
-									var densityslider = new Dragdealer("pslider", {
-										x: 0.5,
-										steps: 5,
-										snap: true,
-										callback: function (a, b) {
-											padding = paddingmultiplier * (1 - a) + 3;
-											change()
-										}
-									});
-								</script>
-							</div>
+							<div class="handle orange-bar">↔</div>
 						</div>
 					</div>
 				</div>
@@ -103,19 +91,7 @@
 					<div style="float:right;">
 						<div id="oslider" title="Drag slider to set diagram flow opacities" class="dragdealer"
 							style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
-							<div class="handle orange-bar">↔
-								<script>
-									new Dragdealer("oslider", {
-										x: 0.25,
-										steps: 5,
-										snap: true,
-										callback: function (a, b) {
-											lowopacity = 0.1 + 0.8 * a;
-											change()
-										}
-									});
-								</script>
-							</div>
+							<div class="handle orange-bar">↔</div>
 						</div>
 					</div>
 				</div>

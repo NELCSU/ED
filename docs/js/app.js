@@ -30,7 +30,7 @@ function addSpaces(s) {	return s.replace(/-/g, " "); }
  * @param {string} day 
  */
 function getScreenDate(day) {
-	var today = new Date(new Date().getFullYear(), parseInt(choice.day.substr(2, 2)) - 1, parseInt(choice.day.substr(0, 2)));
+	var today = new Date(new Date().getFullYear(), parseInt(day.substr(2, 2)) - 1, parseInt(day.substr(0, 2)));
 	var strDate = today.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
 	return strDate;
 }
@@ -68,62 +68,51 @@ function left(s, n) {
 function right(s, n) {
 	return s.slice(-1 * n);
 }
-// #######################
-
-
-//check if in dev mode and on local server
-var datapath = window.location.hostname === "localhost"
-	? "./" 
-	: "https://raw.githubusercontent.com/NELCSU/ED/master/docs/";
-
-// @ts-ignore
-var zip, timedragdealer;
-
-/**
- * 
- * @param {number} a 
- */
-function scrollsankey (a) {
-	var day = document.getElementById("day");
-	if (day) {
-		// @ts-ignore
-		var len = day.options.length;
-		if (a < 0) {
-			dayIndex = Math.min(len, dayIndex + 1);
-		} else {
-			dayIndex = Math.max(1, dayIndex - 1);
-		}
-		// @ts-ignore
-		timedragdealer.setValue((dayIndex - 1) / (len - 1), 0, false);
-	}
-};
 
 /**
  * Scans for first valid file and select corresponding call menu choice
- * @param {*} fileList 
- * @param {*} filename 
+ * @param {any} config
  */
-function setDefaultCall(fileList, filename) {
-	var calls = Array.from(document.querySelectorAll("input[name='r1']"));
-	var choices = new Map();
-	calls.forEach(function(call) {
-		// @ts-ignore
-		choices.set(call.value, call.title);
+function setDefaultCall(config) {	
+	var files = Object.keys(config.zip.files);
+	// @ts-ignore
+	var ctrl;
+	// @ts-ignore
+	config.calls.forEach(function(call) {
+		ctrl = document.getElementById(call.id);
+		if (ctrl) {
+			// @ts-ignore
+			ctrl.disabled = true;
+		}
 	});
-	
-	var files = Object.keys(fileList);
+	var selected = false;
 	for (var i = 0; i < files.length; i++) {
 		var key = right(files[i], 7);
 		key = left(key, 2);
-		if (choices.has(key)) {
+		// @ts-ignore
+		var found = config.calls.findIndex(function(e) { return e.value === key; })
+		if (found > -1) {
 			// @ts-ignore
-			document.getElementById("b" + key).checked = true;
-			break;
+			var ctrl = document.getElementById(config.calls[found].id);
+			if (ctrl) {
+				// @ts-ignore
+				ctrl.disabled = false;
+				if (!selected) {
+					// @ts-ignore
+					ctrl.checked = true;
+					selected = true;
+				}
+			}
+			
 		}
 	}
 }
 
-function change () {
+/**
+ * 
+ * @param {any} config 
+ */
+function userSelectionChange (config) {
 	setQueryHash();
 	var choice = getQueryHash();
 	var calls = document.querySelector("input[name='r1']:checked");
@@ -136,29 +125,29 @@ function change () {
 	window.dispatchEvent(new CustomEvent("day-selection", { detail: { text: getScreenDate(choice.day), value: choice.day }}));
 
 	// @ts-ignore
-	if (choice.call === "30" || choice.call === "31" || choice.call === "32" || choice.call === "33") {
-		paddingmultiplier = 5;
-	} else {
-		paddingmultiplier = 50;
-	}
-
-	// @ts-ignore
-	padding = paddingmultiplier * (1 - densityslider.getValue()[0]) + 3;
+	config.padding = config.paddingmultiplier * (1 - config.densityslider.getValue()[0]) + 3;
 
 	var pietooltip = 0;
 
 	//<!--MAIN SANKEY-->
 	// @ts-ignore
-	zip.file(choice.stp + choice.day + choice.call + ".json")
+	config.zip.file(choice.stp + choice.day + choice.call + ".json")
 		.async("string")
 		// @ts-ignore
 		.then(function (content) {
 			var ndata = JSON.parse(content);
-			svg.selectAll("g").remove();
+			config.svg.selectAll("g").remove();
+
 			// @ts-ignore
-			sankey = d3.sankey().nodeWidth(30).nodePadding(padding).size([width, height]);
-			sankey.nodes(ndata.nodes).links(ndata.links).layout(32);
-			var linkCollection = svg.append("g")
+			config.sankey = d3.sankey()
+				.nodeWidth(30)
+				// @ts-ignore
+				.nodePadding(config.padding)
+				.size([config.width, config.height]);
+
+			config.sankey.nodes(ndata.nodes).links(ndata.links).layout(32);
+
+			var linkCollection = config.svg.append("g")
 				// @ts-ignore
 				.selectAll(".link")
 				.data(ndata.links)
@@ -167,6 +156,9 @@ function change () {
 					.attr("class", "link")
 					// @ts-ignore
 					.sort(function (j, i) { return i.dy - j.dy;	});
+
+			var path = config.sankey.reversibleLink();
+
 			var h = linkCollection.append("path") //path0
 				.attr("d", path(0));
 			var f = linkCollection.append("path") //path1
@@ -176,54 +168,59 @@ function change () {
 
 			// @ts-ignore
 			linkCollection.attr("fill", function (i) { return i.source.fill; })
-			.attr("opacity", lowopacity)
+			.attr("opacity", config.lowopacity)
 			// @ts-ignore
-			.on("mouseover", function (d) { mouseOverLink(this, d); })
+			.on("mouseover", function (d) { mouseOverLink(this, d, config); })
 			// @ts-ignore
-			.on("click", function (d) { mouseOverLink(this, d); })
+			.on("click", function (d) { mouseOverLink(this, d, config); })
 			// @ts-ignore
 			.on("mouseout", function (d) {
 				// @ts-ignore
-				d3.select(this).style('opacity', lowopacity);
+				d3.select(this)
+					.style('opacity', config.lowopacity);
 				// @ts-ignore
 				window.clearTimeout(pietooltip);
 				window.dispatchEvent(new CustomEvent("hide-tip", { detail: d }));
 			});
 
-			var nodeCollection = svg.append("g")
-			.selectAll(".node")
-			.data(ndata.nodes)
-			.enter()
-			.append("g")
-				.attr("class", "node")
-				// @ts-ignore
-				.attr("transform", function (i) { return "translate(" + i.x + "," + i.y + ")"; })
-				// @ts-ignore
-				.call(d3.behavior.drag().origin(function (i) { return i; })
-				// @ts-ignore
-				.on("dragstart", function () { this.parentNode.appendChild(this);	})
-				.on("drag", b));
+			var nodeCollection = config.svg.append("g")
+				.selectAll(".node")
+				.data(ndata.nodes)
+				.enter()
+				.append("g")
+					.attr("class", "node")
+					// @ts-ignore
+					.attr("transform", function (i) { return "translate(" + i.x + "," + i.y + ")"; })
+					// @ts-ignore
+					.call(d3.behavior.drag()
+						// @ts-ignore
+						.origin(function (i) { return i; })
+						// @ts-ignore
+						.on("dragstart", function () { this.parentNode.appendChild(this);	})
+						// @ts-ignore
+						.on("drag", b)
+					);
 
 			nodeCollection.append("rect")
 				// @ts-ignore
 				.attr("height", function (i) { return i.dy; })
 				// @ts-ignore
-				.attr("width", sankey.nodeWidth())
+				.attr("width", config.sankey.nodeWidth())
 				// @ts-ignore
 				.style("fill", function (i) { return i.color = i.fill; })
 				// @ts-ignore
 				.style("stroke", function (i) {	return d3.rgb(i.color).darker(2);	})
 				// @ts-ignore
-				.on("mouseover", function (d) { mouseOverNode(d);	})
+				.on("mouseover", function (d) { mouseOverNode(d, config);	})
 				// @ts-ignore
-				.on("click", function (d) {	mouseOverNode(d);	})
+				.on("click", function (d) {	mouseOverNode(d, config);	})
 				// @ts-ignore
 				.on("mouseout", function (d) {
-					svg.selectAll(".link")
+					config.svg.selectAll(".link")
 							// @ts-ignore
 							.filter(function (l) { return l.source == d || l.target == d;  })
 							.transition()
-							.style('opacity', lowopacity);
+							.style('opacity', config.lowopacity);
 					window.clearTimeout(pietooltip);
 					window.dispatchEvent(new CustomEvent("hide-tip", { detail: d }));
 				})
@@ -252,8 +249,8 @@ function change () {
 				// @ts-ignore
 				.text(function (i) { return i.name; })
 				// @ts-ignore
-				.filter(function (i) { return i.x < width / 2; })
-				.attr("x", 6 + sankey.nodeWidth())
+				.filter(function (i) { return i.x < config.width / 2; })
+				.attr("x", 6 + config.sankey.nodeWidth())
 				.attr("text-anchor", "start");
 
 			nodeCollection.append("text") //node
@@ -277,19 +274,21 @@ function change () {
 					// @ts-ignore
 					if (document.getElementById("xmove").checked) {
 						// @ts-ignore
-						d3.select(this).attr("transform", "translate(" + (i.x = Math.max(0, Math.min(width - i.dx, d3.event.x))) + "," + (i.y = Math.max(0, Math.min(height - i.dy, d3.event.y))) + ")");
+						d3.select(this).attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.width - i.dx, d3.event.x))) + "," + (i.y = Math.max(0, Math.min(config.height - i.dy, d3.event.y))) + ")");
 					} else {
 						// @ts-ignore
-						d3.select(this).attr("transform", "translate(" + i.x + "," + (i.y = Math.max(0, Math.min(height - i.dy, d3.event.y))) + ")");
+						d3.select(this).attr("transform", "translate(" + i.x + "," + (i.y = Math.max(0, Math.min(config.height - i.dy, d3.event.y))) + ")");
 					}
 				} else {
 					// @ts-ignore
 					if (document.getElementById("xmove").checked) {
 						// @ts-ignore
-						d3.select(this).attr("transform", "translate(" + (i.x = Math.max(0, Math.min(width - i.dx, d3.event.x))) + "," + i.y + ")");
+						d3.select(this).attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.width - i.dx, d3.event.x))) + "," + i.y + ")");
 					}
 				}
-				sankey.relayout();
+				config.sankey.relayout();
+
+				var path = config.sankey.reversibleLink();
 				f.attr("d", path(1));
 				h.attr("d", path(0));
 				e.attr("d", path(2));
@@ -301,13 +300,14 @@ function change () {
  * 
  * @param {string} a 
  * @param {any} d 
+ * @param {any} config
  */
-function mouseOverLink (a, d) {
+function mouseOverLink (a, d, config) {
 	// @ts-ignore
 	d3.selectAll("#secondaryPie svg").style("display", null);
 
 	// @ts-ignore
-	d3.select(a).style('opacity', highopacity);
+	d3.select(a).style('opacity', config.highopacity);
 
 	var tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format(d.value) + "</td><td> Calls</td></tr>";
 	
@@ -322,22 +322,24 @@ function mouseOverLink (a, d) {
 /**
  * 
  * @param {any} d 
+ * @param {any} config
  */
-function mouseOverNode(d) {
+function mouseOverNode(d, config) {
 	// @ts-ignore
 	d3.selectAll("#secondaryPie svg").style("display", "none");
 
 	// @ts-ignore
 	var nodesource = [], nodetarget = [];
+
 	// @ts-ignore
-	svg.selectAll(".link")
+	config.svg.selectAll(".link")
 		// @ts-ignore
 		.filter(function (l) { return l.source == d || l.target == d; })
 		.transition()
-		.style('opacity', highopacity);
+		.style('opacity', config.highopacity);
 
 	// @ts-ignore
-	svg.selectAll(".link")
+	config.svg.selectAll(".link")
 		// @ts-ignore
 		.filter(function (l) { return l.target == d; })[0]
 			// @ts-ignore
@@ -346,7 +348,7 @@ function mouseOverNode(d) {
 			});
 
 	// @ts-ignore
-	svg.selectAll(".link")
+	config.svg.selectAll(".link")
 		// @ts-ignore
 		.filter(function (l) { return l.source == d; })[0]
 			// @ts-ignore
@@ -421,14 +423,6 @@ function getQueryHash() {
 	}
 	return result;
 }
-
-//<!--PIE CHARTS-->
-
-// @ts-ignore
-var widepie = Math.max(220, parseInt(d3.select(".piechart.primary").style("width")));
-// @ts-ignore
-var highpie = parseInt(d3.select(".piechart.primary").style("height"));
-var mbottom = 0;
 
 // @ts-ignore
 function updatepie(data, placeholder, placelabel1, placelabel2, pievalue) {
@@ -505,172 +499,122 @@ function toggleBreakdown() {
 }
 document.getElementById("ctrlBreakdown")?.addEventListener("click", toggleBreakdown);
 
-//<!--DYNAMIC SELECTORS-->
-
-var padding = 28;
-var paddingmultiplier = 50;
-var lowopacity = 0.3;
-var highopacity = 0.7;
-var margin = {
-	top: 70,
-	right: 10,
-	bottom: 12,
-	left: 40
-},
-	// @ts-ignore
-	width = document.getElementById("chart").offsetWidth - margin.left - margin.right,
-	// @ts-ignore
-	height = document.getElementById("chart").offsetHeight - margin.bottom - 130;
-// @ts-ignore
-var svg = d3.select("#chart").append("svg").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-// @ts-ignore
-var sankey = d3.sankey().nodeWidth(30).nodePadding(padding).size([width, height]);
-var path = sankey.reversibleLink();
-var calo = '--';
-var a3 = "1";
-var dayIndex = 0;
-
-var choice = getQueryHash();
-
-if (choice.day) {
-	var prevday = choice.day;
-}
-
-if (choice.call) {
-	// @ts-ignore
-	document.getElementById("b" + choice.call).checked = true;
-}
-
-// @ts-ignore
-var sankey2 = d3.sankey().nodeWidth(10).nodePadding(1).size([125, 50]);
-
-document.addEventListener("keydown", function (event) {
-	if ((event.keyCode == 27) || (event.keyCode >= 33 && event.keyCode <= 34) || (event.keyCode >= 37 && event.keyCode <= 40)) {
-		switch (event.keyCode) {
-			case 33: // pg up
-			case 37: // left
-			case 38: // up
-				// @ts-ignore
-				if (d3.select("#content").style("opacity") == 1) {
-					scrollsankey(1);
-				} //scroll only if we are on the sankey page
-				break;
-			case 34: // pg down
-			case 39: // right
-			case 40: // down 
-				// @ts-ignore
-				if (d3.select("#content").style("opacity") == 1) {
-					scrollsankey(-1);
-				}
-				break;
-		}
-
-		event.preventDefault();
-	}
-}, false);
-var coordinates = [0, 0];
-
 /**
  * 
- * @param {string} filePath 
+ * @param {any} data 
+ * @param {any} config 
  */
-function initDayList(filePath) {
+function loadDayFileContent(data, config) {
+	var interpolatedall = data.interpolated;
 	// @ts-ignore
-	JSZipUtils.getBinaryContent(filePath, function (err, rawdata) {
+	var day = d3.select("#day");
+	day.selectAll("option").remove();
+	var prevday;
+	for (var key in interpolatedall) {
+		if (!prevday) {
+			prevday = key;
+		}
+		day.append("option")
+			 .property("value", key)
+			 .text(getScreenDate(key));
+	}
+	// @ts-ignore
+	var toSelect = "0" + Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
+	toSelect = right(toSelect, 4);
+	day.node().value = toSelect;
+
+	setDefaultCall(config);
+
+	window.dispatchEvent(new CustomEvent("data-quality", { detail: {
+		day: day.node().value,
+		estimated: data.estimated,
+		interpolated: data.interpolated, 
+		missing: data.missing, 
+	}}));
+
+	// @ts-ignore
+	var stp = d3.select("#stp");
+	// @ts-ignore
+	window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
+	
+	day.on("change", daychange);
+
+	function daychange() {
+		window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
+		var dayIndex = day.node().value - day.node().options[0].value + 1;
+		// @ts-ignore
+		d3.select("#timeslider")
+			.select(".value")
+			.text(getScreenDate(day.node().value));
+		
+		// @ts-ignore
+		var dv = day.node().length - 1;
+		if (dv < 1) {
+			dv = 1;
+		}
+		dayIndex = dayIndex < 2 ? 1 : dayIndex - 1;
+		config.timedragdealer.setValue(dayIndex / dv, 0, false);
+	}
+
+	// @ts-ignore
+	if (!config.timedragdealer) { //initialize timeslider on first iteration
+		// @ts-ignore
+		config.timedragdealer = new Dragdealer("timeslider", {
+			x: 0,
+			steps: 100, //day.node().length,
+			// @ts-ignore
+			animationCallback: function (a, b) {
+				var firstValue = parseInt(day.node().options[0].value);
+				var lastValue = parseInt(day.node().options[day.node().length - 1].value);
+				var newValue = "0" + (firstValue + Math.round(a * (lastValue - firstValue)));
+				newValue = right(newValue, 4);
+				// @ts-ignore
+				d3.select("#timeslider")
+					.select(".value")
+					.text(getScreenDate(newValue));
+			},
+			// @ts-ignore
+			callback: function (a, b) {
+				var dayIndex = Math.round(a * (day.node().length - 1));
+				if (dayIndex < 1 || isNaN(dayIndex)) {
+					dayIndex = 0;
+				}
+				day.node().selectedIndex = dayIndex;
+				userSelectionChange(config);
+			}
+		});
+	}
+	//reset step scale on other iterations
+	var x = [];
+	var i = 0;
+	while (x.push(i++/(day.node().length-1)) < day.node().length);
+	// @ts-ignore
+	config.timedragdealer.stepRatios = x;
+	daychange(); //initialize & trigger change in main sankey
+}
+
+/**
+ *
+ * @param {any} config
+ */
+function initDayList(config) {
+	// @ts-ignore
+	JSZipUtils.getBinaryContent(config.datapath + config.filename, function (err, rawdata) {
 		// @ts-ignore
 		JSZip.loadAsync(rawdata)
 			// @ts-ignore
 			.then(function(zipfile) {
 				var stp = document.getElementById("stp");
-				var filename = "";
 				if (stp) {
 					// @ts-ignore
-					filename = stp.options[stp.selectedIndex].value;
+					config.filename = stp.options[stp.selectedIndex].value + "m.json";
 				}
-				zip = zipfile;
-				zipfile.file(filename + "m.json")
+				zipfile.file(config.filename)
 					.async("string")
 					// @ts-ignore
 					.then(function (content) {
-						var qdata = JSON.parse(content);
-						var interpolatedall = qdata.interpolated;
-						// @ts-ignore
-						var day = d3.select("#day");
-						day.selectAll("option").remove();
-						var prevday;
-						for (var key in interpolatedall) {
-							if (!prevday) {
-								prevday = key;
-							}
-							day.append("option")
-								.property("value", key)
-								.text(getScreenDate(key));
-						}
-						// @ts-ignore
-						var toSelect = "0" + Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
-						toSelect = right(toSelect, 4);
-						day.node().value = toSelect;
-
-						setDefaultCall(zipfile.files, filename);
-
-						window.dispatchEvent(new CustomEvent("data-quality", { detail: {
-							day: day.node().value,
-							estimated: qdata.estimated,
-							interpolated: qdata.interpolated, 
-							missing: qdata.missing, 
-						}}));
-
-						// @ts-ignore
-						var stp = d3.select("#stp");
-						// @ts-ignore
-						window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
-						
-						day.on("change", daychange);
-
-						function daychange() {
-							window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
-							dayIndex = day.node().value - day.node().options[0].value + 1;
-							// @ts-ignore
-							d3.select("#timeslider")
-								.select(".value")
-								.text(getScreenDate(day.node().value));
-							
-							// @ts-ignore
-							timedragdealer.setValue((dayIndex - 1) / (day.node().length - 1), 0, false);
-						}
-
-						// @ts-ignore
-						if (!timedragdealer) { //initialize timeslider on first iteration
-							// @ts-ignore
-							timedragdealer = new Dragdealer("timeslider", {
-								x: 0,
-								steps: 100, //day.node().length,
-								// @ts-ignore
-								animationCallback: function (a, b) {
-									var firstValue = parseInt(day.node().options[0].value);
-									var lastValue = parseInt(day.node().options[day.node().length - 1].value);
-									var newValue = "0" + (firstValue + Math.round(a * (lastValue - firstValue)));
-									newValue = right(newValue, -4);
-									// @ts-ignore
-									d3.select("#timeslider")
-										.select(".value")
-										.text(getScreenDate(newValue));
-								},
-								// @ts-ignore
-								callback: function (a, b) {
-									dayIndex = Math.round(a * (day.node().length - 1)) + 1;
-									day.node().selectedIndex = dayIndex - 1;
-									change();
-								}
-							});
-						}
-						//reset step scale on other iterations
-						var x = [];
-						var i = 0;
-						while (x.push(i++/(day.node().length-1)) < day.node().length);
-						// @ts-ignore
-						timedragdealer.stepRatios = x;
-						daychange(); //initialize & trigger change in main sankey
+						config.zip = zipfile;
+						loadDayFileContent(JSON.parse(content), config);
 					});
 			});
 	});
@@ -678,14 +622,14 @@ function initDayList(filePath) {
 
 /**
  * Updates the STP user control
- * @param {string[]} d 
+ * @param {any} config 
  */
-function initSTPList(d) {
+function initSTPList(config) {
 	// @ts-ignore
 	var stp = d3.select("#stp");
 	stp.selectAll("option").remove();
-	for (var key in d) {
-		stp.append("option").text(d[key]);
+	for (var key in config.stp) {
+		stp.append("option").text(config.stp[key]);
 	}
 	var choice = getQueryHash();
 	if (choice.stp) {
@@ -693,15 +637,108 @@ function initSTPList(d) {
 	}
 
 	stp.on("change", function() {
-		initDayList(datapath + "json/" + stp.node().value + ".zip");
+		config.filename = stp.node().value + ".zip";
+		initDayList(config);
 	});
+}
 
-	stp.node().dispatchEvent(new Event("change"));
+/**
+ * 
+ * @param {any} config 
+ */
+function initCallList(config) {
+	var calls = Array.from(document.querySelectorAll("input[name='r1']"));
+	calls.forEach(function(call) {
+		call.addEventListener("click", function() {
+			userSelectionChange(config);
+		})
+	});
+	var choice = getQueryHash();
+	if (choice.call) {
+		// @ts-ignore
+		document.getElementById("b" + choice.call).checked = true;
+	}
+}
+
+/**
+ * 
+ * @param {any} config 
+ */
+function initDensitySlider(config) {
+	// @ts-ignore
+	config.densityslider = new Dragdealer("pslider", {
+		x: 0.5,
+		steps: 5,
+		snap: true,
+		// @ts-ignore
+		callback: function (a, b) {
+			config.padding = config.paddingmultiplier * (1 - a) + 3;
+			userSelectionChange(config);
+		}
+	});
+}
+
+/**
+ * 
+ * @param {any} config 
+ */
+function initOpacitySlider(config) {
+	config.lowopacity = 0.3;
+	config.highopacity = 0.7;
+	// @ts-ignore
+	new Dragdealer("oslider", {
+		x: 0.25,
+		steps: 5,
+		snap: true,
+		// @ts-ignore
+		callback: function (a, b) {
+			config.lowopacity = 0.1 + 0.8 * a;
+			userSelectionChange(config);
+		}
+	});
+}
+
+/**
+ * 
+ * @param {any} config 
+ */
+function initCharts(config) {
+	var margin = {
+		top: 70,
+		right: 10,
+		bottom: 12,
+		left: 40
+	};
+	// @ts-ignore
+	config.width = document.getElementById("chart").offsetWidth - margin.left - margin.right;
+	// @ts-ignore
+	config.height = document.getElementById("chart").offsetHeight - margin.bottom - 130;
+	// @ts-ignore
+	config.svg = d3.select("#chart")
+		.append("svg")
+			.attr("width", config.width + margin.left + margin.right)
+			.attr("height", config.height + margin.top + margin.bottom)
+			.append("g")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 }
 
 // APPLICATION ENTRY POINT
+var datapath = window.location.hostname === "localhost"
+	? "./json/" 
+	: "https://raw.githubusercontent.com/NELCSU/ED/master/docs/json/";
 
 // @ts-ignore
-d3.json(datapath + "json/stp.json", function(d) {
-	initSTPList(d.stp);
+d3.json(datapath + "config.json", function(d) {
+	var config = d;
+	config.datapath = datapath;
+	config.paddingmultiplier = 50;
+	initCallList(config);
+	initDensitySlider(config);
+	initOpacitySlider(config);
+	initCharts(config)
+	initSTPList(config);
+	var stp = document.getElementById("stp");
+	if (stp) {
+		stp.dispatchEvent(new Event("change"));
+	}
 });

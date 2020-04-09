@@ -1,0 +1,11 @@
+{
+  "calls": [
+    { "id": "b00", "name": "r1", "title": "System level", "value": "00" },
+    { "id": "b01", "name": "r1", "title": "Provider level", "value": "01" },
+    { "id": "b10", "name": "r1", "title": "All calls", "value": "10" },
+    { "id": "b11", "name": "r1", "title": "COVID-12 calls", "value": "11" },
+    { "id": "b12", "name": "r1", "title": "Non-COVID-19 calls", "value": "12" },
+    { "id": "b13", "name": "r1", "title": "Primary care calls", "value": "13" }
+  ],
+  "stp": ["LCW", "London"]
+}
