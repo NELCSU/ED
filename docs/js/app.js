@@ -6,15 +6,6 @@ This website accompanies the research paper entitled
 Food and Energy in the Global Sustainable Energy Transition:
 An Energy Metabolism View of Global Agriculture Systems
 by Sgouris Sgouridis & Denes Csala
-
-The following software extensively uses the javascript frameworks below,
-all of which are distributed under the MIT or GNU/GPL license:
-D3.js http://d3js.org/  data-oriented javascript framework. 
-	- Sankey plugin http://bost.ocks.org/mike/sankey/ for D3.js (heavily modified) by Mike Bostock's, 
-	  which is based on the initial version http://tamc.github.io/Sankey/ by Thomas Counsell. 
-	  I have incorporated the ability to render Sankey cycles, as pioneered by https://github.com/cfergus
-	- NVD3 http://nvd3.org/ extension for D3.js by Novus Partners
-	- Dragdealer.js href="http://skidding.github.io/dragdealer/ by Ovidiu Chereches
 */
 
 // UTILITIES #############
@@ -147,6 +138,8 @@ function userSelectionChange (config) {
 
 			config.sankey.nodes(ndata.nodes).links(ndata.links).layout(32);
 
+			initSankeyNodeMovement(config);
+
 			var linkCollection = config.svg.append("g")
 				// @ts-ignore
 				.selectAll(".link")
@@ -170,9 +163,12 @@ function userSelectionChange (config) {
 			linkCollection.attr("fill", function (i) { return i.source.fill; })
 			.attr("opacity", config.lowopacity)
 			// @ts-ignore
-			.on("mouseover", function (d) { mouseOverLink(this, d, config); })
+			.on("mouseover", function (d) {	mouseOverLink(this, d, config);	})
 			// @ts-ignore
-			.on("click", function (d) { mouseOverLink(this, d, config); })
+			.on("click", function (d) {
+				// @ts-ignore
+				mouseOverLink(this, d, config);
+			})
 			// @ts-ignore
 			.on("mouseout", function (d) {
 				// @ts-ignore
@@ -213,7 +209,9 @@ function userSelectionChange (config) {
 				// @ts-ignore
 				.on("mouseover", function (d) { mouseOverNode(d, config);	})
 				// @ts-ignore
-				.on("click", function (d) {	mouseOverNode(d, config);	})
+				.on("click", function (d) {
+					mouseOverNode(d, config);
+				})
 				// @ts-ignore
 				.on("mouseout", function (d) {
 					config.svg.selectAll(".link")
@@ -269,21 +267,22 @@ function userSelectionChange (config) {
 
 			// @ts-ignore
 			function b(i) { //dragmove
-				// @ts-ignore
-				if (document.getElementById("ymove").checked) {
-					// @ts-ignore
-					if (document.getElementById("xmove").checked) {
+				if (config.sankey.allowMoveNodeY) {
+					if (config.sankey.allowMoveNodeX) {
 						// @ts-ignore
-						d3.select(this).attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.width - i.dx, d3.event.x))) + "," + (i.y = Math.max(0, Math.min(config.height - i.dy, d3.event.y))) + ")");
+						d3.select(this)
+							// @ts-ignore
+							.attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.width - i.dx, d3.event.x))) + "," + (i.y = Math.max(0, Math.min(config.height - i.dy, d3.event.y))) + ")");
 					} else {
 						// @ts-ignore
 						d3.select(this).attr("transform", "translate(" + i.x + "," + (i.y = Math.max(0, Math.min(config.height - i.dy, d3.event.y))) + ")");
 					}
 				} else {
-					// @ts-ignore
-					if (document.getElementById("xmove").checked) {
+					if (config.sankey.allowMoveNodeX) {
 						// @ts-ignore
-						d3.select(this).attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.width - i.dx, d3.event.x))) + "," + i.y + ")");
+						d3.select(this)
+							// @ts-ignore
+							.attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.width - i.dx, d3.event.x))) + "," + i.y + ")");
 					}
 				}
 				config.sankey.relayout();
@@ -511,6 +510,9 @@ function loadDayFileContent(data, config) {
 	var stp = d3.select("#stp");
 	// @ts-ignore
 	window.dispatchEvent(new CustomEvent("stp-selection", { detail: { text: stp.node().value, value: stp.node().value }}));
+
+	// @ts-ignore
+	day.on("click", function() { d3.event.stopPropagation(); })
 	
 	day.on("change", daychange);
 
@@ -569,6 +571,32 @@ function loadDayFileContent(data, config) {
 }
 
 /**
+ * 
+ * @param {any} config 
+ */
+function initSankeyNodeMovement(config) {
+	if (!config.sankey) {
+		console.error("Cannot set node movement behaviour on missing Sankey object");
+	}
+	var x = document.getElementById("xmove");
+	var y = document.getElementById("ymove");
+	if (x) {
+		// @ts-ignore
+		config.sankey.allowMoveNodeX = x.checked; 
+		x.addEventListener("click", function(e) { e.stopImmediatePropagation(); });
+		// @ts-ignore
+		x.addEventListener("input", function(e) { config.sankey.allowMoveNodeX = x.checked; });
+	}
+	if (y) {
+		// @ts-ignore
+		config.sankey.allowMoveNodeY = y.checked;
+		y.addEventListener("click", function(e) { e.stopImmediatePropagation(); });
+		// @ts-ignore
+		y.addEventListener("input", function(e) { config.sankey.allowMoveNodeY = y.checked; });
+	}
+}
+
+/**
  *
  * @param {any} config
  */
@@ -610,6 +638,9 @@ function initSTPList(config) {
 	if (choice.stp) {
 		stp.node().value = choice.stp;
 	}
+
+	// @ts-ignore
+	stp.on("click", function() { d3.event.stopPropagation(); });
 
 	stp.on("change", function() {
 		config.filename = stp.node().value + ".zip";
@@ -656,7 +687,8 @@ function initCallList(config) {
 			if (choice.call === option.value) {
 				option.checked = true;
 			}
-			option.addEventListener("click", function() {
+			option.addEventListener("click", function(e) {
+				e.stopImmediatePropagation();
 				userSelectionChange(config);
 			});
 			// @ts-ignore
@@ -681,6 +713,11 @@ function initDensitySlider(config) {
 			userSelectionChange(config);
 		}
 	});
+	var el = document.getElementById("pslider");
+	if (el) {
+		// @ts-ignore
+		el.addEventListener("click", function(e) { e.stopImmediatePropagation(); });
+	}
 }
 
 /**
@@ -700,6 +737,24 @@ function initOpacitySlider(config) {
 			config.lowopacity = 0.1 + 0.8 * a;
 			userSelectionChange(config);
 		}
+	});
+	var el = document.getElementById("oslider");
+	if (el) {
+		// @ts-ignore
+		el.addEventListener("click", function(e) { e.stopImmediatePropagation(); });
+	}
+}
+
+/**
+ * Initialises various global event handlers
+ */
+function initGlobalActions() {
+	document.body.addEventListener("click", function(e) {
+		e.stopImmediatePropagation();
+		// close the menu if it is open
+		var menu = document.querySelector(".panel-right");
+		// @ts-ignore
+		menu.classList.add("ready");
 	});
 }
 
@@ -741,7 +796,7 @@ d3.json(datapath + "config.json", function(d) {
 	initCallList(config);
 	initDensitySlider(config);
 	initOpacitySlider(config);
-	initCharts(config)
+	initCharts(config);
 	initSTPList(config);
 	var stp = document.getElementById("stp");
 	if (stp) {
@@ -753,4 +808,5 @@ d3.json(datapath + "config.json", function(d) {
 			dev.classList.remove("hide");
 		}
 	}
+	initGlobalActions();
 });

@@ -47,7 +47,8 @@ function createSelection() {
       // @ts-ignore
       select.appendChild(opt);
     });
-    select.addEventListener("input", function() {
+    select.addEventListener("click", function(e) { e.stopImmediatePropagation(); })
+    select.addEventListener("input", function(e) {
       var i = getThemeId();
       changeStyle(i);
     });
