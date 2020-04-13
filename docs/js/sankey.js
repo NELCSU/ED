@@ -1,11 +1,22 @@
 d3.sankey = function() {
   var sankey = {},
-      nodeWidth = 24,
-      nodePadding = 8,
-      size = [1, 1],
-      nodes = [],
-      links = [],
-      components = [];
+    alignment = "horizontal",
+    nodeWidth = 24,
+    nodePadding = 8,
+    size = [1, 1],
+    nodes = [],
+    links = [],
+    components = [];
+
+  sankey.horizontal = function() {
+    alignment = "horizontal";
+    return sankey;
+  };
+
+  sankey.vertical = function() {
+    alignment = "vertical";
+    return sankey;
+  };
 
   sankey.nodeWidth = function(_) {
     if (!arguments.length) return nodeWidth;
@@ -42,11 +53,16 @@ d3.sankey = function() {
     computeNodeValues();
 
     computeNodeStructure();
-    computeNodeBreadths();
 
-    computeNodeDepths(iterations);
+    if (alignment === "horizontal") {
+      computeNodeBreadths();
+      computeNodeDepthsHorizontal(iterations);
+    } else {
+      computeNodeDepthsVertical();
+      computeNodeBreadths(iterations);
+    }
+
     computeLinkDepths();
-    
     return sankey;
   };
 
@@ -55,29 +71,29 @@ d3.sankey = function() {
     return sankey;
   };
 
-  // A more involved path generator that requires 3 elements to render -- 
-  // It draws a starting element, intermediate and end element that are useful
-  // while drawing reverse links to get an appropriate fill.
-  //
-  // Each link is now an area and not a basic spline and no longer guarantees
-  // fixed width throughout.
-  //
-  // Sample usage:
-  //
-  //  linkNodes = this._svg.append("g").selectAll(".link")
-  //      .data(this.links)
-  //    .enter().append("g")
-  //      .attr("fill", "none")
-  //      .attr("class", ".link")
-  //      .sort(function(a, b) { return b.dy - a.dy; });
-  //
-  //  linkNodePieces = [];
-  //  for (var i = 0; i < 3; i++) {
-  //    linkNodePieces[i] = linkNodes.append("path")
-  //      .attr("class", ".linkPiece")
-  //      .attr("d", path(i))
-  //      .attr("fill", ...)
-  //  }
+  /**
+   * @description A more involved path generator that requires 3 elements to render.
+   * It draws a starting element, intermediate and end element that are useful
+   * while drawing reverse links to get an appropriate fill.
+   * Each link is now an area and not a basic spline and no longer guarantees
+   * fixed width throughout.
+   * @example
+   * linkNodes = this._svg.append("g")
+   *    .selectAll(".link")
+   *    .data(this.links)
+   *    .enter().append("g")
+   *      .attr("fill", "none")
+   *      .attr("class", ".link")
+   *      .sort(function(a, b) { return b.dy - a.dy; });
+   * 
+   * linkNodePieces = [];
+   * for (var i = 0; i < 3; i++) {
+   *    linkNodePieces[i] = linkNodes.append("path")
+   *       .attr("class", ".linkPiece")
+   *       .attr("d", path(i))
+   *       .attr("fill", ...)
+   * }
+   */
   sankey.reversibleLink = function() {
     var curvature = .5;
 
@@ -184,23 +200,45 @@ d3.sankey = function() {
     }
   };
 
-  // The standard link path using a constant width spline that needs a 
-  // single path element.
+  /**
+   * 
+   */
   sankey.link = function() {
     var curvature = .5;
 
+    /**
+     * 
+     * @param {any} d 
+     */
     function link(d) {
-      var x0 = d.source.x + d.source.dx,
-          x1 = d.target.x,
-          xi = d3.interpolateNumber(x0, x1),
-          x2 = xi(curvature),
-          x3 = xi(1 - curvature),
-          y0 = d.source.y + d.sy + d.dy / 2,
-          y1 = d.target.y + d.ty + d.dy / 2;
-      return "M" + x0 + "," + y0
-           + "C" + x2 + "," + y0
-           + " " + x3 + "," + y1
+      var x0, x1, i, y0, y1;
+      if (alignment === "horizontal") {
+        var x2, x3;
+        x0 = d.source.x + d.source.dx;
+        x1 = d.target.x;
+        i = d3.interpolateNumber(x0, x1);
+        x2 = i(curvature);
+        x3 = i(1 - curvature);
+        y0 = d.source.y + d.sy + d.dy / 2;
+        y1 = d.target.y + d.ty + d.dy / 2;
+        return "M" + x0 + "," + y0
+          + "C" + x2 + "," + y0
+          + " " + x3 + "," + y1
+          + " " + x1 + "," + y1;
+      } else {
+        var y2, y3;
+        x0 = d.source.x + d.sy + d.dy / 2;
+        x1 = d.target.x + d.ty + d.dy / 2;
+        y0 = d.source.y + nodeWidth,
+        y1 = d.target.y,
+        i = d3.interpolateNumber(y0, y1),
+        y2 = i(curvature),
+        y3 = i(1 - curvature);
+        return "M" + x0 + "," + y0
+           + "C" + x0 + "," + y2
+           + " " + x1 + "," + y3
            + " " + x1 + "," + y1;
+      }
     }
 
     link.curvature = function(_) {
@@ -230,22 +268,25 @@ d3.sankey = function() {
     });
   }
 
-  // Compute the value (size) of each node by summing the associated links.
+  /**
+   * Compute the value (size) of each node by summing the associated links.
+   */
   function computeNodeValues() {
     nodes.forEach(function(node) {
-      if (!(node.value)) //if not already given
-	  node.value = Math.max(
-        d3.sum(node.sourceLinks, value),
-        d3.sum(node.targetLinks, value)
-      );
+      if (!(node.value)) {
+        node.value = Math.max(
+          d3.sum(node.sourceLinks, value),
+          d3.sum(node.targetLinks, value)
+        );
+      }
     });
   }
 
-  // Take the list of nodes and create a DAG of supervertices, each consisting 
-  // of a strongly connected component of the graph
-  //
-  // Based off:
-  // http://en.wikipedia.org/wiki/Tarjan's_strongly_connected_components_algorithm
+  /**
+   * @description
+   * Take the list of nodes and create a DAG of supervertices, each consisting of a strongly connected component of the graph
+   * @see http://en.wikipedia.org/wiki/Tarjan's_strongly_connected_components_algorithm
+   */
   function computeNodeStructure() {
     var nodeStack = [], 
         index = 0;
@@ -407,29 +448,21 @@ d3.sankey = function() {
     }
   }
 
-  function moveSourcesRight() {
-    nodes.forEach(function(node) {
-      if (!node.targetLinks.length) {
-        node.x = d3.min(node.sourceLinks, function(d) { return d.target.x; }) - 1;
-      }
-    });
-  }
-
-  function moveSinksRight(x) {
-    nodes.forEach(function(node) {
-      if (!node.sourceLinks.length) {
-        node.x = x - 1;
-      }
-    });
-  }
-
+  /**
+   * 
+   * @param {number} kx 
+   */
   function scaleNodeBreadths(kx) {
     nodes.forEach(function(node) {
       node.x *= kx;
     });
   }
 
-  function computeNodeDepths(iterations) {
+  /**
+   * 
+   * @param {number} iterations 
+   */
+  function computeNodeDepthsHorizontal(iterations) {
     var nodesByBreadth = d3.nest()
         .key(function(d) { return d.x; })
         .sortKeys(d3.ascending)
@@ -531,36 +564,95 @@ d3.sankey = function() {
     }
   }
 
+  /**
+   * 
+   */
+  function computeNodeDepthsVertical() {
+    var remainingNodes = nodes,
+    nextNodes,
+    y = 0;
+
+    while (remainingNodes.length) {
+      nextNodes = [];
+      remainingNodes.forEach(function(node) {
+        node.y = y;
+        //node.dx = nodeWidth;
+        node.sourceLinks.forEach(function(link) {
+          if (nextNodes.indexOf(link.target) < 0) {
+            nextNodes.push(link.target);
+          }
+        });
+      });
+      remainingNodes = nextNodes;
+      ++y;
+    }
+
+    // move end points to the very bottom
+    moveSinksDown(y);
+
+    scaleNodeBreadths((size[1] - nodeWidth) / (y - 1));
+}
+
+  /**
+   * 
+   */
   function computeLinkDepths() {
+    // @ts-ignore
     nodes.forEach(function(node) {
       node.sourceLinks.sort(ascendingTargetDepth);
       node.targetLinks.sort(ascendingSourceDepth);
     });
+
+    // @ts-ignore
     nodes.forEach(function(node) {
       var sy = 0, ty = 0;
+      // @ts-ignore
       node.sourceLinks.forEach(function(link) {
         link.sy = sy;
         sy += link.dy;
       });
+      // @ts-ignore
       node.targetLinks.forEach(function(link) {
         link.ty = ty;
         ty += link.dy;
       });
     });
 
+    /**
+     * 
+     * @param {any} a 
+     * @param {any} b 
+     */
     function ascendingSourceDepth(a, b) {
-      return a.source.y - b.source.y;
+      return alignment === "horizontal"
+        ? a.source.y - b.source.y
+        : a.source.x - b.source.x;
     }
 
+    /**
+     * 
+     * @param {*} a 
+     * @param {*} b 
+     */
     function ascendingTargetDepth(a, b) {
-      return a.target.y - b.target.y;
+      return alignment === "horizontal"
+        ? a.target.y - b.target.y
+        : a.target.x - b.target.x;
     }
   }
 
+  /**
+   * 
+   * @param {any} node 
+   */
   function center(node) {
     return node.y + node.dy / 2;
   }
 
+  /**
+   * 
+   * @param {any} link 
+   */
   function value(link) {
     return link.value;
   }

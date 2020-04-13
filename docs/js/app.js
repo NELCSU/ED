@@ -664,17 +664,16 @@ function initCallList(config) {
 			if (group !== call.group) {
 				group = call.group;
 				grpdiv = document.createElement("div");
+				grpdiv.classList.add("panel-row");
 				// @ts-ignore
 				parent.appendChild(grpdiv);
 
-				label = document.createElement("span");
-				label.style.float = "left";
+				label = document.createElement("label");
 				label.textContent = group;
 				// @ts-ignore
 				grpdiv.appendChild(label);
 
-				control = document.createElement("span");
-				control.style.float = "right";
+				control = document.createElement("div");
 				// @ts-ignore
 				grpdiv.appendChild(control);
 			}

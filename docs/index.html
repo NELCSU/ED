@@ -36,56 +36,43 @@
 		<!--CHART CONTROLS-->
 		<div class="panel-right-control">CHART OPTIONS</div>
 		<div class="panel-right border ready">
-			<div>
-				<span style="float:left;">STP:</span>
-				<span	style="float:right;"><select id="stp"></select></span>
+			<div class="panel-row">
+				<label for="stp">STP:</label> <select id="stp"></select>
 			</div>
 		
-			<div>
-				<span style="float:left;">Day:</span>
-				<span	style="float:right;"><select id="day"></select></span>
+			<div class="panel-row">
+				<label for="id">Day:</label> <select id="day"></select>
 			</div>
 
 			<div class="call-options"></div>
 
-			<div>
-				<span style="float:left;">Move nodes:</span>
-				<div style="float:right; padding-right:0; margin-right:0;">
-					<div style="font-size:20px;font-weight:bold;line-height:10px;">
-						<input title="Enable horizontal node dragging" type="checkbox" id="xmove">
-						<label for="xmove">↔</label>
-						<img alt="" style="width:5px; height:0px;">
-						<input title="Enable vertical node dragging" type="checkbox" id="ymove" checked>
-						<label for="ymove">↕</label>
-					</div>
+			<div class="panel-row">
+				<label>Move nodes:</label>
+				<div>
+					<input title="Enable horizontal node dragging" type="checkbox" id="xmove">
+					<label for="xmove">↔</label>
+					<input title="Enable vertical node dragging" type="checkbox" id="ymove" checked>
+					<label for="ymove">↕</label>
 				</div>
 			</div>
 		
-			<div>
-				<span style="float:left;">Density:</span>
-				<div style="float:right;">
-					<div id="pslider" title="Drag slider to set diagram node padding" class="dragdealer"
-						style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
-						<div class="handle orange-bar">↔</div>
-					</div>
+			<div class="panel-row">
+				<label>Density:</label>
+				<div id="pslider" title="Drag slider to set diagram node padding" class="dragdealer menu">
+					<div class="handle orange-bar">↔</div>
 				</div>
 			</div>
 
-			<div>
-				<span style="float:left;">Opacity:</span>
-				<div style="float:right;">
-					<div id="oslider" title="Drag slider to set diagram flow opacities" class="dragdealer"
-						style="margin-top:2px;margin-left:-130px;width:130px; height:18px; position:absolute;">
-						<div class="handle orange-bar">↔</div>
-					</div>
+			<div class="panel-row">
+				<label>Opacity:</label>
+				<div id="oslider" title="Drag slider to set diagram flow opacities" class="dragdealer menu">
+					<div class="handle orange-bar">↔</div>
 				</div>
 			</div>
 		
-			<div>
-				<span style="float:left;">Colors:</span>
-				<span	style="float:right;">
-					<select id="theme_choice"></select>
-				</span>
+			<div class="panel-row">
+				<label>Colors:</label>
+				<select id="theme_choice" title="Change page color scheme"></select>
 				<script src="js/theme.js"></script>
 			</div>
 			
