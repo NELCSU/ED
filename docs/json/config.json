@@ -1,11 +1,50 @@
 {
-  "calls": [
-    { "group": "Scope", "id": "b00", "name": "r1", "title": "System level", "value": "00" },
-    { "group": "Scope", "id": "b01", "name": "r1", "title": "Provider level", "value": "01" },
-    { "group": "Calls", "id": "b10", "name": "r1", "title": "All calls", "value": "10" },
-    { "group": "Calls", "id": "b11", "name": "r1", "title": "COVID-12 calls", "value": "11" },
-    { "group": "Calls", "id": "b12", "name": "r1", "title": "Non-COVID-19 calls", "value": "12" },
-    { "group": "Calls", "id": "b13", "name": "r1", "title": "Primary care calls", "value": "13" }
+  "calls": [{
+      "group": "Scope",
+      "id": "b00",
+      "name": "r1",
+      "title": "System level",
+      "value": "00"
+    },
+    {
+      "group": "Scope",
+      "id": "b01",
+      "name": "r1",
+      "title": "Provider level",
+      "value": "01"
+    },
+    {
+      "group": "Calls",
+      "id": "b10",
+      "name": "r1",
+      "title": "All calls",
+      "value": "10"
+    },
+    {
+      "group": "Calls",
+      "id": "b11",
+      "name": "r1",
+      "title": "COVID-12 calls",
+      "value": "11"
+    },
+    {
+      "group": "Calls",
+      "id": "b12",
+      "name": "r1",
+      "title": "Non-COVID-19 calls",
+      "value": "12"
+    },
+    {
+      "group": "Calls",
+      "id": "b13",
+      "name": "r1",
+      "title": "Primary care calls",
+      "value": "13"
+    }
   ],
-  "stp": ["LCW", "London"]
+  "legend": {
+    "color": ["#E495A5", "#D5A07B", "#B5AD64", "#86B875", "#4EBE9C", "#3FBBC4", "#7DB0DD", "#B8A0E0", "#DC94CB"],
+    "label": ["111", "Service Advisor", "Pathways Clinician", "Other Clinician", "Health Advisor", "Dental Clinician", "Paramedic Clinician", "Primary Care Clinician", "Emergency Clinician"]
+  },
+  "stp": ["INWL", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
 }

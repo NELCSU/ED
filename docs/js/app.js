@@ -298,6 +298,9 @@ function displayLinkBreakdown (a, d, config) {
 	d3.select(".piechart.secondary")
 		.style("display", "none");
 
+	if (config.highlightedItem) {
+		config.highlightedItem.style('opacity', config.lowopacity);
+	}
 	// @ts-ignore
 	config.highlightedItem = d3.select(a);
 	config.highlightedItem.style('opacity', config.highopacity);
