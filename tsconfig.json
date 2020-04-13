@@ -16,7 +16,7 @@
     "typeRoots": ["./node_modules/@types"]
   },
   "exclude": [
-    "docs/js/lib/*.*",
+    "docs/lib/*.*",
     "node_modules"
   ],
   "include": [

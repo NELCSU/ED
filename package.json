@@ -19,10 +19,19 @@
   },
   "homepage": "https://github.com/NELCSU/ED#readme",
   "dependencies": {
+    "d3-tip": "0.6.8",
     "dragdealer": "^0.10.0",
+    "es6-shim": "^0.35.5",
+    "jquery": "^3.5.0",
     "jszip": "^3.3.0",
     "jszip-utils": "^0.1.0",
-    "nvd3": "^1.8.6"
+    "moment": "^2.24.0",
+    "nvd3": "^1.8.6",
+    "underscore": "^1.10.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "bootstrap": "3.1.1",
+    "clean-css": "^4.2.3",
+    "less": "^3.11.1"
+  }
 }

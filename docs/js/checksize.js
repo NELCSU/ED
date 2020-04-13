@@ -4,9 +4,9 @@ function checksize() {
   }
 
   setTimeout(function () {
-    var loading = document.getElementById("loading");
+    var loading = document.querySelector(".loading");
     if (loading) {
-      loading.style.display = "none";
+      document.body.removeChild(loading);
     }
     var content = document.getElementById("content");
     if (content) {

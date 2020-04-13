@@ -1,0 +1,11 @@
+{
+  "name": "mbta",
+  "version": "1.0.0",
+  "description": "Visualizing MBTA Data =====================",
+  "main": "index.js",
+  "scripts": {
+    "test": "http-server . -a localhost -p 8000 -o"
+  },
+  "author": "",
+  "license": "MIT"
+}

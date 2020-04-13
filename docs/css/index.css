@@ -7,85 +7,9 @@ body {
   padding: 0;
 }
 
-#timeslider {
-  bottom: 20;
-  left: 40;
-  position: fixed;
-  width: 85%;
-}
-
-#titlebar {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: none;
-  height: 30px;
-  justify-content: space-between;
-  margin-left: 40px;
-  margin-top: 5px;
-  padding-bottom: 5px;
-  position: fixed;
-  width: 80%;
-  z-index: 9;
-}
-
-#titletext {
-  margin-left: 10px;
-}
-
-#chart {
-  float: left;
-  height: 99%;
-  position: absolute;
-  width: 90%;
-}
-
-#chart3 {
-  cursor: pointer;
-}
-
-.flex-center {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-}
-
-.panel-right {
-  display: flex;
-  flex-direction: column;
-  line-height: 26px;
-  min-width: 220px;
-  padding: 15px;
-  position: fixed;
-  right: 0px;
-  top: 35px;
-  transition: all 500ms;
-  width: 20%;
-  z-index: 600000;
-}
-
-.panel-right.ready {
-  transform: translateX(100%);
-}
-
-.panel-right-control {
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  font-weight: bold;
-  height: 30px;
-  justify-content: center;
-  position: fixed;
-  right: 0px;
-  top: 5px;
-  width: 15%;
-  z-index: 600001;
-}
-
-.centerpielabel {
-  text-anchor: middle;
-  font-weight: bold;
+select {
+  direction: rtl;
+  width: 130px;
 }
 
 a,
@@ -93,51 +17,10 @@ a:active {
   text-decoration: none;
 }
 
-.link2 {
-  text-decoration: underline;
-}
-
 a:hover,
-a:focus,
-.link2:hover {
+a:focus {
+  cursor: pointer;
   text-decoration: underline;
-  cursor: pointer;
-}
-
-.pagetitle {
-  height: 30px;
-  font-size: 20px;
-  line-height: 30px;
-  text-align: center;
-  font-weight: bold;
-}
-
-#titlebar img:hover {
-  cursor: pointer;
-}
-
-.node rect {
-  cursor: move;
-  fill-opacity: .9;
-  shape-rendering: crispEdges
-}
-
-.node text {
-  pointer-events: none;
-}
-
-.link {
-  stroke: #000;
-  stroke-opacity: .3;
-}
-
-.link:hover {
-  stroke-opacity: .7;
-}
-
-.link:hover,
-.nv-slice:hover {
-  cursor: help;
 }
 
 input:hover,
@@ -146,106 +29,14 @@ option:hover {
   cursor: pointer;
 }
 
-#loading {
-  bottom: 50%;
-  font-size: 75px;
-  font-weight: bold;
-  left: 100px;
-  position: absolute;
-  text-align: center;
-  width: 100%;
-  z-index: 0;
+.call-options {
+  display: flex;
+  flex-flow: column;
 }
 
-.dragdealer {
-  height: 30px;
-  z-index: 8;
-}
-
-.dragdealer .handle {
-  top: 0;
-  left: 0;
-  cursor: pointer;
-  opacity: 1;
-}
-
-.dragdealer .red-bar {
-  width: 100px;
-  height: 30px;
-  font-size: 20px;
-  line-height: 30px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.dragdealer .orange-bar {
-  width: 25px;
-  height: 18px;
-  font-size: 18px;
-  line-height: 16px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.dragdealer .handle:hover {
-  outline: 1px solid;
-  -moz-box-shadow: 0 0 15px #667;
-  -webkit-box-shadow: 0 0 15px #667;
-  box-shadow: 0 0 15px #667;
-}
-
-.tooltip {
-  border: 1px solid;
-  font-weight: bold;
-  font-size: 12px;
-  line-height: 1;
-  padding: 4px;
-  width: 300px;
-  z-index: 2000;
-}
-
-.tooltip.left {
-  left: 5px;
-  position: fixed;
-  top: 12%;
-}
-
-.tooltip.right {
-  position: fixed;
-  right: 5px;
-  top: 12%;
-}
-
-.tooltip.charts {
-  font-size: 0.9em;
-  z-index: 100000;
-}
-
-.button:hover {
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.hide {
-  display: none;
-}
-
-.node-label {
-  fill: #000000;
+.centerpielabel {
   font-weight: bold;
   text-anchor: middle;
-}
-
-#miniDQChart {
-  left: 40px;
-  position: absolute;
-  text-align: center;
-  top: 45px;
-}
-
-#quality {
-  font-size: 33px;
-  line-height: 12px;
 }
 
 .data-quality {
@@ -270,12 +61,207 @@ option:hover {
   z-index: 1;
 }
 
-.call-options {
-  display: flex;
-  flex-flow: column;
+.dragdealer {
+  height: 30px;
+  z-index: 8;
 }
 
-select {
-  direction: rtl;
-  width: 130px;
+.dragdealer .handle {
+  cursor: pointer;
+  left: 0;
+  opacity: 1;
+  top: 0;
+}
+
+.dragdealer .red-bar {
+  font-size: 20px;
+  font-weight: bold;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  width: 100px;
+}
+
+.dragdealer .orange-bar {
+  font-size: 18px;
+  font-weight: bold;
+  height: 18px;
+  line-height: 16px;
+  text-align: center;
+  width: 25px;
+}
+
+.dragdealer .handle:hover {
+  box-shadow: 0 0 15px #667;
+  outline: 1px solid;
+  -moz-box-shadow: 0 0 15px #667;
+  -webkit-box-shadow: 0 0 15px #667;
+}
+
+.flex-center {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.hide {
+  display: none;
+}
+
+.link {
+  stroke: #000;
+  stroke-opacity: .3;
+}
+
+.link:hover {
+  stroke-opacity: .7;
+}
+
+.link:hover,
+.nv-slice:hover {
+  cursor: help;
+}
+
+.loading {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  left: 0px;
+  position: fixed;
+  top: 0px;
+  width: 100%;
+  z-index: 0;
+}
+
+.loading > div {
+  font-size: 75px;
+  font-weight: bold;
+}
+
+.node-label {
+  fill: #000000;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+.node rect {
+  cursor: move;
+  fill-opacity: .9;
+  shape-rendering: crispEdges
+}
+
+.node text {
+  pointer-events: none;
+}
+
+.pagetitle {
+  height: 30px;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 30px;
+  margin-left: 10px;
+  text-align: center;
+}
+
+.panel-right {
+  display: flex;
+  flex-direction: column;
+  line-height: 26px;
+  min-width: 220px;
+  padding: 15px;
+  position: fixed;
+  right: 0px;
+  top: 40px;
+  transition: all 500ms;
+  width: 20%;
+  z-index: 600000;
+}
+
+.panel-right.ready {
+  transform: translateX(100%);
+}
+
+.panel-right-control {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-weight: bold;
+  height: 30px;
+  justify-content: center;
+  position: fixed;
+  right: 5px;
+  top: 5px;
+  width: 15%;
+  z-index: 600001;
+}
+
+.tooltip {
+  border: 1px solid;
+  font-weight: bold;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px;
+  width: 300px;
+  z-index: 2000;
+}
+
+.tooltip.charts {
+  font-size: 0.9em;
+  z-index: 100000;
+}
+
+.tooltip.left {
+  left: 5px;
+  position: fixed;
+  top: 12%;
+}
+
+.tooltip.right {
+  position: fixed;
+  right: 5px;
+  top: 12%;
+}
+
+#chart {
+  float: left;
+  height: 99%;
+  position: absolute;
+  width: 90%;
+}
+
+#miniDQChart {
+  left: 40px;
+  position: absolute;
+  text-align: center;
+  top: 45px;
+}
+
+#quality {
+  font-size: 33px;
+  line-height: 12px;
+}
+
+#titlebar {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: none;
+  height: 30px;
+  justify-content: space-between;
+  margin-left: 40px;
+  margin-top: 5px;
+  padding-bottom: 5px;
+  position: fixed;
+  width: 80%;
+  z-index: 9;
+}
+
+
+#timeslider {
+  bottom: 20;
+  left: 40;
+  position: fixed;
+  width: 85%;
 }
