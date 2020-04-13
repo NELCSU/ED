@@ -184,9 +184,21 @@ function userSelectionChange (config) {
 						// @ts-ignore
 						.origin(function (i) { return i; })
 						// @ts-ignore
-						.on("dragstart", function () { this.parentNode.appendChild(this);	})
+						.on("dragstart", function (d) {
+							// @ts-ignore
+							this.parentNode.appendChild(this);
+							// @ts-ignore
+							d.initialPosition = d3.select(this).attr("transform");
+						})
 						// @ts-ignore
 						.on("drag", b)
+						// @ts-ignore
+						.on("dragend", function(d) {
+							// @ts-ignore
+							if (d.initialPosition === d3.select(this).attr("transform")) {
+								displayNodeBreakdown(d, config);
+							}
+						})
 					);
 
 			nodeCollection.append("rect")
@@ -197,36 +209,7 @@ function userSelectionChange (config) {
 				// @ts-ignore
 				.style("fill", function (i) { return i.color = i.fill; })
 				// @ts-ignore
-				.style("stroke", function (i) {	return d3.rgb(i.color).darker(2);	})
-				// @ts-ignore
-				.on("mouseover", function (d) { displayNodeBreakdown(d, config);	})
-				// @ts-ignore
-				.on("click", function (d) {
-					displayNodeBreakdown(d, config);
-				})
-				// @ts-ignore
-				.on("mouseout", function (d) {
-					config.svg.selectAll(".link")
-							// @ts-ignore
-							.filter(function (l) { return l.source == d || l.target == d;  })
-							.transition()
-							.style('opacity', config.lowopacity);
-					window.clearTimeout(pietooltip);
-					window.dispatchEvent(new CustomEvent("hide-tip", { detail: config }));
-				})
-				// @ts-ignore
-				.on("dblclick", function (d) {
-					// @ts-ignore
-					svg.selectAll(".link")
-							// @ts-ignore
-							.filter(function (l) { return l.source == d; })
-							.attr("display", function () {
-								// @ts-ignore
-								return d3.select(this).style("display") === "none"
-									? null
-									: "none";
-							});
-				});
+				.style("stroke", function (i) {	return d3.rgb(i.color).darker(2);	});
 
 			nodeCollection.append("text")
 				.classed("node-label-outer", true)
@@ -308,15 +291,27 @@ function displayLinkBreakdown (a, d, config) {
 	var tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format(d.value) + "</td><td> Calls</td></tr>";
 	
 	// @ts-ignore
-	var container = d3.select(".piechart.primary");
-	container.style("display", null);
-	var svg = container.select("svg");
-	svg.style("height", "300px").style("width", "300px");
+	var container = d3.select(".tooltip-charts");
+
+	var h = parseInt(container.style("height"));
+	var w = parseInt(container.style("width"));
+
+	var containerPrimary = container.select(".piechart.primary");
+	var svgPrimary = containerPrimary.select("svg");
+	var containerSecondary = container.select(".piechart.secondary");
+	var svgSecondary = containerSecondary.select("svg");
+
+	svgPrimary.style("height", h + "px").style("width", w + "px");
+	svgSecondary.style("height", h + "px").style("width", w + "px");
 
 	// @ts-ignore
 	setTimeout(function () {
+		containerPrimary.style("display", null);
+		svgPrimary.style("display", null);
+		containerSecondary.style("display", "none");
+		svgSecondary.style("display", "none");
 		// @ts-ignore
-		updatepie(eval(d.supply), container, d.source.name, d.target.name, d.value);
+		updatepie(eval(d.supply), containerPrimary, d.source.name, d.target.name, d.value);
 	}, 500);
 
 	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
@@ -329,19 +324,19 @@ function displayLinkBreakdown (a, d, config) {
  * @param {any} config
  */
 function displayNodeBreakdown(d, config) {
+	if (config.highlightedItem) {
+		config.highlightedItem.style('opacity', config.lowopacity);
+	}
 	// @ts-ignore
-	d3.select(".piechart.secondary")
-	  .style("display", null);
-
+	config.highlightedItem = config.svg.selectAll(".link")
+		// @ts-ignore
+		.filter(function (l) { return l.source == d || l.target == d; });
+	
+	config.highlightedItem.transition()
+		.style('opacity', config.highopacity);
+	
 	// @ts-ignore
 	var nodesource = [], nodetarget = [];
-
-	// @ts-ignore
-	config.svg.selectAll(".link")
-		// @ts-ignore
-		.filter(function (l) { return l.source == d || l.target == d; })
-		.transition()
-		.style('opacity', config.highopacity);
 
 	// @ts-ignore
 	config.svg.selectAll(".link")
@@ -388,17 +383,46 @@ function displayNodeBreakdown(d, config) {
 	tiptext += "<tr><td>OUT / IN</td><td>" + outin + "</td></tr>";
 
 	// @ts-ignore
-	var container = d3.select(".piechart.primary");
-	container.style("display", null);
-	var svg = container.select("svg");
-	svg.style("height", "200px").style("width", "200px");
+	var container = d3.select(".tooltip-charts");
+
+	var h = parseInt(container.style("height"));
+	var w = parseInt(container.style("width"));
+
+	var containerPrimary = container.select(".piechart.primary");
+	var svgPrimary = containerPrimary.select("svg");
+	var containerSecondary = container.select(".piechart.secondary");
+	var svgSecondary = containerSecondary.select("svg");
+
+	if (nodesource[0].l !== "None" && nodetarget[0].l !== "None") {
+		svgPrimary.style("height", (h / 2) + "px").style("width", w + "px");
+		svgSecondary.style("height", (h / 2) + "px").style("width", w + "px");
+	} else {
+		svgPrimary.style("height", h + "px").style("width", w + "px");
+		svgSecondary.style("height", h + "px").style("width", w + "px");
+	}
 
 	// @ts-ignore
 	pietooltip = setTimeout(function () {
 		// @ts-ignore
-		updatepie(nodesource, d3.select(".piechart.secondary"), "Incoming", d.name, d3.sum(nodesource, function (d) { return d.v; }));
+		if (nodesource[0].l !== "None") {
+			containerPrimary.style("display", null);
+			svgPrimary.style("display", null);
+			// @ts-ignore
+			updatepie(nodesource, containerPrimary, "Incoming", d.name, d3.sum(nodesource, function (d) { return d.v; }));
+		} else {
+			containerPrimary.style("display", "none");
+			svgPrimary.style("display", "none");
+		}
 		// @ts-ignore
-		updatepie(nodetarget, d3.select(".piechart.primary"), d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.v;	}));
+		if (nodetarget[0].l !== "None") {
+			containerSecondary.style("display", null);
+			svgSecondary.style("display", null);
+			// @ts-ignore
+			updatepie(nodetarget, containerSecondary, d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.v;	}));
+		} else {
+			containerSecondary.style("display", "none");
+			svgSecondary.style("display", "none");
+		}
 	}, 500);
 
 	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
@@ -615,6 +639,10 @@ function initSankeyNodeMovement(config) {
 	}
 }
 
+/**
+ * 
+ * @param {any} config 
+ */
 function initMenu(config) {
   var menu = document.querySelector(".panel-right");
   var menuButton = document.querySelector(".panel-right-control");
@@ -818,6 +846,99 @@ function initCharts(config) {
 				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 }
 
+/**
+ * 
+ * @param {any} config 
+ */
+function initTooltip(config) {
+  // @ts-ignore
+  var tooltipdiv = d3.select("body")
+    .append("div")
+      .attr("class", "tooltip left")
+      .style("opacity", 0)
+      .on("click", function () {
+        // @ts-ignore
+        tooltipdiv.transition()
+          .duration(500)
+          .style("opacity", 0)
+          .style("z-index", -10);
+      });
+
+  var tooltiptext = tooltipdiv.append("div")
+    .classed("tooltip message", true);
+
+  var tooltipcharts = tooltipdiv.append("div")
+    .classed("tooltip-charts", true)
+    .style("height", Math.min(config.height - 100, config.width) + "px");
+   
+  tooltipcharts.append("div")
+    .classed("piechart primary", true)
+    .style("display", "none")
+    .append("svg")
+      .style("width", "200px")
+      .style("height", "200px");
+
+  tooltipcharts.append("div")
+    .classed("piechart secondary", true)
+    .style("display", "none")
+    .append("svg")
+      .style("width", "200px")
+			.style("height", "200px");
+		
+	// @ts-ignore
+	function tiphide (config) {
+		// @ts-ignore
+		tooltipdiv.transition()
+			.duration(500)
+			.style("opacity", 0)
+			.style("z-index", -10);
+
+		if (config.highlightedItem) {
+			config.highlightedItem.style('opacity', config.lowopacity);
+			config.highlightedItem = undefined;
+		}
+			
+		// @ts-ignore
+		tooltipcharts.selectAll("g").remove();
+	};
+
+	// @ts-ignore
+	function tipshow (d) {
+		// @ts-ignore
+		var event = d3.event.sourceEvent ? d3.event.sourceEvent : d3.event;
+		// @ts-ignore
+		if (event.pageX > window.innerWidth * 0.5) {
+			// @ts-ignore
+			tooltipdiv.classed("right", false).classed("left", true);
+		} else {
+			// @ts-ignore
+			tooltipdiv.classed("right", true).classed("left", false);
+		}
+	
+		// @ts-ignore
+		tooltipcharts.style("display", d.chart ? null : "none");
+	
+		// @ts-ignore
+		tooltipdiv.transition()
+			.duration(500)
+			.style("opacity", 1)
+			.style("z-index", 10);
+	
+		// @ts-ignore
+		tooltiptext.html('<table style="text-align:center;">' + d.text + '</table>');
+	};
+
+  window.addEventListener("show-tip", function(e) {
+    // @ts-ignore
+    tipshow(e.detail);
+  });
+  
+  window.addEventListener("hide-tip", function(e) {
+    // @ts-ignore
+    tiphide(config);
+  });
+}
+
 // APPLICATION ENTRY POINT
 var datapath = window.location.hostname === "localhost"
 	? "./json/" 
@@ -845,5 +966,6 @@ d3.json(datapath + "config.json", function(d) {
 			dev.classList.remove("hide");
 		}
 	}
+	initTooltip(config);
 	initGlobalActions(config);
 });

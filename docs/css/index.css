@@ -216,11 +216,11 @@ option:hover {
   font-size: 12px;
   line-height: 1;
   padding: 4px;
-  width: 300px;
+  width: 40%;
   z-index: 2000;
 }
 
-.tooltip.charts {
+.tooltip-charts {
   font-size: 0.9em;
   z-index: 100000;
 }
