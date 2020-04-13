@@ -1,6 +1,7 @@
 function initMenu() {
   var menu = document.querySelector(".panel-right");
   var menuButton = document.querySelector(".panel-right-control");
+
   if (menu && menuButton) {
     menuButton.addEventListener("click", function(e) {
       e.stopImmediatePropagation();
@@ -8,6 +9,11 @@ function initMenu() {
       menu.classList.toggle("ready");
     });
   }
+
+  window.addEventListener("hide-menu", function() {
+    // @ts-ignore
+    menu.classList.add("ready");
+  });
 }
 
 initMenu();

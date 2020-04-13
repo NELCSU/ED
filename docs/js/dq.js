@@ -184,11 +184,11 @@ function drawDataQualityChart (data) {
 
 	// @ts-ignore
 	d3.select("#miniDQChart")
-		.on("mouseover", function () {
-			window.dispatchEvent(new CustomEvent("show-tip", { detail: qualitytooltip }));
-		})
-		.on("mouseout", function() {
-			window.dispatchEvent(new CustomEvent("hide-tip", { detail: qualitytooltip }));
+		.on("click", function () {
+			// @ts-ignore
+			d3.event.stopPropagation();
+			window.dispatchEvent(new CustomEvent("hide-menu"));
+			window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: false, text: qualitytooltip } }));
 		});
 }
 

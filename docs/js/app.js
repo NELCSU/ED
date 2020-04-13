@@ -159,25 +159,17 @@ function userSelectionChange (config) {
 			var e = linkCollection.append("path") //path2
 				.attr("d", path(2));
 
-			// @ts-ignore
-			linkCollection.attr("fill", function (i) { return i.source.fill; })
-			.attr("opacity", config.lowopacity)
-			// @ts-ignore
-			.on("mouseover", function (d) {	mouseOverLink(this, d, config);	})
-			// @ts-ignore
-			.on("click", function (d) {
+			linkCollection
 				// @ts-ignore
-				mouseOverLink(this, d, config);
-			})
-			// @ts-ignore
-			.on("mouseout", function (d) {
+				.attr("fill", function (i) { return i.source.fill; })
+				.attr("opacity", config.lowopacity)
 				// @ts-ignore
-				d3.select(this)
-					.style('opacity', config.lowopacity);
-				// @ts-ignore
-				window.clearTimeout(pietooltip);
-				window.dispatchEvent(new CustomEvent("hide-tip", { detail: d }));
-			});
+				.on("click", function (d) {
+					// @ts-ignore
+					d3.event.stopPropagation();
+					// @ts-ignore
+					displayLinkBreakdown(this, d, config); 
+				});
 
 			var nodeCollection = config.svg.append("g")
 				.selectAll(".node")
@@ -207,10 +199,10 @@ function userSelectionChange (config) {
 				// @ts-ignore
 				.style("stroke", function (i) {	return d3.rgb(i.color).darker(2);	})
 				// @ts-ignore
-				.on("mouseover", function (d) { mouseOverNode(d, config);	})
+				.on("mouseover", function (d) { displayNodeBreakdown(d, config);	})
 				// @ts-ignore
 				.on("click", function (d) {
-					mouseOverNode(d, config);
+					displayNodeBreakdown(d, config);
 				})
 				// @ts-ignore
 				.on("mouseout", function (d) {
@@ -220,7 +212,7 @@ function userSelectionChange (config) {
 							.transition()
 							.style('opacity', config.lowopacity);
 					window.clearTimeout(pietooltip);
-					window.dispatchEvent(new CustomEvent("hide-tip", { detail: d }));
+					window.dispatchEvent(new CustomEvent("hide-tip", { detail: config }));
 				})
 				// @ts-ignore
 				.on("dblclick", function (d) {
@@ -301,21 +293,30 @@ function userSelectionChange (config) {
  * @param {any} d 
  * @param {any} config
  */
-function mouseOverLink (a, d, config) {
+function displayLinkBreakdown (a, d, config) {
 	// @ts-ignore
-	d3.selectAll("#secondaryPie svg").style("display", null);
+	d3.select(".piechart.secondary")
+		.style("display", "none");
 
 	// @ts-ignore
-	d3.select(a).style('opacity', config.highopacity);
+	config.highlightedItem = d3.select(a);
+	config.highlightedItem.style('opacity', config.highopacity);
 
 	var tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format(d.value) + "</td><td> Calls</td></tr>";
 	
-	window.dispatchEvent(new CustomEvent("show-tip", { detail: tiptext }));
 	// @ts-ignore
-	pietooltip = setTimeout(function () {
+	var container = d3.select(".piechart.primary");
+	container.style("display", null);
+	var svg = container.select("svg");
+	svg.style("height", "300px").style("width", "300px");
+
+	// @ts-ignore
+	setTimeout(function () {
 		// @ts-ignore
-		updatepie(eval(d.supply), d3.select(".piechart.primary"), d.source.name, d.target.name, d.value);
+		updatepie(eval(d.supply), container, d.source.name, d.target.name, d.value);
 	}, 500);
+
+	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
 }
 
 /**
@@ -323,9 +324,10 @@ function mouseOverLink (a, d, config) {
  * @param {any} d 
  * @param {any} config
  */
-function mouseOverNode(d, config) {
+function displayNodeBreakdown(d, config) {
 	// @ts-ignore
-	d3.selectAll("#secondaryPie svg").style("display", "none");
+	d3.select(".piechart.secondary")
+	  .style("display", null);
 
 	// @ts-ignore
 	var nodesource = [], nodetarget = [];
@@ -381,7 +383,11 @@ function mouseOverNode(d, config) {
 	}
 	tiptext += "<tr><td>OUT / IN</td><td>" + outin + "</td></tr>";
 
-	window.dispatchEvent(new CustomEvent("show-tip", { detail: tiptext }));
+	// @ts-ignore
+	var container = d3.select(".piechart.primary");
+	container.style("display", null);
+	var svg = container.select("svg");
+	svg.style("height", "200px").style("width", "200px");
 
 	// @ts-ignore
 	pietooltip = setTimeout(function () {
@@ -390,6 +396,9 @@ function mouseOverNode(d, config) {
 		// @ts-ignore
 		updatepie(nodetarget, d3.select(".piechart.primary"), d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.v;	}));
 	}, 500);
+
+	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
+
 }
 
 function setQueryHash() {
@@ -444,31 +453,37 @@ function updatepie(data, placeholder, placelabel1, placelabel2, pievalue) {
 		// @ts-ignore
 		svg.selectAll(".centerpielabel").remove();
 
+		var cx = parseInt(placeholder.style("width")) / 2
+		var cy = parseInt(placeholder.style("height")) / 2 + 20;
+
 		// @ts-ignore
-		svg
-			.append("text")
-			.attr("x", parseInt(placeholder.style("width")) / 2)
-			.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 - 10)
+		svg.datum(data).transition().duration(350).call(chart);
+
+		// @ts-ignore
+		svg.append("text")
+			.transition().duration(400)
+			.attr("x", cx)
+			.attr("y", cy - 10)
 			.attr("class", "centerpielabel")
 			.text(placelabel1);
 
 		// @ts-ignore
 		svg.append("text")
-			.attr("x", parseInt(placeholder.style("width")) / 2)
-			.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 + 4)
+			.transition().duration(400)
+			.attr("x", cx)
+			.attr("y", cy + 4)
 			.attr("class", "centerpielabel")
 			.text(placelabel2);
 
 		var pietext = format(pievalue);
 		// @ts-ignore
 		svg.append("text")
-			.attr("x", parseInt(placeholder.style("width")) / 2)
-			.attr("y", parseInt(placeholder.style("height")) - parseInt(placeholder.style("width")) / 2 + 18)
+			.transition().duration(400)
+			.attr("x", cx)
+			.attr("y", cy + 18)
 			.attr("class", "centerpielabel")
 			.text(pietext);
 
-		// @ts-ignore
-		svg.datum(data).transition().duration(350).call(chart);
 		return chart;
 	});
 }
@@ -746,14 +761,13 @@ function initOpacitySlider(config) {
 
 /**
  * Initialises various global event handlers
+ * @param {any} config
  */
-function initGlobalActions() {
+function initGlobalActions(config) {
 	document.body.addEventListener("click", function(e) {
 		e.stopImmediatePropagation();
-		// close the menu if it is open
-		var menu = document.querySelector(".panel-right");
-		// @ts-ignore
-		menu.classList.add("ready");
+		window.dispatchEvent(new CustomEvent("hide-tip", { detail: config }));
+		window.dispatchEvent(new CustomEvent("hide-menu"));
 	});
 }
 
@@ -807,5 +821,5 @@ d3.json(datapath + "config.json", function(d) {
 			dev.classList.remove("hide");
 		}
 	}
-	initGlobalActions();
+	initGlobalActions(config);
 });

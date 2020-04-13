@@ -1,20 +1,24 @@
 // @ts-ignore
-var old;
-// @ts-ignore
 var tooltipdiv, tooltiptext, tooltipcharts;
 
 /**
  * 
- * @param {string | undefined} d 
+ * @param {any} config 
  */
-function tiphide (d) {
-  old = d;
+function tiphide (config) {
   // @ts-ignore
 	tooltipdiv.transition()
-		.delay(300)
-		.duration(200)
+		.duration(500)
 		.style("opacity", 0)
-		.style("z-index", -10);
+    .style("z-index", -10);
+
+  if (config.highlightedItem) {
+    config.highlightedItem.style('opacity', config.lowopacity);
+    config.highlightedItem = undefined;
+  }
+    
+  // @ts-ignore
+  tooltipcharts.selectAll("g").remove();
 };
 
 /**
@@ -32,32 +36,31 @@ function tipshow (d) {
   }
 
   // @ts-ignore
+  tooltipcharts.style("display", d.chart ? null : "none");
+
+  // @ts-ignore
 	tooltipdiv.transition()
-		.delay(300)
-		.duration(200)
+		.duration(500)
 		.style("opacity", 1)
 		.style("z-index", 10);
 
-	// @ts-ignore
-	if (d != old) {
-    // @ts-ignore
-		tooltiptext.html('<table style="text-align:center;">' + d + '</table>');
-	}
+  // @ts-ignore
+  tooltiptext.html('<table style="text-align:center;">' + d.text + '</table>');
 };
 
 function initTooltip() {
   // @ts-ignore
   tooltipdiv = d3.select("body")
     .append("div")
-    .attr("class", "tooltip left")
-    .style("opacity", 0)
-    .on("click", function () {
-      // @ts-ignore
-      tooltipdiv.transition()
-        .duration(200)
-        .style("opacity", 0)
-        .style("z-index", -10);
-    });
+      .attr("class", "tooltip left")
+      .style("opacity", 0)
+      .on("click", function () {
+        // @ts-ignore
+        tooltipdiv.transition()
+          .duration(500)
+          .style("opacity", 0)
+          .style("z-index", -10);
+      });
 
   tooltiptext = tooltipdiv.append("div")
     .classed("tooltip message", true);
@@ -67,12 +70,14 @@ function initTooltip() {
    
   tooltipcharts.append("div")
     .classed("piechart primary", true)
+    .style("display", "none")
     .append("svg")
       .style("width", "200px")
       .style("height", "200px");
 
   tooltipcharts.append("div")
     .classed("piechart secondary", true)
+    .style("display", "none")
     .append("svg")
       .style("width", "200px")
       .style("height", "200px");

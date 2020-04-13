@@ -245,6 +245,7 @@ option:hover {
 }
 
 #miniDQChart {
+  cursor: pointer;
   left: 40px;
   position: absolute;
   text-align: center;
