@@ -320,6 +320,7 @@ function displayLinkBreakdown (a, d, config) {
 	}, 500);
 
 	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
+	window.dispatchEvent(new CustomEvent("hide-menu"));
 }
 
 /**
@@ -401,7 +402,7 @@ function displayNodeBreakdown(d, config) {
 	}, 500);
 
 	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
-
+	window.dispatchEvent(new CustomEvent("hide-menu"));
 }
 
 function setQueryHash() {
@@ -614,6 +615,25 @@ function initSankeyNodeMovement(config) {
 	}
 }
 
+function initMenu(config) {
+  var menu = document.querySelector(".panel-right");
+  var menuButton = document.querySelector(".panel-right-control");
+
+  if (menu && menuButton) {
+    menuButton.addEventListener("click", function(e) {
+      e.stopImmediatePropagation();
+      // @ts-ignore
+      menu.classList.toggle("ready");
+      window.dispatchEvent(new CustomEvent("hide-tip", { detail: config }));
+    });
+  }
+
+  window.addEventListener("hide-menu", function() {
+    // @ts-ignore
+    menu.classList.add("ready");
+  });
+}
+
 /**
  *
  * @param {any} config
@@ -809,6 +829,7 @@ d3.json(datapath + "config.json", function(d) {
 	config.environment = window.location.hostname === "localhost" ? "DEVELOPMENT" : "PRODUCTION";
 	config.datapath = datapath;
 	config.paddingmultiplier = 50;
+	initMenu(config);
 	initCallList(config);
 	initDensitySlider(config);
 	initOpacitySlider(config);

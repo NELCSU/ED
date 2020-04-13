@@ -126,7 +126,7 @@ option:hover {
 
 .link:hover,
 .nv-slice:hover {
-  cursor: help;
+  cursor: pointer;
 }
 
 .loading {
