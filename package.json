@@ -30,7 +30,7 @@
     "underscore": "^1.10.2"
   },
   "devDependencies": {
-    "bootstrap": "3.1.1",
+    "bootstrap": "^3.4.1",
     "clean-css": "^4.2.3",
     "less": "^3.11.1"
   }
