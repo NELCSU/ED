@@ -118,8 +118,6 @@ function userSelectionChange (config) {
 	// @ts-ignore
 	config.padding = config.paddingmultiplier * (1 - config.densityslider.getValue()[0]) + 3;
 
-	var pietooltip = 0;
-
 	//<!--MAIN SANKEY-->
 	// @ts-ignore
 	config.zip.file(choice.stp + choice.day + choice.call + ".json")
@@ -131,6 +129,7 @@ function userSelectionChange (config) {
 
 			// @ts-ignore
 			config.sankey = d3.sankey()
+				.alignHorizontal()
 				.nodeWidth(30)
 				// @ts-ignore
 				.nodePadding(config.padding)
@@ -152,12 +151,14 @@ function userSelectionChange (config) {
 
 			var path = config.sankey.reversibleLink();
 
-			var h = linkCollection.append("path") //path0
-				.attr("d", path(0));
-			var f = linkCollection.append("path") //path1
-				.attr("d", path(1));
-			var e = linkCollection.append("path") //path2
-				.attr("d", path(2));
+			if (path) {
+				var h = linkCollection.append("path") //path0
+					.attr("d", path(0));
+				var f = linkCollection.append("path") //path1
+					.attr("d", path(1));
+				var e = linkCollection.append("path") //path2
+					.attr("d", path(2));
+			}
 
 			linkCollection
 				// @ts-ignore
@@ -263,9 +264,12 @@ function userSelectionChange (config) {
 				config.sankey.relayout();
 
 				var path = config.sankey.reversibleLink();
-				f.attr("d", path(1));
-				h.attr("d", path(0));
-				e.attr("d", path(2));
+
+				if (path) {
+					f.attr("d", path(1));
+					h.attr("d", path(0));
+					e.attr("d", path(2));
+				}
 			}
 		});
 }
@@ -402,7 +406,7 @@ function displayNodeBreakdown(d, config) {
 	}
 
 	// @ts-ignore
-	pietooltip = setTimeout(function () {
+	setTimeout(function () {
 		// @ts-ignore
 		if (nodesource[0].l !== "None") {
 			containerPrimary.style("display", null);
