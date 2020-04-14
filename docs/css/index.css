@@ -42,14 +42,16 @@ option:hover {
 
 g.chart-legend {
   cursor: move;
+  opacity: 1;
 }
 
 rect.chart-legend {
-  fill-opacity: 0.9;
+  fill-opacity: 1;
 }
 
 text.chart-legend {
   font-size: 0.8em;
+  font-weight: bold;
   opacity: 1;
 }
 
