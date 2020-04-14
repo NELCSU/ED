@@ -46,5 +46,5 @@
     "color": ["#E495A5", "#D5A07B", "#B5AD64", "#86B875", "#4EBE9C", "#3FBBC4", "#7DB0DD", "#B8A0E0", "#DC94CB"],
     "label": ["111", "Service Advisor", "Pathways Clinician", "Other Clinician", "Health Advisor", "Dental Clinician", "Paramedic Clinician", "Primary Care Clinician", "Emergency Clinician"]
   },
-  "stp": ["INWL", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
+  "stp": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
 }
