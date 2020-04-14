@@ -8,58 +8,6 @@ An Energy Metabolism View of Global Agriculture Systems
 by Sgouris Sgouridis & Denes Csala
 */
 
-// UTILITIES #############
-
-/***
- * Replace hyphens by spaces
- * @param {string} s
- */
-function addSpaces(s) {	return s.replace(/-/g, " "); }
-
-/**
- * returns short date format based on data key "daymonth" e.g. "0102" being 1st Feb
- * @param {string} day 
- */
-function getScreenDate(day) {
-	var today = new Date(new Date().getFullYear(), parseInt(day.substr(2, 2)) - 1, parseInt(day.substr(0, 2)));
-	var strDate = today.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
-	return strDate;
-}
-
-/***
- * Replace spaces by hyphens
- * @param {string} s
- */
-function stripSpaces(s) { return s.replace(/\s/g, "-"); }
-
-// @ts-ignore
-var format2 = d3.format(",.2f"), format1 = d3.format(",.1f"), format0 = d3.format(",.0f");
-/**
- * 
- * @param {number} v 
- */
-function format(v) {
-	return v < 1 ? format2(v) : v < 10 ? format1(v) : format0(v);
-}
-
-/**
- * Select n characters from the left side of string s
- * @param {string} s 
- * @param {number} n 
- */
-function left(s, n) {
-	return s.slice(0, Math.abs(n));
-}
-
-/**
- * Select n characters from the right side of string s
- * @param {string} s 
- * @param {number} n 
- */
-function right(s, n) {
-	return s.slice(-1 * n);
-}
-
 /**
  * Scans for first valid file and select corresponding call menu choice
  * @param {any} config
@@ -78,8 +26,8 @@ function setDefaultCall(config) {
 	});
 	var selected = false;
 	for (var i = 0; i < files.length; i++) {
-		var key = right(files[i], 7);
-		key = left(key, 2);
+		var key = App.right(files[i], 7);
+		key = App.left(key, 2);
 		// @ts-ignore
 		var found = config.calls.findIndex(function(e) { return e.value === key; })
 		if (found > -1) {
@@ -104,8 +52,8 @@ function setDefaultCall(config) {
  * @param {any} config 
  */
 function userSelectionChange (config) {
-	setQueryHash();
-	var choice = getQueryHash();
+	App.setQueryHash();
+	var choice = App.getQueryHash();
 	var calls = document.querySelector("input[name='r1']:checked");
 	var callText = choice.call;
 	if (calls) {
@@ -113,7 +61,7 @@ function userSelectionChange (config) {
 		callText = calls.title;
 	}
 	window.dispatchEvent(new CustomEvent("call-selection", { detail: { text: callText, value: choice.call }}));
-	window.dispatchEvent(new CustomEvent("day-selection", { detail: { text: getScreenDate(choice.day), value: choice.day }}));
+	window.dispatchEvent(new CustomEvent("day-selection", { detail: { text: App.getScreenDate(choice.day), value: choice.day }}));
 
 	// @ts-ignore
 	config.padding = config.paddingmultiplier * (1 - config.densityslider.getValue()[0]) + 3;
@@ -237,7 +185,7 @@ function userSelectionChange (config) {
 				// @ts-ignore
 				.text(function (i) {
 					if (i.dy > 50) {
-						return format(i.value)
+						return App.formatNumber(i.value);
 					}
 				});
 
@@ -292,7 +240,10 @@ function displayLinkBreakdown (a, d, config) {
 	config.highlightedItem = d3.select(a);
 	config.highlightedItem.style('opacity', config.highopacity);
 
-	var tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color + ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:" + d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>" + format(d.value) + "</td><td> Calls</td></tr>";
+	var tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color;
+	tiptext += ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:";
+	tiptext += d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>";
+	tiptext += App.formatNumber(d.value) + "</td><td> Calls</td></tr>";
 	
 	// @ts-ignore
 	var container = d3.select(".tooltip-charts");
@@ -318,7 +269,12 @@ function displayLinkBreakdown (a, d, config) {
 		updatepie(eval(d.supply), containerPrimary, d.source.name, d.target.name, d.value);
 	}, 500);
 
-	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
+	var tipData = {
+		chart: true,
+		mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
+		text: tiptext
+	};
+	window.dispatchEvent(new CustomEvent("show-tip", { detail: tipData }));
 	window.dispatchEvent(new CustomEvent("hide-menu"));
 }
 
@@ -371,13 +327,13 @@ function displayNodeBreakdown(d, config) {
 	var tiptext = "<tr><td colspan=2 style='font-weight:bold;color:" + d.color + ";'>" + d.name;
 	tiptext += "</td></tr><tr><td>Incoming</td><td>";
 	// @ts-ignore
-	tiptext += format(d3.sum(nodesource, function (d) { return d.v; }));
+	tiptext += App.formatNumber(d3.sum(nodesource, function (d) { return d.v; }));
 	tiptext += " Calls</td></tr><tr><td>Outgoing</td><td>";
 	// @ts-ignore
-	tiptext += format(d3.sum(nodetarget, function (d) { return d.v; })) + " Calls</td></tr>";
+	tiptext += App.formatNumber(d3.sum(nodetarget, function (d) { return d.v; })) + " Calls</td></tr>";
 	
 	// @ts-ignore
-	var outin = format(d3.sum(nodetarget, function (d) { return d.v; }) / d3.sum(nodesource, function (d) { return d.v; }));
+	var outin = App.formatNumber(d3.sum(nodetarget, function (d) { return d.v; }) / d3.sum(nodesource, function (d) { return d.v; }));
 	// @ts-ignore
 	if ((d3.sum(nodesource, function (d) { return d.v; }) == 0) || 
 			// @ts-ignore
@@ -429,39 +385,13 @@ function displayNodeBreakdown(d, config) {
 		}
 	}, 500);
 
-	window.dispatchEvent(new CustomEvent("show-tip", { detail: { chart: true, text: tiptext } }));
+	var tipData = {
+		chart: true,
+		mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
+		text: tiptext
+	};
+	window.dispatchEvent(new CustomEvent("show-tip", { detail: tipData }));
 	window.dispatchEvent(new CustomEvent("hide-menu"));
-}
-
-function setQueryHash() {
-	var calls = document.querySelector("input[name='r1']:checked");
-	// @ts-ignore
-	var day = d3.select("#day");
-	// @ts-ignore
-	var stp = d3.select("#stp");
-	var myhash = "";
-	if (calls) {
-		// @ts-ignore
-		myhash = "call$" + calls.value + "+";
-	}
-	myhash += "day$" + day.node().value + "+";
-	myhash += "stp$" + stripSpaces(stp.node().value);
-	window.location.hash = myhash;
-}
-
-function getQueryHash() {
-	var re = /\w+\$[\w\-]+/gmi;
-	var m, result = { call: "", day: "", stp: "" };
-	while ((m = re.exec(window.location.hash)) !== null) {
-		var p = m[0].split("$");
-		// @ts-ignore
-		switch(p[0]) {
-			case "call": result.call = p[1]; break;
-			case "day": result.day = p[1]; break;
-			case "stp": result.stp = addSpaces(p[1]); break;
-		}
-	}
-	return result;
 }
 
 // @ts-ignore
@@ -507,7 +437,7 @@ function updatepie(data, placeholder, placelabel1, placelabel2, pievalue) {
 			.attr("class", "centerpielabel")
 			.text(placelabel2);
 
-		var pietext = format(pievalue);
+		var pietext = App.formatNumber(pievalue);
 		// @ts-ignore
 		svg.append("text")
 			.transition().duration(400)
@@ -537,11 +467,11 @@ function loadDayFileContent(data, config) {
 		}
 		day.append("option")
 			 .property("value", key)
-			 .text(getScreenDate(key));
+			 .text(App.getScreenDate(key));
 	}
 	// @ts-ignore
 	var toSelect = "0" + Math.max(Math.min(prevday, Math.max.apply(null, Object.keys(interpolatedall))), Math.min.apply(null, Object.keys(interpolatedall)));
-	toSelect = right(toSelect, 4);
+	toSelect = App.right(toSelect, 4);
 	day.node().value = toSelect;
 
 	setDefaultCall(config);
@@ -569,7 +499,7 @@ function loadDayFileContent(data, config) {
 		// @ts-ignore
 		d3.select("#timeslider")
 			.select(".value")
-			.text(getScreenDate(day.node().value));
+			.text(App.getScreenDate(day.node().value));
 		
 		// @ts-ignore
 		var dv = day.node().length - 1;
@@ -591,11 +521,11 @@ function loadDayFileContent(data, config) {
 				var firstValue = parseInt(day.node().options[0].value);
 				var lastValue = parseInt(day.node().options[day.node().length - 1].value);
 				var newValue = "0" + (firstValue + Math.round(a * (lastValue - firstValue)));
-				newValue = right(newValue, 4);
+				newValue = App.right(newValue, 4);
 				// @ts-ignore
 				d3.select("#timeslider")
 					.select(".value")
-					.text(getScreenDate(newValue));
+					.text(App.getScreenDate(newValue));
 			},
 			// @ts-ignore
 			callback: function (a, b) {
@@ -704,7 +634,7 @@ function initSTPList(config) {
 	for (var key in config.stp) {
 		stp.append("option").text(config.stp[key]);
 	}
-	var choice = getQueryHash();
+	var choice = App.getQueryHash();
 	if (choice.stp) {
 		stp.node().value = choice.stp;
 	}
@@ -723,7 +653,7 @@ function initSTPList(config) {
  * @param {any} config 
  */
 function initCallList(config) {
-	var choice = getQueryHash();
+	var choice = App.getQueryHash();
 	var parent = document.querySelector(".call-options");
 	if (parent) {
 		parent.innerHTML = "";
@@ -859,14 +789,19 @@ function initTooltip(config) {
   var tooltipdiv = d3.select("body")
     .append("div")
       .attr("class", "tooltip left")
-      .style("opacity", 0)
-      .on("click", function () {
-        // @ts-ignore
-        tooltipdiv.transition()
-          .duration(500)
-          .style("opacity", 0)
-          .style("z-index", -10);
-      });
+			.style("opacity", 0)
+			.on("click", function () {
+				// @ts-ignore
+				d3.event.stopPropagation();
+			});
+
+	tooltipdiv.append("div")
+		.classed("tooltip-close", true)
+		.on("click", function () {
+			// @ts-ignore
+			d3.event.stopPropagation();
+			tiphide(config);
+		});
 
   var tooltiptext = tooltipdiv.append("div")
     .classed("tooltip message", true);
@@ -904,14 +839,12 @@ function initTooltip(config) {
 			
 		// @ts-ignore
 		tooltipcharts.selectAll("g").remove();
-	};
+	}
 
 	// @ts-ignore
 	function tipshow (d) {
 		// @ts-ignore
-		var event = d3.event.sourceEvent ? d3.event.sourceEvent : d3.event;
-		// @ts-ignore
-		if (event.pageX > window.innerWidth * 0.5) {
+		if (d.mouseX > window.innerWidth * 0.5) {
 			// @ts-ignore
 			tooltipdiv.classed("right", false).classed("left", true);
 		} else {
@@ -930,7 +863,7 @@ function initTooltip(config) {
 	
 		// @ts-ignore
 		tooltiptext.html('<table style="text-align:center;">' + d.text + '</table>');
-	};
+	}
 
   window.addEventListener("show-tip", function(e) {
     // @ts-ignore
@@ -954,10 +887,13 @@ d3.json(datapath + "config.json", function(d) {
 	config.environment = window.location.hostname === "localhost" ? "DEVELOPMENT" : "PRODUCTION";
 	config.datapath = datapath;
 	config.paddingmultiplier = 50;
+	App.initTitleBar();
 	initMenu(config);
+	App.initUIThemes();
 	initCallList(config);
 	initDensitySlider(config);
 	initOpacitySlider(config);
+	App.initDataQualityChart();
 	initCharts(config);
 	initSTPList(config);
 	var stp = document.getElementById("stp");
@@ -972,4 +908,5 @@ d3.json(datapath + "config.json", function(d) {
 	}
 	initTooltip(config);
 	initGlobalActions(config);
+	App.updateSplash();
 });

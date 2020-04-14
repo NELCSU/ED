@@ -55,6 +55,12 @@ svg {
   border-color: rgba(255,255,255,0.2);
 }
 
+.tooltip-close {
+  background-color: #111111;
+  border: 1px solid #444444;
+  color: #aaaa88;
+}
+
 select {
   background: #222222;
   border-color: rgba(255,255,255,0.2);

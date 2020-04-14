@@ -1,14 +1,14 @@
 /* nvd3 version 1.8.6 (https://github.com/novus/nvd3) 2017-08-23 */
 .nvd3 .nv-axis {
-    pointer-events:none;
     opacity: 1;
+    pointer-events:none;
 }
 
 .nvd3 .nv-axis path {
     fill: none;
+    shape-rendering: crispEdges;
     stroke: #000;
     stroke-opacity: .75;
-    shape-rendering: crispEdges;
 }
 
 .nvd3 .nv-axis path.domain {
@@ -21,8 +21,8 @@
 
 .nvd3 .nv-axis line {
     fill: none;
-    stroke: #e5e5e5;
     shape-rendering: crispEdges;
+    stroke: #e5e5e5;
 }
 
 .nvd3 .nv-axis .zero line,
@@ -83,8 +83,8 @@
 
 .nvd3 .nv-discretebar .nv-groups text,
 .nvd3 .nv-multibarHorizontal .nv-groups text {
-    font-weight: bold;
     fill: rgba(0,0,0,1);
+    font-weight: bold;
     stroke: rgba(0,0,0,0);
 }
 
@@ -113,7 +113,7 @@
 .nvd3.nv-bullet .nv-measure { fill-opacity: .8; }
 .nvd3.nv-bullet .nv-measure:hover { fill-opacity: 1; }
 .nvd3.nv-bullet .nv-marker { stroke: #000; stroke-width: 2px; }
-.nvd3.nv-bullet .nv-markerTriangle { stroke: #000; fill: #fff; stroke-width: 1.5px; }
+.nvd3.nv-bullet .nv-markerTriangle { fill: #fff; stroke: #000; stroke-width: 1.5px; }
 .nvd3.nv-bullet .nv-markerLine { stroke: #000; stroke-width: 1.5px; }
 .nvd3.nv-bullet .nv-tick line { stroke: #666; stroke-width: .5px; }
 .nvd3.nv-bullet .nv-range.nv-s0 { fill: #eee; }
@@ -140,13 +140,13 @@
 }
 
 .nvd3.nv-candlestickBar .nv-ticks .nv-tick.positive rect {
-    stroke: #2ca02c;
     fill: #2ca02c;
+    stroke: #2ca02c;
 }
 
 .nvd3.nv-candlestickBar .nv-ticks .nv-tick.negative rect {
-    stroke: #d62728;
     fill: #d62728;
+    stroke: #d62728;
 }
 
 .with-transitions .nv-candlestickBar .nv-ticks .nv-tick {
@@ -227,17 +227,17 @@
 
 .nvd3.nv-scatter .nv-groups .nv-point.hover,
 .nvd3 .nv-groups .nv-point.hover {
-    stroke-width: 7px;
     fill-opacity: .95 !important;
     stroke-opacity: .95 !important;
+    stroke-width: 7px;
 }
 
 
 .nvd3 .nv-point-paths path {
-    stroke: #aaa;
-    stroke-opacity: 0;
     fill: #eee;
     fill-opacity: 0;
+    stroke: #aaa;
+    stroke-opacity: 0;
 }
 
 
@@ -253,21 +253,21 @@
   Default CSS for an svg element nvd3 used
 */
 svg.nvd3-svg {
+    display: block;
+    height:100%;
     -webkit-user-select: none;
        -moz-user-select: none;
         -ms-user-select: none;
             user-select: none;
-    display: block;
     width:100%;
-    height:100%;
 }
 
 /********************
   Box shadow and border radius styling
 */
 .nvtooltip.with-3d-shadow, .with-3d-shadow .nvtooltip {
-    box-shadow: 0 5px 10px rgba(0,0,0,.2);
     border-radius: 5px;
+    box-shadow: 0 5px 10px rgba(0,0,0,.2);
 }
 
 
@@ -323,10 +323,10 @@ svg.nvd3-svg {
 }
 
 .nvd3 .nv-brushBackground rect {
-    stroke: #000;
-    stroke-width: .4;
     fill: #fff;
     fill-opacity: .7;
+    stroke: #000;
+    stroke-width: .4;
 }
 
 /**********
@@ -335,8 +335,8 @@ svg.nvd3-svg {
 
 @media print {
     .nvd3 text {
-        stroke-width: 0;
         fill-opacity: 1;
+        stroke-width: 0;
     }
 }
 
@@ -359,9 +359,9 @@ svg.nvd3-svg {
 
 .nvd3 .background path {
     fill: none;
+    shape-rendering: crispEdges;
     stroke: #EEE;
     stroke-opacity: .4;
-    shape-rendering: crispEdges;
 }
 
 .nvd3 .foreground path {
@@ -372,8 +372,8 @@ svg.nvd3-svg {
 .nvd3 .nv-parallelCoordinates-brush .extent {
     fill: #fff;
     fill-opacity: .6;
-    stroke: gray;
     shape-rendering: crispEdges;
+    stroke: gray;
 }
 
 .nvd3 .nv-parallelCoordinates .hover  {
@@ -385,9 +385,9 @@ svg.nvd3-svg {
 .nvd3 .missingValuesline line {
   fill: none;
   stroke: black;
-  stroke-width: 1;
-  stroke-opacity: 1;
   stroke-dasharray: 5, 5;
+  stroke-opacity: 1;
+  stroke-width: 1;
 }
 
 .nvd3.nv-pie path {
@@ -396,8 +396,8 @@ svg.nvd3-svg {
 }
 
 .nvd3.nv-pie .nv-pie-title {
-    font-size: 24px;
     fill: rgba(19, 196, 249, 0.59);
+    font-size: 24px;
 }
 
 .nvd3.nv-pie .nv-slice text {
@@ -407,8 +407,8 @@ svg.nvd3-svg {
 
 .nvd3.nv-pie path {
     stroke: #fff;
-    stroke-width: 1px;
     stroke-opacity: 1;
+    stroke-width: 1px;
 }
 
 .nvd3.nv-pie path {
@@ -430,8 +430,8 @@ svg.nvd3-svg {
 
 /* scatter */
 .nvd3 .nv-groups .nv-point.hover {
-    stroke-width: 20px;
     stroke-opacity: .5;
+    stroke-width: 20px;
 }
 
 .nvd3 .nv-scatter .nv-point.hover {
@@ -472,9 +472,9 @@ svg.nvd3-svg {
 
 .nvd3.nv-sparklineplus .nv-xValue,
 .nvd3.nv-sparklineplus .nv-yValue {
-    stroke-width: 0;
     font-size: .9em;
     font-weight: normal;
+    stroke-width: 0;
 }
 
 .nvd3.nv-sparklineplus .nv-yValue {
@@ -482,18 +482,18 @@ svg.nvd3-svg {
 }
 
 .nvd3.nv-sparklineplus .nv-maxValue {
-    stroke: #2ca02c;
     fill: #2ca02c;
+    stroke: #2ca02c;
 }
 
 .nvd3.nv-sparklineplus .nv-minValue {
-    stroke: #d62728;
     fill: #d62728;
+    stroke: #d62728;
 }
 
 .nvd3.nv-sparklineplus .nv-currentValue {
-    font-weight: bold;
     font-size: 1.1em;
+    font-weight: bold;
 }
 /* stacked area */
 .nvd3.nv-stackedarea path.nv-area {
@@ -508,25 +508,22 @@ svg.nvd3-svg {
 
 
 .nvd3.nv-stackedarea .nv-groups .nv-point {
-    stroke-opacity: 0;
     fill-opacity: 0;
+    stroke-opacity: 0;
 }
 
 .nvtooltip {
-    position: absolute;
     background-color: rgba(255,255,255,1.0);
-    color: rgba(0,0,0,1.0);
-    padding: 1px;
     border: 1px solid rgba(0,0,0,.2);
-    z-index: 10000;
+    color: rgba(0,0,0,1.0);
     display: block;
 
     font-family: Arial, sans-serif;
     font-size: 13px;
-    text-align: left;
+    padding: 1px;
     pointer-events: none;
-
-    white-space: nowrap;
+    position: absolute;
+    text-align: left;
 
     -webkit-user-select: none;
 
@@ -535,6 +532,9 @@ svg.nvd3-svg {
         -ms-user-select: none;
 
             user-select: none;
+
+    white-space: nowrap;
+    z-index: 10000;
 }
 
 .nvtooltip {
@@ -558,17 +558,17 @@ svg.nvd3-svg {
 }
 
 .nvtooltip h3 {
-    margin: 0;
-    padding: 4px 14px;
-    line-height: 18px;
-    font-weight: normal;
     background-color: rgba(247,247,247,0.75);
-    color: rgba(0,0,0,1.0);
-    text-align: center;
 
     border-bottom: 1px solid #ebebeb;
 
     border-radius: 5px 5px 0 0;
+    color: rgba(0,0,0,1.0);
+    font-weight: normal;
+    line-height: 18px;
+    margin: 0;
+    padding: 4px 14px;
+    text-align: center;
 }
 
 .nvtooltip p {
@@ -583,8 +583,8 @@ svg.nvd3-svg {
 }
 
 .nvtooltip table {
-    margin: 6px;
     border-spacing:0;
+    margin: 6px;
 }
 
 
@@ -602,8 +602,8 @@ svg.nvd3-svg {
 }
 
 .nvtooltip table td.value {
-    text-align: right;
     font-weight: bold;
+    text-align: right;
 }
 
 .nvtooltip table td.percent {
@@ -611,23 +611,23 @@ svg.nvd3-svg {
 }
 
 .nvtooltip table tr.highlight td {
-    padding: 1px 9px 1px 0;
     border-bottom-style: solid;
     border-bottom-width: 1px;
     border-top-style: solid;
     border-top-width: 1px;
+    padding: 1px 9px 1px 0;
 }
 
 .nvtooltip table td.legend-color-guide div {
-    width: 8px;
     height: 8px;
     vertical-align: middle;
+    width: 8px;
 }
 
 .nvtooltip table td.legend-color-guide div {
-    width: 12px;
-    height: 12px;
     border: 1px solid #999;
+    height: 12px;
+    width: 12px;
 }
 
 .nvtooltip .footer {
@@ -636,8 +636,8 @@ svg.nvd3-svg {
 }
 
 .nvtooltip-pending-removal {
-    pointer-events: none;
     display: none;
+    pointer-events: none;
 }
 
 

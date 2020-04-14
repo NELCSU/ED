@@ -1,7 +1,7 @@
 html,
 body {
-  height: 100%;
   font-family: "Trebuchet MS", "Open Sans", "Segoe UI light", "Verdana", "Tahoma", "Helvetica", sans-serif;
+  height: 100%;
   margin: 0;
   overflow: hidden;
   padding: 0;
@@ -100,8 +100,6 @@ option:hover {
 .dragdealer .handle:hover {
   box-shadow: 0 0 15px #667;
   outline: 1px solid;
-  -moz-box-shadow: 0 0 15px #667;
-  -webkit-box-shadow: 0 0 15px #667;
 }
 
 .flex-center {
@@ -155,7 +153,7 @@ option:hover {
 .node rect {
   cursor: move;
   fill-opacity: .9;
-  shape-rendering: crispEdges
+  shape-rendering: crispEdges;
 }
 
 .node text {
@@ -163,9 +161,9 @@ option:hover {
 }
 
 .pagetitle {
-  height: 30px;
   font-size: 20px;
   font-weight: bold;
+  height: 30px;
   line-height: 30px;
   margin-left: 10px;
   text-align: center;
@@ -206,18 +204,37 @@ option:hover {
 .panel-row {
   align-items: center;
   display: flex;
-  min-height: 1.3em;
   justify-content: space-between;
+  min-height: 1.3em;
 }
 
 .tooltip {
   border: 1px solid;
-  font-weight: bold;
   font-size: 12px;
+  font-weight: bold;
   line-height: 1;
   padding: 4px;
   width: 40%;
   z-index: 2000;
+}
+
+.tooltip-close {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-size: 2em;
+  font-weight: bold;
+  height: 20px;
+  justify-content: center;
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  width: 20px;
+}
+
+.tooltip-close:after{
+  content: "\00d7";
+  display: inline-block;
 }
 
 .tooltip-charts {
@@ -243,6 +260,10 @@ option:hover {
   position: absolute;
   width: 90%;
   z-index: 5;
+}
+
+#content {
+  transition: opacity 500ms;
 }
 
 #miniDQChart {
