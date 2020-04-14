@@ -218,6 +218,14 @@ option:hover {
   z-index: 2000;
 }
 
+.tooltip-message {
+  width: 90%;
+}
+
+.tooltip-message > table {
+  width: 100%;
+}
+
 .tooltip-close {
   align-items: center;
   cursor: pointer;

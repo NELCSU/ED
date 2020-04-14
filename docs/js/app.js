@@ -110,7 +110,9 @@ function userSelectionChange (config) {
 
 			linkCollection
 				// @ts-ignore
-				.attr("fill", function (i) { return i.source.fill; })
+				.attr("fill", function (i) { 
+					return i.fill ? i.fill : i.source.fill; 
+				})
 				.attr("opacity", config.lowopacity)
 				// @ts-ignore
 				.on("click", function (d) {
@@ -240,9 +242,9 @@ function displayLinkBreakdown (a, d, config) {
 	config.highlightedItem = d3.select(a);
 	config.highlightedItem.style('opacity', config.highopacity);
 
-	var tiptext = "<tr><td style='font-weight:bold;color:" + d.source.color;
-	tiptext += ";'>" + d.source.name + "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;color:";
-	tiptext += d.target.color + ";'>" + d.target.name + "</td></tr><tr><td>Calls</td><td>";
+	var tiptext = "<tr><td style='font-weight:bold;'>" + d.source.name;
+	tiptext += "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;'>";
+	tiptext += d.target.name + "</td></tr><tr><td>Calls</td><td>";
 	tiptext += App.formatNumber(d.value) + "</td><td> Calls</td></tr>";
 	
 	// @ts-ignore
@@ -324,7 +326,7 @@ function displayNodeBreakdown(d, config) {
 		nodetarget = eval('[{\"l\":\"None\", \"v\":0}]');
 	}
 
-	var tiptext = "<tr><td colspan=2 style='font-weight:bold;color:" + d.color + ";'>" + d.name;
+	var tiptext = "<tr><td colspan=2 style='font-weight:bold;'>" + d.name;
 	tiptext += "</td></tr><tr><td>Incoming</td><td>";
 	// @ts-ignore
 	tiptext += App.formatNumber(d3.sum(nodesource, function (d) { return d.v; }));
@@ -804,7 +806,7 @@ function initTooltip(config) {
 		});
 
   var tooltiptext = tooltipdiv.append("div")
-    .classed("tooltip message", true);
+    .classed("tooltip-message", true);
 
   var tooltipcharts = tooltipdiv.append("div")
     .classed("tooltip-charts", true)

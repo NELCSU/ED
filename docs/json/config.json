@@ -43,8 +43,8 @@
     }
   ],
   "legend": {
-    "color": ["#E495A5", "#D5A07B", "#B5AD64", "#86B875", "#4EBE9C", "#3FBBC4", "#7DB0DD", "#B8A0E0", "#DC94CB"],
-    "label": ["111", "Service Advisor", "Pathways Clinician", "Other Clinician", "Health Advisor", "Dental Clinician", "Paramedic Clinician", "Primary Care Clinician", "Emergency Clinician"]
+    "label": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown"],
+    "color": ["#FF0000", "#00FF00", "#0000FF", "#B3B3B3"]
   },
   "stp": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
 }
