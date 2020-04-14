@@ -76,7 +76,7 @@ function userSelectionChange (config) {
 			config.svg.selectAll("g").remove();
 
 			// @ts-ignore
-			config.sankey = d3.sankey()
+			config.sankey = App.sankey()
 				.alignHorizontal()
 				.nodeWidth(30)
 				// @ts-ignore
