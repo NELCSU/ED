@@ -40,6 +40,19 @@ option:hover {
   text-anchor: middle;
 }
 
+g.chart-legend {
+  cursor: pointer;
+}
+
+rect.chart-legend {
+  fill-opacity: 0.9;
+}
+
+text.chart-legend {
+  font-size: 0.8em;
+  opacity: 1;
+}
+
 .data-quality {
   font-size: 15px;
   margin: 0px;

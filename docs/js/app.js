@@ -191,6 +191,45 @@ function userSelectionChange (config) {
 					}
 				});
 
+			var legend = config.svg.append("g")
+				.classed("chart-legend", true)
+				.style("transform", "translate(" + (config.width - 200) + "px, " + (config.height - 140) + "px)");
+
+			legend.append("title").text("Click to hide this legend");
+
+			legend.on("click", function() {
+				d3.select(this)
+					.transition().duration(500)
+					.style("opacity", 0)
+					.transition()
+					.style("display", "none");
+			});
+
+			legend.append("rect")
+				.attr("width", "200px")
+				.attr("height", "140px")
+				.attr("x", 0)
+				.attr("y", 0)
+				.classed("chart-legend", true);
+
+			config.legend.color.forEach(function(item, n) {
+				var g = legend.append("g")
+					.style("transform", "translate(10px, " + (20 + (25 * n)) + "px)");
+
+				g.append("circle")
+					.style("fill", item)
+					.style("opacity", config.lowopacity)
+					.attr("r", 10)
+					.attr("cx", 10)
+					.attr("cy", 10 + (1 * n));
+
+				g.append("text")
+					.classed("chart-legend", true)
+					.attr("x", 25)
+					.attr("y", 15 + (1 * n))
+					.text(config.legend.label[n]);
+			});
+				
 			// @ts-ignore
 			function b(i) { //dragmove
 				if (config.sankey.allowMoveNodeY) {
@@ -221,6 +260,7 @@ function userSelectionChange (config) {
 					e.attr("d", path(2));
 				}
 			}
+
 		});
 }
 

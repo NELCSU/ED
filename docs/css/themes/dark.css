@@ -25,6 +25,15 @@ svg {
   border-left: 1px solid #444444;
 }
 
+rect.chart-legend {
+  fill: #222222;
+  stroke: #111111;
+}
+
+text.chart-legend {
+  fill: #aaaa88;
+}
+
 .dragdealer {
   background: #222222;
 }
