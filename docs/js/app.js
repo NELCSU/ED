@@ -192,13 +192,32 @@ function userSelectionChange (config) {
 				});
 
 			var legend = config.svg.append("g")
+				.datum({ x: config.width - 200, y: config.height - 140 })
+				.attr("x", function(d) { return d.x; })
+				.attr("y", function(d) { return d.y; })
 				.classed("chart-legend", true)
-				.style("transform", "translate(" + (config.width - 200) + "px, " + (config.height - 140) + "px)");
+				.attr("transform", function (d) { return "translate(" + [ d.x,d.y ] + ")"; });
 
-			legend.append("title").text("Click to hide this legend");
+			legend.call(d3.behavior.drag()
+				.on("drag", function (d) {
+					d.x += d3.event.dx;
+					d.y += d3.event.dy;	
+					d3.select(this)
+						.attr("transform", function(d) {
+							return "translate(" + [ d.x,d.y ] + ")";
+						});
+				})
+			);
 
-			legend.on("click", function() {
-				d3.select(this)
+			window.addEventListener("show-legend", function() {
+				legend
+					.style("display", null)
+					.transition().duration(500)
+					.style("opacity", 1);
+			});
+
+			window.addEventListener("hide-legend", function() {
+				legend
 					.transition().duration(500)
 					.style("opacity", 0)
 					.transition()
@@ -589,6 +608,18 @@ function loadDayFileContent(data, config) {
 	daychange(); //initialize & trigger change in main sankey
 }
 
+function initSankeyLegend() {
+	var leg = document.getElementById("uiLegend");
+	if (leg) {
+		leg.addEventListener("click", function(e) { e.stopImmediatePropagation(); });
+		// @ts-ignore
+		leg.addEventListener("input", function(e) {
+			e.stopImmediatePropagation();
+			window.dispatchEvent(new CustomEvent(leg.checked ? "show-legend" : "hide-legend"));
+		});
+	}
+}
+
 /**
  * 
  * @param {any} config 
@@ -935,6 +966,7 @@ d3.json(datapath + "config.json", function(d) {
 	initCallList(config);
 	initDensitySlider(config);
 	initOpacitySlider(config);
+	initSankeyLegend();
 	App.initDataQualityChart();
 	initCharts(config);
 	initSTPList(config);

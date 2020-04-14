@@ -41,7 +41,7 @@ option:hover {
 }
 
 g.chart-legend {
-  cursor: pointer;
+  cursor: move;
 }
 
 rect.chart-legend {
