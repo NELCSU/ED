@@ -365,7 +365,7 @@ function displayNodeBreakdown(d, config) {
 		.filter(function (l) { return l.target == d; })[0]
 			// @ts-ignore
 			.forEach(function (l) {
-				nodesource.push(JSON.parse("{\"l\":\"" + l.__data__.source.name + "\", \"v\":" + l.__data__.value + "}"));
+				nodesource.push(JSON.parse("{\"label\":\"" + l.__data__.source.name + "\", \"value\":" + l.__data__.value + "}"));
 			});
 
 	// @ts-ignore
@@ -374,31 +374,31 @@ function displayNodeBreakdown(d, config) {
 		.filter(function (l) { return l.source == d; })[0]
 			// @ts-ignore
 			.forEach(function (l) {
-				nodetarget.push(JSON.parse("{\"l\":\"" + l.__data__.target.name + "\", \"v\":" + l.__data__.value + "}"));
+				nodetarget.push(JSON.parse("{\"label\":\"" + l.__data__.target.name + "\", \"value\":" + l.__data__.value + "}"));
 			});
 
 	if (nodesource.length == 0) {
-		nodesource = eval('[{\"l\":\"None\", \"v\":0}]');
+		nodesource = eval('[{\"label\":\"None\", \"value\":0}]');
 	}
 
 	if (nodetarget.length == 0) {
-		nodetarget = eval('[{\"l\":\"None\", \"v\":0}]');
+		nodetarget = eval('[{\"label\":\"None\", \"value\":0}]');
 	}
 
 	var tiptext = "<tr><td colspan=2 style='font-weight:bold;'>" + d.name;
 	tiptext += "</td></tr><tr><td>Incoming</td><td>";
 	// @ts-ignore
-	tiptext += App.formatNumber(d3.sum(nodesource, function (d) { return d.v; }));
+	tiptext += App.formatNumber(d3.sum(nodesource, function (d) { return d.value; }));
 	tiptext += " Calls</td></tr><tr><td>Outgoing</td><td>";
 	// @ts-ignore
-	tiptext += App.formatNumber(d3.sum(nodetarget, function (d) { return d.v; })) + " Calls</td></tr>";
+	tiptext += App.formatNumber(d3.sum(nodetarget, function (d) { return d.value; })) + " Calls</td></tr>";
 	
 	// @ts-ignore
-	var outin = App.formatNumber(d3.sum(nodetarget, function (d) { return d.v; }) / d3.sum(nodesource, function (d) { return d.v; }));
+	var outin = App.formatNumber(d3.sum(nodetarget, function (d) { return d.value; }) / d3.sum(nodesource, function (d) { return d.value; }));
 	// @ts-ignore
-	if ((d3.sum(nodesource, function (d) { return d.v; }) == 0) || 
+	if ((d3.sum(nodesource, function (d) { return d.value; }) == 0) || 
 			// @ts-ignore
-			(d3.sum(nodetarget, function (d) { return d.v;	}) == 0)) {
+			(d3.sum(nodetarget, function (d) { return d.value;	}) == 0)) {
 				outin = "--";
 	}
 	tiptext += "<tr><td>OUT / IN</td><td>" + outin + "</td></tr>";
@@ -414,7 +414,7 @@ function displayNodeBreakdown(d, config) {
 	var containerSecondary = container.select(".piechart.secondary");
 	var svgSecondary = containerSecondary.select("svg");
 
-	if (nodesource[0].l !== "None" && nodetarget[0].l !== "None") {
+	if (nodesource[0].label !== "None" && nodetarget[0].label !== "None") {
 		svgPrimary.style("height", (h / 2) + "px").style("width", w + "px");
 		svgSecondary.style("height", (h / 2) + "px").style("width", w + "px");
 	} else {
@@ -425,21 +425,21 @@ function displayNodeBreakdown(d, config) {
 	// @ts-ignore
 	setTimeout(function () {
 		// @ts-ignore
-		if (nodesource[0].l !== "None") {
+		if (nodesource[0].label !== "None") {
 			containerPrimary.style("display", null);
 			svgPrimary.style("display", null);
 			// @ts-ignore
-			updatepie(nodesource, containerPrimary, "Incoming", d.name, d3.sum(nodesource, function (d) { return d.v; }));
+			updatepie(nodesource, containerPrimary, "Incoming", d.name, d3.sum(nodesource, function (d) { return d.value; }));
 		} else {
 			containerPrimary.style("display", "none");
 			svgPrimary.style("display", "none");
 		}
 		// @ts-ignore
-		if (nodetarget[0].l !== "None") {
+		if (nodetarget[0].label !== "None") {
 			containerSecondary.style("display", null);
 			svgSecondary.style("display", null);
 			// @ts-ignore
-			updatepie(nodetarget, containerSecondary, d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.v;	}));
+			updatepie(nodetarget, containerSecondary, d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.value;	}));
 		} else {
 			containerSecondary.style("display", "none");
 			svgSecondary.style("display", "none");
@@ -462,9 +462,9 @@ function updatepie(data, placeholder, placelabel1, placelabel2, pievalue) {
 		// @ts-ignore
 		var chart = nv.models.pieChart()
 			// @ts-ignore
-			.x(function (d) { return d.l; })
+			.x(function (d) { return d.label; })
 			// @ts-ignore
-			.y(function (d) { return d.v; })
+			.y(function (d) { return d.value; })
 			.showLabels(true) //Display pie labels
 			.labelThreshold(0.05) //Configure the minimum slice size for labels to show up
 			.labelType("percent") //Configure what type of data to show in the label. Can be "key", "value" or "percent"
