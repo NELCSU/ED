@@ -43,8 +43,8 @@
     }
   ],
   "legend": {
-    "label": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown"],
-    "color": ["#FF0000", "#00FF00", "#0000FF", "#B3B3B3"]
+    "label": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown/Not Applicable"],
+    "color": ["#FCC5C0", "#8DD3C7", "#BEBADA", "#B3DE69"]
   },
   "stp": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
 }
