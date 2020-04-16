@@ -12,7 +12,7 @@ export default [
 		},
 	  output: [
 			{
-				file: "docs/js/code.js",
+				file: "docs/js/app.js",
 				format: "iife",
 				name: "App",
 			}

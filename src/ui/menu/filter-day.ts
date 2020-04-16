@@ -1,23 +1,32 @@
 import { getScreenDate } from "../../utils/format";
-import { right } from "../../utils/string";
+import { setQueryHash } from "../urlhash";
 
-export function initDayList() {
-  const day = document.getElementById("day") as HTMLSelectElement;
+const day = document.getElementById("Day") as HTMLInputElement;
+const label = document.getElementById("lblDay") as HTMLLabelElement;
 
-  window.addEventListener("day-list", function(e: any) {
-    day.innerHTML = "";
-    let prevday: number = 0;
-    e.detail.forEach((d: string, i: number) => {
-      if (i === 0) {
-        prevday = parseInt(d);
-      }
-      const option = document.createElement("option");
-      option.value = d;
-      option.textContent = getScreenDate(d);
-    });
-
-    let toSelect: string = "0" + Math.max(Math.min(prevday, Math.max.apply(null, e.detail)), Math.min.apply(null, e.detail));
-    toSelect = right(toSelect, 4);
-    day.value = toSelect;
+/**
+ * @param config 
+ */
+export function initDayList(config: any) { 
+  day.addEventListener("change", e => {
+    const raw = config.filters.days[parseInt(day.value)];
+    const fdate = getScreenDate(raw);
+    window.dispatchEvent(new CustomEvent("day-selected", { detail: fdate }));
+    label.textContent = `Day: ${fdate}`;
+    window.dispatchEvent(new CustomEvent("filter-action"));
   });
+}
+
+/**
+ * @param config 
+ */
+export function updateDayList(config: any) {
+  setQueryHash(config);
+  day.max = config.filters.days.length - 1 + "";
+  const i = config.filters.days.findIndex((e: string) => e === config.querystring.day);
+  day.value = (i > -1 ? i : 0) + "";
+  const raw = config.filters.days[parseInt(day.value)];
+  const fdate = getScreenDate(raw);
+  label.textContent = `Day: ${fdate}`;
+  window.dispatchEvent(new CustomEvent("day-selected", { detail: fdate }));
 }

@@ -64,57 +64,17 @@ text.chart-legend {
 
 .dev-mode {
   background-color: yellow;
-  bottom: 0px;
   color: #000;
   font-size: 0.7em;
   font-weight: bold;
+  left: 40%;
   opacity: 0.9;
   padding: 5px;
   position: fixed;
-  right: 0px;
   text-align: center;
+  top: 0px;
   width: 20%;
   z-index: 1;
-}
-
-.dragdealer {
-  height: 30px;
-  z-index: 8;
-}
-
-.dragdealer.menu {
-  height: 18px;
-  width: 130px;
-}
-
-.dragdealer .handle {
-  cursor: pointer;
-  left: 0;
-  opacity: 1;
-  top: 0;
-}
-
-.dragdealer .red-bar {
-  font-size: 20px;
-  font-weight: bold;
-  height: 30px;
-  line-height: 30px;
-  text-align: center;
-  width: 100px;
-}
-
-.dragdealer .orange-bar {
-  font-size: 18px;
-  font-weight: bold;
-  height: 18px;
-  line-height: 16px;
-  text-align: center;
-  width: 25px;
-}
-
-.dragdealer .handle:hover {
-  box-shadow: 0 0 15px #667;
-  outline: 1px solid;
 }
 
 .flex-center {
@@ -194,7 +154,7 @@ text.chart-legend {
   right: 0px;
   top: 40px;
   transition: all 500ms;
-  width: 20%;
+  width: 25%;
   z-index: 600000;
 }
 
@@ -223,25 +183,27 @@ text.chart-legend {
   min-height: 1.3em;
 }
 
-.tooltip {
+.breakdown {
   border: 1px solid;
   font-size: 12px;
   font-weight: bold;
   line-height: 1;
   padding: 4px;
+  position: fixed;
+  transition: opacity 500ms;
   width: 40%;
   z-index: 2000;
 }
 
-.tooltip-message {
+.breakdown-message {
   width: 90%;
 }
 
-.tooltip-message > table {
+.breakdown-message > table {
   width: 100%;
 }
 
-.tooltip-close {
+.breakdown-close {
   align-items: center;
   cursor: pointer;
   display: flex;
@@ -255,33 +217,38 @@ text.chart-legend {
   width: 20px;
 }
 
-.tooltip-close:after{
+.breakdown-close:after{
   content: "\00d7";
   display: inline-block;
 }
 
-.tooltip-charts {
+.breakdown-charts {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
   font-size: 0.9em;
+  height: 100%;
   z-index: 100000;
 }
 
-.tooltip.left {
+.breakdown.left {
   left: 5px;
   position: fixed;
   top: 12%;
 }
 
-.tooltip.right {
+.breakdown.right {
   position: fixed;
   right: 5px;
   top: 12%;
 }
 
 #chart {
-  float: left;
-  height: 99%;
+  height: 93%;
+  left: 1%;
   position: absolute;
-  width: 90%;
+  top: 7%;
+  width: 99%;
   z-index: 5;
 }
 
@@ -315,12 +282,4 @@ text.chart-legend {
   position: fixed;
   width: 80%;
   z-index: 9;
-}
-
-
-#timeslider {
-  bottom: 20;
-  left: 40;
-  position: fixed;
-  width: 85%;
 }

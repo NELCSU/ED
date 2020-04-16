@@ -11,7 +11,6 @@
 	<link href="css/index.css" rel="stylesheet" />
 	<link href="css/nv.d3.css" rel="stylesheet" />
 
-	<script src="lib/dragdealer.min.js"></script>
 	<script src="lib/d3.min.js"></script>
 	<!-- NV D3 library goes after D3 base library -->
 	<script src="lib/nv.d3.min.js"></script>
@@ -20,83 +19,73 @@
 </head>
 <body>
 	<div class="loading th-fg-color"><div>Loading ...</div></div>
-	<div class="dev-mode hide">DEVELOPMENT</div>
 
-	<!--PAGE WRAPPER-->
 	<div id="content" style="opacity:0; visibility:hidden;">
-		<!--TITLELBAR-->
+
 		<div id="titlebar">
 			<div class="flex-center">
 				<a href="index.html" title="Home"><img id="favicon" src="favicon.png" alt="Home" /></a>
 				<span id="titletext" class="pagetitle th-fg-color">Urgent Care COVID-19 Flows</span>
 			</div>
-			<div id="titlebar-right"><!-- see titlebar.js --></div>
+			<div id="titlebar-right"></div>
 		</div>
 
-		<!--CHART CONTROLS-->
+		<!--MENU-->
 		<div class="panel-right-control">CHART OPTIONS</div>
 		<div class="panel-right border ready">
-			<div class="panel-row">
-				<label for="stp">STP:</label> <select id="stp"></select>
-			</div>
-		
-			<div class="panel-row">
-				<label for="id">Day:</label> <select id="day"></select>
+			<div class="panel-row" title="Select an organisation from the list">
+				<label id="lblOrganisation" for="Organisation">Organisation:</label>
+				<select id="Organisation"></select>
 			</div>
 
-			<div class="call-options"></div>
+			<div class="panel-row" title="Select a day (moving right moves forward through the available days)">
+				<label id="lblDay" for="Day">Day:</label>
+				<input id="Day" type="range" min="0" max="10" value="0" />
+			</div>
+
+			<div class="call-options" title="Select a category of call"></div>
 
 			<div class="panel-row">
 				<label>Move nodes:</label>
 				<div>
-					<input title="Enable horizontal node dragging" type="checkbox" id="xmove" checked>
-					<label for="xmove">↔</label>
-					<input title="Enable vertical node dragging" type="checkbox" id="ymove" checked>
-					<label for="ymove">↕</label>
+					<input id="MoveX" type="checkbox" checked>
+					<label id="lblMoveX" for="MoveX" title="Enable horizontal node dragging">↔</label>
+					<input id="MoveY" type="checkbox" checked>
+					<label id="lblMoveY" for="MoveY" title="Enable vertical node dragging">↕</label>
 				</div>
 			</div>
 		
-			<div class="panel-row">
-				<label>Density:</label>
-				<div id="pslider" title="Drag slider to set diagram node padding" class="dragdealer menu">
-					<div class="handle orange-bar">↔</div>
-				</div>
+			<div class="panel-row" title="Adjust the density of the nodes">
+				<label id="lblDensity" for="Density">Density:</label>
+				<input id="Density" type="range" min="5" max="100" step="5" value="5" />
 			</div>
 
-			<div class="panel-row">
-				<label>Opacity:</label>
-				<div id="oslider" title="Drag slider to set diagram flow opacities" class="dragdealer menu">
-					<div class="handle orange-bar">↔</div>
-				</div>
+			<div class="panel-row" title="Adjust the opacity of the nodes">
+				<label id="lblOpacity" for="Opacity">Opacity:</label>
+				<input id="Opacity" type="range" min="0.3" max="0.9" step="0.1" value="0.3" />
 			</div>
 
-			<div class="panel-row">
-				<label>Legend:</label>
-				<input id="uiLegend" title="View legend" type="checkbox" checked>
+			<div class="panel-row" title="Show/hide the legend">
+				<label id="lblLegend" for="Legend">Legend:</label>
+				<input id="Legend" type="checkbox" checked>
 			</div>
 		
-			<div class="panel-row">
-				<label>Colors:</label>
-				<select id="theme_choice" title="Change page color scheme"></select>
+			<div class="panel-row" title="Change page color scheme">
+				<label id="lblColors" for="Colors">Colors:</label>
+				<select id="Colors"></select>
 			</div>
 			
 		</div>
 
-		<!--CHARTS-->
 		<div id="chart">
-			<div id="miniDQChart"><!-- see dq.js--></div>
-		</div>
-
-		<!--TIME SLIDER-->
-		<div id="timeslider" title="Scroll through available days in the data" class="dragdealer">
-			<div class="handle red-bar">
-				<span class="value"></span>
-			</div>
+			<div id="miniDQChart"></div>
 		</div>
 
 	</div>
 
-	<script src="js/code.js"></script>
 	<script src="js/app.js"></script>
+	<script type="text/javascript">
+		App.start();
+	</script>
 </body>
 </html>

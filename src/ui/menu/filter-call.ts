@@ -2,47 +2,17 @@ import { left, right } from "../../utils/string";
 import { getQueryHash } from "../urlhash";
 
 /**
- * Scans for first valid file and select corresponding call menu choice
- * @param config
- */
-export function setDefaultCall(config: any) {	
-	const files = Object.keys(config.zip.files);
-	let ctrl: HTMLInputElement | null;
-	config.calls.forEach(function(call: any) {
-		ctrl = document.getElementById(call.id) as HTMLInputElement;
-		if (ctrl) {
-			ctrl.disabled = true;
-		}
-	});
-	let selected = false;
-	for (let i = 0; i < files.length; i++) {
-		let key = right(files[i], 7);
-		key = left(key, 2);
-		let found = config.calls.findIndex(function(e: any) { return e.value === key; });
-		if (found > -1) {
-			ctrl = document.getElementById(config.calls[found].id) as HTMLInputElement;
-			if (ctrl) {
-				ctrl.disabled = false;
-				if (!selected) {
-					ctrl.checked = true;
-					selected = true;
-				}
-			}			
-		}
-	}
-}
-
-/**
+ * Creates call options. All options are available initially.
  * @param config 
  */
 export function initCallList(config: any) {
-	const choice = getQueryHash();
+	getQueryHash(config);
 	const parent = document.querySelector(".call-options") as HTMLDivElement;
 	if (parent) {
 		parent.innerHTML = "";
     let group = "", grpdiv, label;
     let control: HTMLDivElement;
-		config.calls.forEach(function(call: any) {
+		config.filters.calls.forEach(function(call: any) {
 			if (group !== call.group) {
 				group = call.group;
 				grpdiv = document.createElement("div");
@@ -50,7 +20,7 @@ export function initCallList(config: any) {
 				parent.appendChild(grpdiv);
 
 				label = document.createElement("label");
-				label.textContent = group;
+				label.textContent = group + ":";
 				grpdiv.appendChild(label);
 
 				control = document.createElement("div");
@@ -62,16 +32,47 @@ export function initCallList(config: any) {
 			option.value = call.value;
 			option.name = call.name;
 			option.title = call.title;
-			if (choice.call === option.value) {
+			if (config.querystring.call === option.value) {
 				option.checked = true;
 			}
-			option.addEventListener("click", function(e) {
-				e.stopImmediatePropagation();
-				window.dispatchEvent(new CustomEvent("filter-action", { detail: config }));
+			option.addEventListener("click", () => {
+				window.dispatchEvent(new CustomEvent("call-selected", { detail: option.title }));
+				window.dispatchEvent(new CustomEvent("filter-action"));
 			});
 			control.appendChild(option);
 		});
 	}
+}
 
-	window.addEventListener("call-list", () => setDefaultCall(config));
+/**
+ * Scans for first valid file and select corresponding call menu choice
+ * @param config
+ */
+export function updateCallList(config: any) {	
+	const files = Object.keys(config.db.zip.files);
+	let ctrl: HTMLInputElement | null;
+	config.filters.calls.forEach(function(call: any) {
+		ctrl = document.getElementById(call.id) as HTMLInputElement;
+		if (ctrl) {
+			ctrl.disabled = true;
+			ctrl.checked = false;
+		}
+	});
+	let selected = false;
+	for (let i = 0; i < files.length; i++) {
+		let key = right(files[i], 7);
+		key = left(key, 2);
+		let found = config.filters.calls.findIndex((e: any) => e.value === key);
+		if (found > -1) {
+			ctrl = document.getElementById(config.filters.calls[found].id) as HTMLInputElement;
+			if (ctrl) {
+				ctrl.disabled = false;
+				if (!selected) {
+					selected = true;
+					ctrl.checked = true;
+					window.dispatchEvent(new CustomEvent("call-selected", { detail: ctrl.title }));
+				}
+			}			
+		}
+	}
 }

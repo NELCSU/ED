@@ -2,16 +2,13 @@
  * @param config 
  */
 export function initSankeyNodeMovement(config: any) {
-	const x = document.getElementById("xmove") as HTMLInputElement;
-	const y = document.getElementById("ymove") as HTMLInputElement;
-	if (x) {
-		config.sankeyX = x.checked; 
-		x.addEventListener("click", e => e.stopImmediatePropagation());
-		x.addEventListener("input", () => config.sankeyX = x.checked);
+	const x = document.getElementById("MoveX") as HTMLInputElement;
+	const y = document.getElementById("MoveY") as HTMLInputElement;
+	if (config.chart === undefined) {
+		config.chart = {};
 	}
-	if (y) {
-		config.sankeyY = y.checked;
-		y.addEventListener("click", e => e.stopImmediatePropagation());
-		y.addEventListener("input", () => config.sankeyY = y.checked);
-	}
+	config.chart.moveX = true;
+	config.chart.moveY = true;
+	x.addEventListener("input", () => config.chart.moveX = x.checked);
+	y.addEventListener("input", () => config.chart.moveY = y.checked);	
 }

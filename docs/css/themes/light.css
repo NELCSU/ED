@@ -34,10 +34,6 @@ text.chart-legend {
   fill: #ff6600;
 }
 
-.dragdealer {
-  background: #eeeeee;
-}
-
 .handle {
   background: #ff6600;
   color: #111111;
@@ -59,12 +55,12 @@ text.chart-legend {
   color: #ff6600;
 }
 
-.tooltip {
+.breakdown {
   background: rgba(255,255,255,0.9);
   border-color: rgba(0,0,0,0.2);
 }
 
-.tooltip-close {
+.breakdown-close {
   background-color: #ff6600;
   color: #ffffff;
 }

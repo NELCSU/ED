@@ -1,7 +1,7 @@
 /**
  * @param config 
  */
-export function setEnvironment(config: any) {
+export function initEnvironment(config: any) {
   config.environment = window.location.hostname === "localhost" ? "DEVELOPMENT" : "PRODUCTION";
 
   if (config.environment === "DEVELOPMENT") {

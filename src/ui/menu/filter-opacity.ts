@@ -1,24 +1,12 @@
-import type { TDragdealerConstructor } from "../../typings/Dragdealer";
-
-declare let Dragdealer: TDragdealerConstructor;
-
 /**
  * @param config 
  */
 export function initOpacitySlider(config: any) {
-	config.lowopacity = 0.3;
-	config.highopacity = 0.7;
-
-	new Dragdealer("oslider", {
-		x: 0.25,
-		steps: 5,
-		snap: true,
-		callback: a => {
-			config.lowopacity = 0.1 + 0.8 * a;
-			window.dispatchEvent(new CustomEvent("filter-action", { detail: config }));
-		}
-  });
-  
-	const el = document.getElementById("oslider") as HTMLDivElement;
-	el.addEventListener("click", e => e.stopImmediatePropagation());
+	config.filters.lowopacity = 0.3;
+	config.filters.highopacity = 0.9;
+	const opacity = document.getElementById("Opacity") as HTMLInputElement;
+	opacity.addEventListener("change", (e: any) => {
+		config.filters.lowopacity = e.target.value;
+		window.dispatchEvent(new CustomEvent("filter-action"));
+	});
 }

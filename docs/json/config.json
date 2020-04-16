@@ -1,50 +1,53 @@
 {
-  "calls": [{
-      "group": "Scope",
-      "id": "b00",
-      "name": "r1",
-      "title": "System level",
-      "value": "00"
-    },
-    {
-      "group": "Scope",
-      "id": "b01",
-      "name": "r1",
-      "title": "Provider level",
-      "value": "01"
-    },
-    {
-      "group": "Calls",
-      "id": "b10",
-      "name": "r1",
-      "title": "All calls",
-      "value": "10"
-    },
-    {
-      "group": "Calls",
-      "id": "b11",
-      "name": "r1",
-      "title": "COVID-12 calls",
-      "value": "11"
-    },
-    {
-      "group": "Calls",
-      "id": "b12",
-      "name": "r1",
-      "title": "Non-COVID-19 calls",
-      "value": "12"
-    },
-    {
-      "group": "Calls",
-      "id": "b13",
-      "name": "r1",
-      "title": "Primary care calls",
-      "value": "13"
-    }
-  ],
-  "legend": {
-    "label": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown/Not Applicable"],
-    "color": ["#FCC5C0", "#8DD3C7", "#BEBADA", "#B3DE69"]
+  "filters": {
+    "calls": [{
+        "group": "Scope",
+        "id": "b00",
+        "name": "r1",
+        "title": "System level",
+        "value": "00"
+      },
+      {
+        "group": "Scope",
+        "id": "b01",
+        "name": "r1",
+        "title": "Provider level",
+        "value": "01"
+      },
+      {
+        "group": "Calls",
+        "id": "b10",
+        "name": "r1",
+        "title": "All calls",
+        "value": "10"
+      },
+      {
+        "group": "Calls",
+        "id": "b11",
+        "name": "r1",
+        "title": "COVID-12 calls",
+        "value": "11"
+      },
+      {
+        "group": "Calls",
+        "id": "b12",
+        "name": "r1",
+        "title": "Non-COVID-19 calls",
+        "value": "12"
+      },
+      {
+        "group": "Calls",
+        "id": "b13",
+        "name": "r1",
+        "title": "Primary care calls",
+        "value": "13"
+      }
+    ],
+    "organisations": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
   },
-  "stp": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
+  "legend": {
+    "colors": ["#FCC5C0", "#8DD3C7", "#BEBADA", "#B3DE69"],
+    "labels": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown/Not Applicable"]
+  },
+  "themes": ["light", "dark"]
 }

@@ -1,6 +1,6 @@
-import type { TSankey } from "./typings/ED";
+import type { TSankey } from "../../typings/ED";
 
-export function sankey() {
+export function sankeyModel() {
   const sankey: TSankey = {
     alignHorizontal: () => {
       alignment = "horizontal";
