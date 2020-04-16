@@ -4,9 +4,6 @@ import { addSpaces, stripSpaces } from "../utils/string";
  * Returns TURLHash object with values from current URL hash value
  */
 export function getQueryHash(config: any) {
-	if (config.querystring === undefined) {
-		config.querystring = { call: "", day: "", organisation: "" };
-	}
 	const re = /\w+\$[\w\-]+/gmi;
 	let m;
 	while ((m = re.exec(window.location.hash)) !== null) {

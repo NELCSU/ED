@@ -1,4 +1,25 @@
 {
+  "chart": {
+    "height": 600,
+    "highlighted": null,
+    "margin": {
+      "bottom": 12,
+      "left": 40,
+      "right": 10,
+      "top": 70
+    },
+    "sankey": null,
+    "svg": null,
+    "width": 800
+  },
+  "db": {
+    "dq": null,
+    "file": null,
+    "path": null,
+    "sankey": null,
+    "zip": null
+  },
+  "environment": "DEVELOPMENT",
   "filters": {
     "calls": [{
         "group": "Scope",
@@ -43,11 +64,40 @@
         "value": "13"
       }
     ],
+    "days": [],
+    "density": 5,
+    "move": {
+      "x": true,
+      "y": true
+    },
+    "opacity": {
+      "high": 0.9,
+      "low": 0.3
+    },
     "organisations": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
   },
   "legend": {
     "colors": ["#FCC5C0", "#8DD3C7", "#BEBADA", "#B3DE69"],
     "labels": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown/Not Applicable"]
+  },
+  "querystring": {
+    "call": "",
+    "day": "",
+    "organisation": ""
+  },
+  "status": {
+    "amber": {
+      "src": "./images/square.svg", 
+      "title": "Amber status"
+    },
+    "green": {
+      "src": "./images/circle.svg", 
+      "title": "Green status"
+    },
+    "red": {
+      "src": "./images/triangle.svg", 
+      "title": "Red status"
+    }
   },
   "themes": ["light", "dark"]
 }

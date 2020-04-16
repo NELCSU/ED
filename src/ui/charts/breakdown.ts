@@ -24,7 +24,7 @@ export function initBreakdown(config: any) {
 
   const chartContainer = document.createElement("div");
   chartContainer.classList.add("breakdown-charts");
-  chartContainer.style.height = Math.min(config.height - 100, config.width) + "px";
+  chartContainer.style.height = Math.min(config.chart.height - 100, config.chart.width) + "px";
   container.appendChild(chartContainer);
 
   const chart1 = document.createElement("div");
@@ -53,9 +53,9 @@ export function initBreakdown(config: any) {
 	function hide (config: any) {
 		container.style.opacity = "0";
 		container.style.zIndex = "-10";
-		if (config.chart.highlightedItem) {
-      config.chart.highlightedItem.style('opacity', config.filters.lowopacity);
-      config.chart.highlightedItem = undefined;
+		if (config.chart.highlighted) {
+      config.chart.highlighted.style('opacity', config.filters.opacity.low);
+      config.chart.highlighted = undefined;
     }
     svg1.innerHTML = "";
     svg2.innerHTML = "";

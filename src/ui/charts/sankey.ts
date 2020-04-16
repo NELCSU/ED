@@ -5,10 +5,6 @@ import { formatNumber } from "../../utils/format";
  * @param config 
  */
 export function initSankeyChart(config: any) {
-	if (config.chart === undefined) {
-		config.chart = {};
-	}
-	config.chart.margin = {	top: 70, right: 10, bottom: 12, left: 40 };
   const chart = document.getElementById("chart");
   if (chart) {
     config.chart.width = chart.offsetWidth - config.chart.margin.left - config.chart.margin.right;
@@ -64,7 +60,7 @@ export function loadSankeyChart(config: any) {
   linkCollection.attr("fill", function (i: any) { 
       return i.fill ? i.fill : i.source.fill; 
     })
-    .attr("opacity", config.filters.lowopacity)
+    .attr("opacity", config.filters.opacity.low)
     .on("click", function (d: any) {
       // @ts-ignore
       d3.event.stopPropagation();
@@ -130,8 +126,8 @@ export function loadSankeyChart(config: any) {
   window.dispatchEvent(new CustomEvent("show-legend"));
   
   function dragged(i: any) {
-    if (config.chart.moveY) {
-      if (config.chart.moveX) {
+    if (config.filters.move.y) {
+      if (config.filters.move.x) {
         // @ts-ignore
         d3.select(this)
           // @ts-ignore
@@ -143,7 +139,7 @@ export function loadSankeyChart(config: any) {
           .attr("transform", "translate(" + i.x + "," + (i.y = Math.max(0, Math.min(config.chart.height - i.dy, d3.event.y))) + ")");
       }
     } else {
-      if (config.chart.moveX) {
+      if (config.filters.move.x) {
         // @ts-ignore
         d3.select(this)
           // @ts-ignore
@@ -167,8 +163,8 @@ export function loadSankeyChart(config: any) {
  * @param config
  */
 function displayLinkBreakdown (a: any, d: any, config: any) {
-	if (config.chart.highlightedItem) {
-		config.chart.highlightedItem.style('opacity', config.filters.lowopacity);
+	if (config.chart.highlighted) {
+		config.chart.highlighted.style('opacity', config.filters.opacity.low);
 	}
 
   // @ts-ignore
@@ -176,8 +172,8 @@ function displayLinkBreakdown (a: any, d: any, config: any) {
 		.style("display", "none");
 
 	// @ts-ignore
-	config.chart.highlightedItem = d3.select(a);
-	config.chart.highlightedItem.style('opacity', config.filters.highopacity);
+	config.chart.highlighted = d3.select(a);
+	config.chart.highlighted.style('opacity', config.filters.opacity.high);
 
 	let tiptext = "<tr><td style='font-weight:bold;'>" + d.source.name;
 	tiptext += "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;'>";
@@ -225,16 +221,16 @@ function displayLinkBreakdown (a: any, d: any, config: any) {
  * @param config
  */
 function displayNodeBreakdown(d: any, config: any) {
-	if (config.chart.highlightedItem) {
-		config.chart.highlightedItem.style('opacity', config.filters.lowopacity);
+	if (config.chart.highlighted) {
+		config.chart.highlighted.style('opacity', config.filters.opacity.low);
 	}
 
-	config.chart.highlightedItem = config.chart.svg.selectAll(".link")
+	config.chart.highlighted = config.chart.svg.selectAll(".link")
 		// @ts-ignore
 		.filter(function (l) { return l.source === d || l.target === d; });
 	
-	config.chart.highlightedItem.transition()
-    .style('opacity', config.filters.highopacity);
+	config.chart.highlighted.transition()
+    .style('opacity', config.filters.opacity.high);
     
 	const nodesource: any[] = [], nodetarget: any[] = [];
 

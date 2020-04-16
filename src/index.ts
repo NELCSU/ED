@@ -13,7 +13,7 @@ export function start() {
 
   json(datapath + "config.json", function(d) {
     const config = d;
-    config.db = { path: datapath };
+    config.db.path = datapath;
     initEnvironment(config);
     initTitleBar();
     initMenu(config);

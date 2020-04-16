@@ -46,6 +46,7 @@ export function processDayFile(data: string, config: any) {
   for (let key in config.db.dq.interpolated) {
     config.filters.days.push(key);
 	}
+	window.dispatchEvent(new CustomEvent("data-quality"));
 	updateDayList(config);
 	updateCallList(config);
 	setQueryHash(config);

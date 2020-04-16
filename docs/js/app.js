@@ -103,9 +103,6 @@ var App = (function (exports) {
    * Returns TURLHash object with values from current URL hash value
    */
   function getQueryHash(config) {
-      if (config.querystring === undefined) {
-          config.querystring = { call: "", day: "", organisation: "" };
-      }
       const re = /\w+\$[\w\-]+/gmi;
       let m;
       while ((m = re.exec(window.location.hash)) !== null) {
@@ -234,11 +231,9 @@ var App = (function (exports) {
    * @param config
    */
   function initOpacitySlider(config) {
-      config.filters.lowopacity = 0.3;
-      config.filters.highopacity = 0.9;
       const opacity = document.getElementById("Opacity");
       opacity.addEventListener("change", (e) => {
-          config.filters.lowopacity = e.target.value;
+          config.filters.opacity.low = e.target.value;
           window.dispatchEvent(new CustomEvent("filter-action"));
       });
   }
@@ -301,7 +296,7 @@ var App = (function (exports) {
                   .style("transform", "translate(10px, " + (20 + (25 * n)) + "px)");
               g.append("circle")
                   .style("fill", item)
-                  .style("opacity", config.filters.lowopacity)
+                  .style("opacity", config.filters.opacity.high)
                   .attr("r", 10)
                   .attr("cx", 10)
                   .attr("cy", 10 + (1 * n));
@@ -320,13 +315,10 @@ var App = (function (exports) {
   function initSankeyNodeMovement(config) {
       const x = document.getElementById("MoveX");
       const y = document.getElementById("MoveY");
-      if (config.chart === undefined) {
-          config.chart = {};
-      }
-      config.chart.moveX = true;
-      config.chart.moveY = true;
-      x.addEventListener("input", () => config.chart.moveX = x.checked);
-      y.addEventListener("input", () => config.chart.moveY = y.checked);
+      config.filters.move.x = true;
+      config.filters.move.y = true;
+      x.addEventListener("input", () => config.filters.move.x = x.checked);
+      y.addEventListener("input", () => config.filters.move.y = y.checked);
   }
 
   /*! *****************************************************************************
@@ -754,6 +746,7 @@ var App = (function (exports) {
       for (let key in config.db.dq.interpolated) {
           config.filters.days.push(key);
       }
+      window.dispatchEvent(new CustomEvent("data-quality"));
       updateDayList(config);
       updateCallList(config);
       setQueryHash(config);
@@ -765,7 +758,7 @@ var App = (function (exports) {
    */
   function initMenu(config) {
       const menu = document.querySelector(".panel-right");
-      const menuButton = document.querySelector(".panel-right-control");
+      const menuButton = document.querySelector(".menu-button");
       if (menu && menuButton) {
           menuButton.addEventListener("click", e => {
               e.stopImmediatePropagation();
@@ -816,7 +809,7 @@ var App = (function (exports) {
       container.appendChild(text);
       const chartContainer = document.createElement("div");
       chartContainer.classList.add("breakdown-charts");
-      chartContainer.style.height = Math.min(config.height - 100, config.width) + "px";
+      chartContainer.style.height = Math.min(config.chart.height - 100, config.chart.width) + "px";
       container.appendChild(chartContainer);
       const chart1 = document.createElement("div");
       chart1.classList.add("breakdown-primary");
@@ -840,9 +833,9 @@ var App = (function (exports) {
       function hide(config) {
           container.style.opacity = "0";
           container.style.zIndex = "-10";
-          if (config.chart.highlightedItem) {
-              config.chart.highlightedItem.style('opacity', config.filters.lowopacity);
-              config.chart.highlightedItem = undefined;
+          if (config.chart.highlighted) {
+              config.chart.highlighted.style('opacity', config.filters.opacity.low);
+              config.chart.highlighted = undefined;
           }
           svg1.innerHTML = "";
           svg2.innerHTML = "";
@@ -875,217 +868,76 @@ var App = (function (exports) {
   }
 
   /**
-   * Appends <td> to parent, returns DOM node
-   * @param parent
-   */
-  function td(parent) {
-      const cell = document.createElement("td");
-      parent.appendChild(cell);
-      return cell;
-  }
-  /**
-   * Appends <tr> to parent, returns DOM node
-   * @param parent
-   */
-  function tr(parent) {
-      const row = document.createElement("tr");
-      parent.appendChild(row);
-      return row;
-  }
-  /**
-   * @param config
-   */
-  function draw(config) {
-      const i = config.db.dq.interpolated[config.querystring.day];
-      const es = config.db.dq.estimated;
-      const ms = config.db.dq.missing;
-      const q = document.getElementById("quality");
-      let qt = "<table style='font-size:12px;'><tr><td style='border-bottom:solid 1px #888;'>Data availability for <b>";
-      if (q) {
-          qt += getScreenDate(config.querystring.day) + ": </b>";
-          if ((i.length < 1) && (ms.length < 1) && (es.length < 1)) {
-              q.textContent = "▪▪▪▪▪▪▪▪▪▪";
-              qt += "<b style='color:#2a2;'>Complete</b></td></tr><tr><td>All data is available in the database.</td></tr>";
-          }
-          else {
-              q.textContent = "▪▪▪▪▪▪▪▪▪▫";
-              if ((i.length + es.length < 3) && (ms.length < 3)) {
-                  qt += "<b style='color:#2a2;'>Very High</b></td></tr>";
-              }
-              else if ((i.length + es.length < 5) && (ms.length < 1)) {
-                  qt += "<b style='color:#2a2;'>Very High</b></td></tr>";
-              }
-              else if ((i.length + es.length < 7) && (ms.length < 1)) {
-                  q.textContent = "▪▪▪▪▪▪▪▪▫▫";
-                  qt += "<b style='color:#2a2;'>High</b></td></tr>";
-              }
-              else if ((i.length + es.length < 5) && (ms.length < 3)) {
-                  q.textContent = "▪▪▪▪▪▪▪▪▫▫";
-                  qt += "<b style='color:#2a2;'>High</b></td></tr>";
-              }
-              else if ((i.length + es.length < 3) && (ms.length < 5)) {
-                  q.textContent = "▪▪▪▪▪▪▪▪▫▫";
-                  qt += "<b style='color:#2a2;'>High</b></td></tr>";
-              }
-              else if ((i.length + es.length < 5) && (ms.length < 5)) {
-                  q.textContent = "▪▪▪▪▪▪▪▫▫▫";
-                  q.style.color = "#ff6600";
-                  qt += "<b style='color:#f60;'>Medium</b></td></tr>";
-              }
-              else if ((i.length + es.length < 7) && (ms.length < 3)) {
-                  q.textContent = "▪▪▪▪▪▪▪▫▫▫";
-                  q.style.color = "#ff6600";
-                  qt += "<b style='color:#f60;'>Medium</b></td></tr>";
-              }
-              else if ((i.length + es.length < 9) && (ms.length < 1)) {
-                  q.textContent = "▪▪▪▪▪▪▪▫▫▫";
-                  q.style.color = "#ff6600";
-                  qt += "<b style='color:#f60;'>Medium</b></td></tr>";
-              }
-              else if ((i.length + es.length < 11) && (ms.length < 1)) {
-                  q.textContent = "▪▪▪▪▪▪▫▫▫▫";
-                  q.style.color = "#ff6600";
-                  qt += "<b style='color:#f60;'>Medium</b></td></tr>";
-              }
-              else if ((i.length + es.length < 9) && (ms.length < 3)) {
-                  q.textContent = "▪▪▪▪▪▪▫▫▫▫";
-                  q.style.color = "#ff6600";
-                  qt += "<b style='color:#f60;'>Medium</b></td></tr>";
-              }
-              else if ((i.length + es.length < 7) && (ms.length < 5)) {
-                  q.textContent = "▪▪▪▪▪▪▫▫▫▫";
-                  q.style.color = "#ff6600";
-                  qt += "<b style='color:#f60;'>Medium</b></td></tr>";
-              }
-              else if ((i.length + es.length < 5) && (ms.length < 7)) {
-                  q.textContent = "▪▪▪▪▪▪▫▫▫▫";
-                  q.style.color = "#ff6600";
-                  qt += "<b style='color:#f60;'>Medium</b></td></tr>";
-              }
-              else if ((i.length + es.length < 13) && (ms.length < 1)) {
-                  q.textContent = "▪▪▪▪▪▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Fair</b></td></tr>";
-              }
-              else if ((i.length + es.length < 11) && (ms.length < 3)) {
-                  q.textContent = "▪▪▪▪▪▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Fair</b></td></tr>";
-              }
-              else if ((i.length + es.length < 9) && (ms.length < 5)) {
-                  q.textContent = "▪▪▪▪▪▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'" + ">Fair</b></td></tr>";
-              }
-              else if ((i.length + es.length < 9) && (ms.length < 7)) {
-                  q.textContent = "▪▪▪▪▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Fair</b></td></tr>";
-              }
-              else if ((i.length + es.length < 11) && (ms.length < 5)) {
-                  q.textContent = "▪▪▪▪▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Fair</b></td></tr>";
-              }
-              else if ((i.length + es.length < 13) && (ms.length < 3)) {
-                  q.textContent = "▪▪▪▪▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Fair</b></td></tr>";
-              }
-              else if ((i.length + es.length < 15) && (ms.length < 1)) {
-                  q.textContent = "▪▪▪▪▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Fair</b></td></tr>";
-              }
-              else if ((i.length + es.length < 17) && (ms.length < 1)) {
-                  q.textContent = "▪▪▪▫▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Low</b></td></tr>";
-              }
-              else if ((i.length + es.length < 15) && (ms.length < 3)) {
-                  q.textContent = "▪▪▪▫▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Low</b></td></tr>";
-              }
-              else if ((i.length + es.length < 13) && (ms.length < 5)) {
-                  q.textContent = "▪▪▪▫▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'>Low</b></td></tr>";
-              }
-              else if ((i.length + es.length < 11) && (ms.length < 7)) {
-                  q.textContent = "▪▪▪▫▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'" + ">Low</b></td></tr>";
-              }
-              else {
-                  q.textContent = "▪▪▫▫▫▫▫▫▫▫";
-                  q.style.color = "#D90000";
-                  qt += "<b style='color:#D90000;'" + ">Low</b></td></tr>";
-              }
-              if (ms.length > 0) {
-                  qt += "<tr><td><b>Missing data:</b></td></tr><tr><td>";
-                  qt += JSON.stringify(ms)
-                      .replace(/\"/g, "")
-                      .replace(/\,/g, "</td></tr><tr><td>")
-                      .replace(/\[/g, "")
-                      .replace(/\]/g, "") + "</td></tr>";
-              }
-              if (es.length > 0) {
-                  qt += "<tr><td><b>Estimated data:</b></td></tr><tr><td>";
-                  qt += JSON.stringify(es)
-                      .replace(/\"/g, "")
-                      .replace(/\,/g, "</td></tr><tr><td>")
-                      .replace(/\[/g, "")
-                      .replace(/\]/g, "") + "</td></tr>";
-              }
-              if (i.length > 0) {
-                  qt += "<tr><td><b>Interpolated data:</b></td></tr><tr><td>";
-                  qt += JSON.stringify(i)
-                      .replace(/\"/g, "")
-                      .replace(/\,/g, "</td></tr><tr><td>")
-                      .replace(/\[/g, "")
-                      .replace(/\]/g, "") + "</td></tr>";
-              }
-          }
-          qt += "</table>";
-      }
-      q.dataset.tip = qt;
-  }
-  /**
    * Initialises Data Quality chart
    * @param config
    */
   function initDataQualityChart(config) {
-      const container = document.getElementById("miniDQChart");
-      const tbl = document.createElement("table");
-      if (container) {
-          tbl.classList.add("pagetitle", "th-fg-color", "data-quality");
-          tbl.cellPadding = "0";
-          tbl.cellSpacing = "0";
-          container.appendChild(tbl);
-          let row = tr(tbl);
-          let cell = td(row);
-          cell.textContent = "Data Availability";
-          row = tr(tbl);
-          cell = td(row);
-          cell.id = "quality";
-          cell.style.color = "#2a2";
-          container.addEventListener("click", function (e) {
-              e.stopImmediatePropagation();
-              window.dispatchEvent(new CustomEvent("hide-menu"));
-              const quality = document.getElementById("quality");
-              if (quality.dataset.tip) {
-                  const d = {
-                      chart: false,
-                      x: 10,
-                      y: e.clientY + 50,
-                      text: quality.dataset.tip
-                  };
-                  window.dispatchEvent(new CustomEvent("show-breakdown", { detail: d }));
-              }
-          });
-      }
-      window.addEventListener("data-quality", () => draw(config));
+      const container = document.getElementById("lblDQStatus");
+      const status = container.querySelector("img");
+      container.addEventListener("click", function (e) {
+          e.stopImmediatePropagation();
+          window.dispatchEvent(new CustomEvent("hide-menu"));
+          const tipData = {
+              chart: false,
+              // @ts-ignore
+              mouseX: 0,
+              text: config.db.dq.text
+          };
+          window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
+      });
+      window.addEventListener("data-quality", () => {
+          const i = config.db.dq.interpolated[config.querystring.day];
+          const es = config.db.dq.estimated;
+          const ms = config.db.dq.missing;
+          let state = i.length + es.length + ms.length;
+          status.src = state < 6 ? config.status.green.src : state < 10 ? config.status.amber.src : config.status.red.src;
+          container.title = state < 6 ? config.status.green.title : state < 10 ? config.status.amber.title : config.status.red.title;
+          let qt = `<p class="th-fg-color">Data availability for <b>${getScreenDate(config.querystring.day)}</b></p>`;
+          qt += `<p><b class="th-fg-color">`;
+          if (state === 0) {
+              qt += `Complete</b> All data is available in the database.</p>`;
+          }
+          else if (state < 3) {
+              qt += `Very High</b></p>`;
+          }
+          else if (state < 6) {
+              qt += `High</b></p>`;
+          }
+          else if (state < 10) {
+              qt += `Medium</b></p>`;
+          }
+          else if (state < 14) {
+              qt += `Fair</b></p>`;
+          }
+          else {
+              qt += `Low</b></p>`;
+          }
+          if (ms.length > 0) {
+              qt += `<p><b class="th-fg-color">Missing data:</b> `;
+              qt += JSON.stringify(ms)
+                  .replace(/\"/g, "")
+                  .replace(/\,/g, ", ")
+                  .replace(/\[/g, "")
+                  .replace(/\]/g, "") + ".</p>";
+          }
+          if (es.length > 0) {
+              qt += `<p><b class="th-fg-color">Estimated data:</b> `;
+              qt += JSON.stringify(es)
+                  .replace(/\"/g, "")
+                  .replace(/\,/g, ", ")
+                  .replace(/\[/g, "")
+                  .replace(/\]/g, "") + ".</p>";
+          }
+          if (i.length > 0) {
+              qt += `<p><b class="th-fg-color">Interpolated data:</b><br>`;
+              qt += JSON.stringify(i)
+                  .replace(/\"/g, "")
+                  .replace(/\,/g, ", ")
+                  .replace(/\[/g, "")
+                  .replace(/\]/g, "") + ".</p>";
+          }
+          config.db.dq.text = qt;
+      });
   }
 
   function sankeyModel() {
@@ -1755,10 +1607,6 @@ var App = (function (exports) {
    * @param config
    */
   function initSankeyChart(config) {
-      if (config.chart === undefined) {
-          config.chart = {};
-      }
-      config.chart.margin = { top: 70, right: 10, bottom: 12, left: 40 };
       const chart = document.getElementById("chart");
       if (chart) {
           config.chart.width = chart.offsetWidth - config.chart.margin.left - config.chart.margin.right;
@@ -1807,7 +1655,7 @@ var App = (function (exports) {
       linkCollection.attr("fill", function (i) {
           return i.fill ? i.fill : i.source.fill;
       })
-          .attr("opacity", config.filters.lowopacity)
+          .attr("opacity", config.filters.opacity.low)
           .on("click", function (d) {
           // @ts-ignore
           d3.event.stopPropagation();
@@ -1866,8 +1714,8 @@ var App = (function (exports) {
       });
       window.dispatchEvent(new CustomEvent("show-legend"));
       function dragged(i) {
-          if (config.chart.moveY) {
-              if (config.chart.moveX) {
+          if (config.filters.move.y) {
+              if (config.filters.move.x) {
                   // @ts-ignore
                   d3.select(this)
                       // @ts-ignore
@@ -1881,7 +1729,7 @@ var App = (function (exports) {
               }
           }
           else {
-              if (config.chart.moveX) {
+              if (config.filters.move.x) {
                   // @ts-ignore
                   d3.select(this)
                       // @ts-ignore
@@ -1903,15 +1751,15 @@ var App = (function (exports) {
    * @param config
    */
   function displayLinkBreakdown(a, d, config) {
-      if (config.chart.highlightedItem) {
-          config.chart.highlightedItem.style('opacity', config.filters.lowopacity);
+      if (config.chart.highlighted) {
+          config.chart.highlighted.style('opacity', config.filters.opacity.low);
       }
       // @ts-ignore
       d3.select(".breakdown-secondary")
           .style("display", "none");
       // @ts-ignore
-      config.chart.highlightedItem = d3.select(a);
-      config.chart.highlightedItem.style('opacity', config.filters.highopacity);
+      config.chart.highlighted = d3.select(a);
+      config.chart.highlighted.style('opacity', config.filters.opacity.high);
       let tiptext = "<tr><td style='font-weight:bold;'>" + d.source.name;
       tiptext += "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;'>";
       tiptext += d.target.name + "</td></tr><tr><td>Calls</td><td>";
@@ -1950,14 +1798,14 @@ var App = (function (exports) {
    * @param config
    */
   function displayNodeBreakdown(d, config) {
-      if (config.chart.highlightedItem) {
-          config.chart.highlightedItem.style('opacity', config.filters.lowopacity);
+      if (config.chart.highlighted) {
+          config.chart.highlighted.style('opacity', config.filters.opacity.low);
       }
-      config.chart.highlightedItem = config.chart.svg.selectAll(".link")
+      config.chart.highlighted = config.chart.svg.selectAll(".link")
           // @ts-ignore
           .filter(function (l) { return l.source === d || l.target === d; });
-      config.chart.highlightedItem.transition()
-          .style('opacity', config.filters.highopacity);
+      config.chart.highlighted.transition()
+          .style('opacity', config.filters.opacity.high);
       const nodesource = [], nodetarget = [];
       config.chart.svg.selectAll(".link")
           .filter((l) => l.target === d)[0]
@@ -2100,33 +1948,12 @@ var App = (function (exports) {
    * Renders title bar components
    */
   function initTitleBar() {
-      const titlebar = document.getElementById("titlebar-right");
-      const org = document.createElement("span");
-      org.id = "org-in-title";
-      const day = document.createElement("span");
-      day.id = "day-in-title";
-      const call = document.createElement("span");
-      call.id = "call-in-title";
-      if (titlebar) {
-          const parent = document.createElement("span");
-          parent.classList.add("pagetitle", "th-fg-color");
-          titlebar.appendChild(parent);
-          parent.appendChild(org);
-          parent.appendChild(sep());
-          parent.appendChild(day);
-          parent.appendChild(sep());
-          parent.appendChild(call);
-      }
-      window.addEventListener("org-selected", (e) => org.textContent = e.detail);
-      window.addEventListener("day-selected", (e) => day.textContent = e.detail);
+      const org = document.getElementById("lblOrganisationStatus");
+      const day = document.getElementById("lblDayStatus");
+      const call = document.getElementById("lblCallStatus");
+      window.addEventListener("org-selected", (e) => org.textContent = e.detail + " |");
+      window.addEventListener("day-selected", (e) => day.textContent = e.detail + " |");
       window.addEventListener("call-selected", (e) => call.textContent = e.detail);
-      function sep() {
-          const sep = document.createElement("span");
-          sep.style.marginLeft = "5px";
-          sep.style.marginRight = "5px";
-          sep.textContent = "|";
-          return sep;
-      }
   }
 
   /**
@@ -2536,7 +2363,7 @@ var App = (function (exports) {
           : "https://raw.githubusercontent.com/NELCSU/ED/master/docs/json/";
       json(datapath + "config.json", function (d) {
           const config = d;
-          config.db = { path: datapath };
+          config.db.path = datapath;
           initEnvironment(config);
           initTitleBar();
           initMenu(config);

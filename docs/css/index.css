@@ -7,6 +7,13 @@ body {
   padding: 0;
 }
 
+h1 {
+  display: inline-block;
+  font-size: 1.5em;
+  font-weight: bold;
+  line-height: 31.1em;
+}
+
 select {
   direction: rtl;
   height: 1.5em;
@@ -40,7 +47,7 @@ option:hover {
   text-anchor: middle;
 }
 
-g.chart-legend {
+.chart-legend {
   cursor: move;
   opacity: 1;
 }
@@ -162,18 +169,12 @@ text.chart-legend {
   transform: translateX(100%);
 }
 
-.panel-right-control {
+.menu-button {
   align-items: center;
-  cursor: pointer;
   display: flex;
   font-weight: bold;
-  height: 30px;
   justify-content: center;
-  position: fixed;
-  right: 5px;
-  top: 5px;
-  width: 15%;
-  z-index: 600001;
+  padding: 5px;
 }
 
 .panel-row {
@@ -199,7 +200,7 @@ text.chart-legend {
   width: 90%;
 }
 
-.breakdown-message > table {
+.breakdown-message>table {
   width: 100%;
 }
 
@@ -217,7 +218,7 @@ text.chart-legend {
   width: 20px;
 }
 
-.breakdown-close:after{
+.breakdown-close:after {
   content: "\00d7";
   display: inline-block;
 }
@@ -244,29 +245,22 @@ text.chart-legend {
 }
 
 #chart {
-  height: 93%;
-  left: 1%;
-  position: absolute;
-  top: 7%;
-  width: 99%;
-  z-index: 5;
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
 }
 
 #content {
-  transition: opacity 500ms;
-}
-
-#miniDQChart {
-  cursor: pointer;
-  left: 40px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  left: 0px;
   position: absolute;
-  text-align: center;
-  top: 45px;
-}
-
-#quality {
-  font-size: 33px;
-  line-height: 12px;
+  top: 0px;
+  transition: opacity 500ms;
+  width: 100%;
 }
 
 #titlebar {
@@ -274,12 +268,32 @@ text.chart-legend {
   display: flex;
   flex-direction: row;
   flex-wrap: none;
-  height: 30px;
+  height: 7%;
   justify-content: space-between;
-  margin-left: 40px;
-  margin-top: 5px;
-  padding-bottom: 5px;
-  position: fixed;
-  width: 80%;
-  z-index: 9;
+  width: 100%;
+}
+
+.titlebar-item {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  justify-content: flex-start;
+}
+
+.titlebar-icon,
+.menu-button {
+  cursor: pointer;
+  margin: 0 10px 0 10px;
+}
+
+#lblDQStatus {
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+#lblOrganisationStatus,
+#lblDayStatus,
+#lblCallStatus {
+  margin-left: 5px;
 }

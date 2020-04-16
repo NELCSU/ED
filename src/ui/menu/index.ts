@@ -13,7 +13,7 @@ import { setQueryHash } from "../urlhash";
  */
 export function initMenu(config: any) {
   const menu = document.querySelector(".panel-right") as HTMLDivElement;
-  const menuButton = document.querySelector(".panel-right-control") as HTMLDivElement;
+  const menuButton = document.querySelector(".menu-button") as HTMLDivElement;
 
   if (menu && menuButton) {
     menuButton.addEventListener("click", e => {

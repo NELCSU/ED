@@ -63,7 +63,7 @@ export function initSankeyLegend(config: any) {
 
 			g.append("circle")
 				.style("fill", item)
-				.style("opacity", config.filters.lowopacity)
+				.style("opacity", config.filters.opacity.high)
 				.attr("r", 10)
 				.attr("cx", 10)
 				.attr("cy", 10 + (1 * n));
