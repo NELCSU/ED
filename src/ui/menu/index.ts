@@ -7,11 +7,12 @@ import { initSankeyNodeMovement } from "./filter-move-nodes";
 import { openDataFile } from "../data";
 import { initDayList } from "./filter-day";
 import { setQueryHash } from "../urlhash";
+import type { TConfig } from "../../typings/ED";
 
 /**
  * @param config 
  */
-export function initMenu(config: any) {
+export function initMenu(config: TConfig) {
   const menu = document.querySelector(".panel-right") as HTMLDivElement;
   const menuButton = document.querySelector(".menu-button") as HTMLDivElement;
 

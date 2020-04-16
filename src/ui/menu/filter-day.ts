@@ -1,5 +1,6 @@
 import { getScreenDate } from "../../utils/format";
 import { setQueryHash } from "../urlhash";
+import type { TConfig } from "../../typings/ED";
 
 const day = document.getElementById("Day") as HTMLInputElement;
 const label = document.getElementById("lblDay") as HTMLLabelElement;
@@ -7,7 +8,7 @@ const label = document.getElementById("lblDay") as HTMLLabelElement;
 /**
  * @param config 
  */
-export function initDayList(config: any) { 
+export function initDayList(config: TConfig) {
   day.addEventListener("change", e => {
     const raw = config.filters.days[parseInt(day.value)];
     const fdate = getScreenDate(raw);
@@ -20,7 +21,7 @@ export function initDayList(config: any) {
 /**
  * @param config 
  */
-export function updateDayList(config: any) {
+export function updateDayList(config: TConfig) {
   setQueryHash(config);
   day.max = config.filters.days.length - 1 + "";
   const i = config.filters.days.findIndex((e: string) => e === config.querystring.day);

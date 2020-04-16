@@ -1,10 +1,11 @@
 import { getScreenDate } from "../../utils/format";
+import type { TConfig } from "../../typings/ED";
 
 /**
  * Initialises Data Quality chart
  * @param config
  */
-export function initDataQualityChart(config: any) {
+export function initDataQualityChart(config: TConfig) {
   const container = document.getElementById("lblDQStatus") as HTMLDivElement;
   const status = container.querySelector("img") as HTMLImageElement;
 
@@ -25,19 +26,19 @@ export function initDataQualityChart(config: any) {
     const es = config.db.dq.estimated;
     const ms = config.db.dq.missing;
     let state = i.length + es.length + ms.length;
-    status.src = state < 6 ? config.status.green.src : state < 10 ? config.status.amber.src : config.status.red.src;
-    container.title = state < 6 ? config.status.green.title : state < 10 ? config.status.amber.title : config.status.red.title;
+    status.src = state < 10 ? config.status.green.src : state < 15 ? config.status.amber.src : config.status.red.src;
+    container.title = state < 10 ? config.status.green.title : state < 15 ? config.status.amber.title : config.status.red.title;
     let qt = `<p class="th-fg-color">Data availability for <b>${getScreenDate(config.querystring.day)}</b></p>`;
     qt += `<p><b class="th-fg-color">`;
     if (state === 0) {
       qt += `Complete</b> All data is available in the database.</p>`;
-    } else if (state < 3) {
+    } else if (state < 5) {
       qt += `Very High</b></p>`;
-    } else if (state < 6) {
-      qt += `High</b></p>`;
     } else if (state < 10) {
+      qt += `High</b></p>`;
+    } else if (state < 15) {
       qt += `Medium</b></p>`;
-    } else if (state < 14) {
+    } else if (state < 20) {
       qt += `Fair</b></p>`;
     } else {
       qt += `Low</b></p>`;

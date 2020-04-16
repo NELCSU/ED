@@ -1,9 +1,12 @@
+
+import type { TConfig, TPoint } from "../../typings/ED";
+
 /**
  * @param config 
  */
-export function initSankeyLegend(config: any) {
+export function initSankeyLegend(config: TConfig) {
 	const leg = document.getElementById("Legend") as HTMLInputElement;
-	leg.addEventListener("input", e => leg.checked ? show() : hide());
+	leg.addEventListener("input", () => leg.checked ? show() : hide());
 
 	window.addEventListener("show-legend", () => {
 		if (!leg.checked) { return; }
@@ -24,12 +27,10 @@ export function initSankeyLegend(config: any) {
 		// @ts-ignore
 		const svg = d3.select("#chart > svg");
 		const legend = svg.append("g")
-			.datum({ x: config.chart.width - 200, y: config.chart.height - 140 })
+			.datum({ x: config.legend.move.x, y: config.legend.move.y })
 			.style("opacity", 0)
-			.attr("x", function(d: any) { return d.x; })
-			.attr("y", function(d: any) { return d.y; })
 			.classed("chart-legend", true)
-			.attr("transform", function (d: any) { return "translate(" + [ d.x,d.y ] + ")"; });
+			.attr("transform", (d: TPoint) => `translate(${[d.x, d.y]})`);
 
 		legend.transition()
 			.duration(500)
@@ -37,16 +38,18 @@ export function initSankeyLegend(config: any) {
 
 		// @ts-ignore
 		legend.call(d3.behavior.drag()
-			.on("drag", function (d: any) {
+			.on("drag", function (this: Element, d: TPoint) {
 				// @ts-ignore
 				d.x += d3.event.dx;
 				// @ts-ignore
-				d.y += d3.event.dy;	
+				d.y += d3.event.dy;
 				// @ts-ignore
 				d3.select(this)
-					.attr("transform", function(d: any) {
-						return "translate(" + [ d.x, d.y ] + ")";
-					});
+					.attr("transform", (d: any) => `translate(${[d.x, d.y]})`);
+			})
+			.on("dragend", (d: TPoint) => {
+				config.legend.move.x = d.x;
+				config.legend.move.y = d.y;
 			})
 		);
 
@@ -57,9 +60,9 @@ export function initSankeyLegend(config: any) {
 			.attr("y", 0)
 			.classed("chart-legend", true);
 
-		config.legend.colors.forEach((item: any, n: number) => {
+		config.legend.colors.forEach((item: string, n: number) => {
 			const g = legend.append("g")
-				.style("transform", "translate(10px, " + (20 + (25 * n)) + "px)");
+				.style("transform", `translate(10px, ${20 + (25 * n)}px)`);
 
 			g.append("circle")
 				.style("fill", item)

@@ -6,7 +6,7 @@ export function initTitleBar() {
   const day = document.getElementById("lblDayStatus") as HTMLDivElement;
   const call = document.getElementById("lblCallStatus") as HTMLDivElement;
   
-  window.addEventListener("org-selected", (e: any) => org.textContent = e.detail + " |");
-  window.addEventListener("day-selected", (e: any) => day.textContent = e.detail + " |");
-  window.addEventListener("call-selected", (e: any) => call.textContent = e.detail);
+  window.addEventListener("org-selected", (e: Event) => org.textContent = (e as CustomEvent).detail + " |");
+  window.addEventListener("day-selected", (e: Event) => day.textContent = (e as CustomEvent).detail + " |");
+  window.addEventListener("call-selected", (e: Event) => call.textContent = (e as CustomEvent).detail);
 }

@@ -1,4 +1,4 @@
-import type { TSankey } from "../../typings/ED";
+import type { TLink, TNode, TSankey } from "../../typings/ED";
 
 export function sankeyModel() {
   const sankey: TSankey = {
@@ -27,7 +27,7 @@ export function sankeyModel() {
     link: () => {
       let curvature = .5;
   
-      function link(d: any) {
+      function link(d: TLink) {
         let x0, x1, i, y0, y1;
         if (alignment === "horizontal") {
           let x2, x3;
@@ -72,7 +72,7 @@ export function sankeyModel() {
   
       return link;
     },
-    links: (n: any[] | undefined) => {
+    links: (n: TLink[] | undefined) => {
       if (n === undefined) {
         return links;
       }
@@ -111,7 +111,7 @@ export function sankeyModel() {
        * @param part 
        * @param d 
        */
-      function forwardLink(part: number, d: any) {
+      function forwardLink(part: number, d: TLink) {
         let x0 = d.source.x + d.source.dx,
           x1 = d.target.x,
           // @ts-ignore
@@ -205,13 +205,7 @@ export function sankeyModel() {
       }
   
       return function (part: any) {
-        return function (d: any) {
-          if (d.source.x < d.target.x) {
-            return forwardLink(part, d);
-          } else {
-            return backwardLink(part, d);
-          }
-        };
+        return (d: TLink) => (d.source.x < d.target.x) ? forwardLink(part, d) : backwardLink(part, d);
       };
     },
     size: (n: number[] | undefined) => {
@@ -226,8 +220,8 @@ export function sankeyModel() {
   let nodeWidth = 24;
   let nodePadding = 8;
   let size = [1, 1];
-  let nodes: any[] = [];
-  let links: any[] = [];
+  let nodes: TNode[] = [];
+  let links: TLink[] = [];
   const components: any[] = [];
 
   /**
@@ -245,10 +239,12 @@ export function sankeyModel() {
       let source = link.source,
           target = link.target;
       if (typeof source === "number") {
-        source = link.source = nodes[link.source];
+        const key = link.source as any;
+        source = link.source = nodes[key];
       }
       if (typeof target === "number") {
-        target = link.target = nodes[link.target];
+        const key = link.target as any;
+        target = link.target = nodes[key];
       }
       source.sourceLinks.push(link);
       target.targetLinks.push(link);
@@ -277,19 +273,19 @@ export function sankeyModel() {
   function computeNodeStructure() {
     let nodeStack: any[] = [], index = 0;
 
-    nodes.forEach(function (node) {
+    nodes.forEach((node: TNode) => {
       if (!node.index) {
         connect(node);
       }
     });
 
-    function connect(node: any) {
+    function connect(node: TNode) {
       node.index = index++;
       node.lowIndex = node.index;
       node.onStack = true;
       nodeStack.push(node);
       if (node.sourceLinks) {        
-        node.sourceLinks.forEach(function (sourceLink: any) {
+        node.sourceLinks.forEach((sourceLink: TLink) => {
           let target = sourceLink.target;
           if (!target.hasOwnProperty('index')) {
             connect(target);
@@ -332,31 +328,23 @@ export function sankeyModel() {
     components.forEach(function (component, i) {
       bfs(component.root, function (node: any) {
         let result = node.sourceLinks
-          .filter(function (sourceLink: any) {
-            return sourceLink.target.component === i;
-          })
-          .map(function (sourceLink: any) {
-            return sourceLink.target;
-          });
+          .filter((sourceLink: any) => sourceLink.target.component === i)
+          .map((sourceLink: any) => sourceLink.target);
         return result;
       });
     });
 
     // @ts-ignore
     let componentsByBreadth = d3.nest()
-      .key(function (d: any) {
-        return d.x;
-      })
+      .key((d: any) => d.x)
       // @ts-ignore
       .sortKeys(d3.ascending)  
       .entries(components)
-      .map(function (d) {
-        return d.values;
-      });
+      .map(d => d.values);
 
     let max = -1, nextMax = -1;
     
-    componentsByBreadth.forEach(function (c) {
+    componentsByBreadth.forEach((c: any[]) => {
       c.forEach(function (component: any) {
         component.x = max + 1;
         component.scc.forEach(function (node: any) {
@@ -371,24 +359,16 @@ export function sankeyModel() {
       max = nextMax;
     });
 
-    nodes.filter(function (node) {
-      let outLinks = node.sourceLinks.filter(function (link: any) {
-        return link.source.name !== link.target.name;
-      });
+    nodes.filter((node) => {
+      let outLinks = node.sourceLinks.filter((link: TLink) => link.source.name !== link.target.name);
       return (outLinks.length === 0);
     })
-    .forEach(function (node) {
-      node.x = max;
-    });
+    .forEach((node) => node.x = max);
 
     scaleNodeBreadths((size[0] - nodeWidth) / Math.max(max, 1));
-    
-    function flatten(a: any) {
-      return [].concat.apply([], a);
-    }
 
     function layerComponents() {    
-      let remainingComponents = components, nextComponents: any, visitedIndex: any, x = 0;
+      let remainingComponents = components, nextComponents: any[], visitedIndex: any, x = 0;
 
       while (remainingComponents.length) {
         nextComponents = [];
@@ -437,31 +417,25 @@ export function sankeyModel() {
   function computeNodeBreadthsVertical(iterations: number) {
     // @ts-ignore
     let nodesByBreadth = d3.nest()
-      .key(function (d: any) {
-        return d.y;
-      })
+      .key((d: any) => d.y)
       // @ts-ignore
       .sortKeys(d3.ascending)
       .entries(nodes)
-      .map(function (d) {
-        return d.values;
-      });
+      .map(d => d.values);
 
     // this bit is actually the node sizes (widths)
     //var ky = (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value)
     // this should be only source nodes surely (level 1)
     // @ts-ignore
     let ky = (size[0] - (nodesByBreadth[0].length - 1) * nodePadding) / d3.sum(nodesByBreadth[0], value);
-    nodesByBreadth.forEach(function (nodes) {
-      nodes.forEach(function (node: any, i: number) {
+    nodesByBreadth.forEach((nodes) => {
+      nodes.forEach((node: TNode, i: number) => {
         node.x = i;
         node.dy = node.value * ky;
       });
     });
 
-    links.forEach(function (link) {
-      link.dy = link.value * ky;
-    });
+    links.forEach((link) => link.dy = link.value * ky);
 
     resolveCollisions();
 
@@ -475,7 +449,7 @@ export function sankeyModel() {
     // these relax methods should probably be operating on one level of the nodes, not all!?
     function relaxLeftToRight(alpha: number) {
       nodesByBreadth.forEach(function (nodes, breadth) {
-        nodes.forEach(function (node: any) {
+        nodes.forEach(function (node: TNode) {
           if (node.targetLinks.length) {
             // @ts-ignore
             let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
@@ -484,7 +458,7 @@ export function sankeyModel() {
         });
       });
       
-      function weightedSource(link: any) {
+      function weightedSource(link: TLink) {
         return center(link.source) * link.value;
       }
     }
@@ -493,7 +467,7 @@ export function sankeyModel() {
     function relaxRightToLeft(alpha: number) {
       nodesByBreadth.slice().reverse()
         .forEach(function (nodes) {
-          nodes.forEach(function (node: any) {
+          nodes.forEach(function (node: TNode) {
             if (node.sourceLinks.length) {
               // @ts-ignore
               let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
@@ -502,7 +476,7 @@ export function sankeyModel() {
           });
         });
       
-      function weightedTarget(link: any) {
+      function weightedTarget(link: TLink) {
         return center(link.target) * link.value;
       }
     }
@@ -539,10 +513,8 @@ export function sankeyModel() {
       });
     }
     
-    function ascendingDepth(a: any, b: any) {
-      //return a.y - b.y; // flows go up
-      return b.x - a.x; // flows go down
-      //return a.x - b.x;
+    function ascendingDepth(a: TNode, b: TNode): number {
+      return b.x - a.x;
     }
   }
 
@@ -550,7 +522,7 @@ export function sankeyModel() {
    * @param kx 
    */
   function scaleNodeBreadths(kx: number) {
-    nodes.forEach(function (node) {
+    nodes.forEach((node: TNode) => {
       if (alignment === "horizontal") {
         node.x *= kx;
       } else {
@@ -565,15 +537,11 @@ export function sankeyModel() {
   function computeNodeDepthsHorizontal(iterations: number) {
     // @ts-ignore
     let nodesByBreadth = d3.nest()
-      .key(function (d: any) {
-        return d.x;
-      })
+      .key((d: any) => d.x)
       // @ts-ignore
       .sortKeys(d3.ascending)
       .entries(nodes)  
-      .map(function (d) {
-        return d.values;
-      });
+      .map((d: any) => d.values);
 
     initializeNodeDepth();
     resolveCollisions();
@@ -619,21 +587,22 @@ export function sankeyModel() {
         });
       });
       
-      function weightedSource(link: any) {
+      function weightedSource(link: TLink): number {
         return center(link.source) * link.value;
       }
     }
 
     function relaxRightToLeft(alpha: number) {
-      nodesByBreadth.slice().reverse().forEach(function (nodes) {
-        nodes.forEach(function (node: any) {
-          if (node.sourceLinks.length) {
-            // @ts-ignore
-            let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
-            node.y += (y - center(node)) * alpha;
-          }
+      nodesByBreadth.slice().reverse()
+        .forEach((nodes: TNode[]) => {
+          nodes.forEach(function (node: TNode) {
+            if (node.sourceLinks.length) {
+              // @ts-ignore
+              let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+              node.y += (y - center(node)) * alpha;
+            }
+          });
         });
-      });
 
       
       function weightedTarget(link: any) {
@@ -674,20 +643,19 @@ export function sankeyModel() {
       });
     }
     
-    function ascendingDepth(a: any, b: any) {
+    function ascendingDepth(a: TNode, b: TNode): number {
       return a.y - b.y;
     }
   }
 
   function computeNodeDepthsVertical() {
-    let remainingNodes = nodes, nextNodes: any, y = 0;
+    let remainingNodes = nodes, nextNodes: TNode[], y = 0;
 
     while (remainingNodes.length) {
       nextNodes = [];
-      remainingNodes.forEach(function (node) {
+      remainingNodes.forEach((node: TNode) => {
         node.y = y;
-        //node.dx = nodeWidth;
-        node.sourceLinks.forEach(function (link: any) {
+        node.sourceLinks.forEach(function (link: TLink) {
           if (nextNodes.indexOf(link.target) < 0) {
             nextNodes.push(link.target);
           }
@@ -704,7 +672,7 @@ export function sankeyModel() {
 
   // this moves all end points (sinks!) to the most extreme bottom
   function moveSinksDown(y: number) {
-    nodes.forEach(function (node) {
+    nodes.forEach((node: TNode) => {
       if (!node.sourceLinks.length) {
         node.y = y - 1;
       }
@@ -712,43 +680,43 @@ export function sankeyModel() {
   }
 
   function computeLinkDepths() {  
-    nodes.forEach(function (node) {
+    nodes.forEach((node: TNode) => {
       node.sourceLinks.sort(ascendingTargetDepth);
       node.targetLinks.sort(ascendingSourceDepth);
     });
 
-    nodes.forEach(function (node) {
+    nodes.forEach((node: TNode) => {
       let sy = 0, ty = 0;
       
-      node.sourceLinks.forEach(function (link: any) {
+      node.sourceLinks.forEach((link: TLink) => {
         link.sy = sy;
         sy += link.dy;
       });
       
-      node.targetLinks.forEach(function (link: any) {
+      node.targetLinks.forEach((link: TLink) => {
         link.ty = ty;
         ty += link.dy;
       });
     });
 
     function ascendingSourceDepth(a: any, b: any) {
-      return alignment === "horizontal" ?
-        a.source.y - b.source.y :
-        a.source.x - b.source.x;
+      return alignment === "horizontal"
+        ? a.source.y - b.source.y
+        : a.source.x - b.source.x;
     }
 
     function ascendingTargetDepth(a: any, b: any) {
-      return alignment === "horizontal" ?
-        a.target.y - b.target.y :
-        a.target.x - b.target.x;
+      return alignment === "horizontal" 
+        ? a.target.y - b.target.y
+        : a.target.x - b.target.x;
     }
   }
 
-  function center(node: any) {
+  function center(node: TNode): number {
     return node.y + node.dy / 2;
   }
 
-  function value(link: any) {
+  function value(link: TLink): number {
     return link.value;
   }
 

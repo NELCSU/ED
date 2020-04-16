@@ -133,7 +133,7 @@ var App = (function (exports) {
           myhash = "call$" + call.value + "+";
       }
       if (day && config.filters.days) {
-          myhash += "day$" + config.filters.days[day.value] + "+";
+          myhash += "day$" + config.filters.days[parseInt(day.value)] + "+";
       }
       if (org && org.value) {
           myhash += "stp$" + stripSpaces(org.options[org.selectedIndex].value);
@@ -153,7 +153,7 @@ var App = (function (exports) {
           parent.innerHTML = "";
           let group = "", grpdiv, label;
           let control;
-          config.filters.calls.forEach(function (call) {
+          config.filters.calls.forEach((call) => {
               if (group !== call.group) {
                   group = call.group;
                   grpdiv = document.createElement("div");
@@ -189,7 +189,7 @@ var App = (function (exports) {
   function updateCallList(config) {
       const files = Object.keys(config.db.zip.files);
       let ctrl;
-      config.filters.calls.forEach(function (call) {
+      config.filters.calls.forEach((call) => {
           ctrl = document.getElementById(call.id);
           if (ctrl) {
               ctrl.disabled = true;
@@ -243,7 +243,7 @@ var App = (function (exports) {
    */
   function initSankeyLegend(config) {
       const leg = document.getElementById("Legend");
-      leg.addEventListener("input", e => leg.checked ? show() : hide());
+      leg.addEventListener("input", () => leg.checked ? show() : hide());
       window.addEventListener("show-legend", () => {
           if (!leg.checked) {
               return;
@@ -263,12 +263,10 @@ var App = (function (exports) {
           // @ts-ignore
           const svg = d3.select("#chart > svg");
           const legend = svg.append("g")
-              .datum({ x: config.chart.width - 200, y: config.chart.height - 140 })
+              .datum({ x: config.legend.move.x, y: config.legend.move.y })
               .style("opacity", 0)
-              .attr("x", function (d) { return d.x; })
-              .attr("y", function (d) { return d.y; })
               .classed("chart-legend", true)
-              .attr("transform", function (d) { return "translate(" + [d.x, d.y] + ")"; });
+              .attr("transform", (d) => `translate(${[d.x, d.y]})`);
           legend.transition()
               .duration(500)
               .style("opacity", 1);
@@ -281,9 +279,11 @@ var App = (function (exports) {
               d.y += d3.event.dy;
               // @ts-ignore
               d3.select(this)
-                  .attr("transform", function (d) {
-                  return "translate(" + [d.x, d.y] + ")";
-              });
+                  .attr("transform", (d) => `translate(${[d.x, d.y]})`);
+          })
+              .on("dragend", (d) => {
+              config.legend.move.x = d.x;
+              config.legend.move.y = d.y;
           }));
           legend.append("rect")
               .attr("width", "200px")
@@ -293,7 +293,7 @@ var App = (function (exports) {
               .classed("chart-legend", true);
           config.legend.colors.forEach((item, n) => {
               const g = legend.append("g")
-                  .style("transform", "translate(10px, " + (20 + (25 * n)) + "px)");
+                  .style("transform", `translate(10px, ${20 + (25 * n)}px)`);
               g.append("circle")
                   .style("fill", item)
                   .style("opacity", config.filters.opacity.high)
@@ -746,7 +746,6 @@ var App = (function (exports) {
       for (let key in config.db.dq.interpolated) {
           config.filters.days.push(key);
       }
-      window.dispatchEvent(new CustomEvent("data-quality"));
       updateDayList(config);
       updateCallList(config);
       setQueryHash(config);
@@ -784,6 +783,55 @@ var App = (function (exports) {
               config.db.sankey = JSON.parse(content);
               window.dispatchEvent(new CustomEvent("sankey-chart"));
           });
+      });
+  }
+
+  /**
+   * @param data
+   * @param placeholder
+   * @param placelabel1
+   * @param placelabel2
+   * @param pievalue
+   */
+  function updatePie(data, placeholder, placelabel1, placelabel2, pievalue) {
+      // @ts-ignore
+      nv.addGraph(function () {
+          // @ts-ignore
+          const chart = nv.models.pieChart()
+              // @ts-ignore
+              .x(function (d) { return d.label; })
+              // @ts-ignore
+              .y(function (d) { return d.value; })
+              .showLabels(true) //Display pie labels
+              .labelThreshold(0.05) //Configure the minimum slice size for labels to show up
+              .labelType("percent") //Configure what type of data to show in the label. Can be "key", "value" or "percent"
+              .donut(true) //Turn on Donut mode.
+              .donutRatio(0.35); //Configure how big you want the donut hole size to be.
+          const svg = placeholder.select("svg");
+          svg.selectAll(".centerpielabel").remove();
+          const cx = parseInt(placeholder.style("width")) / 2;
+          const cy = parseInt(placeholder.style("height")) / 2 + 20;
+          svg.datum(data).transition().duration(350).call(chart);
+          svg.append("text")
+              .transition().duration(400)
+              .attr("x", cx)
+              .attr("y", cy - 10)
+              .attr("class", "centerpielabel")
+              .text(placelabel1);
+          svg.append("text")
+              .transition().duration(400)
+              .attr("x", cx)
+              .attr("y", cy + 4)
+              .attr("class", "centerpielabel")
+              .text(placelabel2);
+          const pietext = formatNumber(pievalue);
+          svg.append("text")
+              .transition().duration(400)
+              .attr("x", cx)
+              .attr("y", cy + 18)
+              .attr("class", "centerpielabel")
+              .text(pietext);
+          return chart;
       });
   }
 
@@ -850,7 +898,7 @@ var App = (function (exports) {
               container.style.left = d.x + "px";
               container.style.top = d.y + "px";
           }
-          else if (d.mouseX > window.innerWidth * 0.5) {
+          else if (d.mouseX !== undefined && d.mouseX > window.innerWidth * 0.5) {
               container.classList.remove("right");
               container.classList.add("left");
           }
@@ -865,6 +913,148 @@ var App = (function (exports) {
       }
       window.addEventListener("show-breakdown", (e) => show(e.detail));
       window.addEventListener("hide-breakdown", () => hide(config));
+      window.addEventListener("link-breakdown", (e) => displayLinkBreakdown(e.detail.element, e.detail.data, config));
+      window.addEventListener("node-breakdown", (e) => displayNodeBreakdown(e.detail.data, config));
+  }
+  /**
+   * @param a
+   * @param d
+   * @param config
+   */
+  function displayLinkBreakdown(a, d, config) {
+      if (config.chart.highlighted) {
+          config.chart.highlighted.style('opacity', config.filters.opacity.low);
+      }
+      // @ts-ignore
+      d3.select(".breakdown-secondary")
+          .style("display", "none");
+      // @ts-ignore
+      config.chart.highlighted = d3.select(a);
+      config.chart.highlighted.style('opacity', config.filters.opacity.high);
+      let tiptext = "<tr><td style='font-weight:bold;'>" + d.source.name;
+      tiptext += "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;'>";
+      tiptext += d.target.name + "</td></tr><tr><td>Calls</td><td>";
+      tiptext += formatNumber(d.value) + "</td><td> Calls</td></tr>";
+      // @ts-ignore
+      const container = d3.select(".breakdown-charts");
+      let h = parseInt(container.style("height"));
+      let w = parseInt(container.style("width"));
+      h = w = Math.max(h, w);
+      const containerPrimary = container.select(".breakdown-primary");
+      const svgPrimary = containerPrimary.select("svg");
+      const containerSecondary = container.select(".breakdown-secondary");
+      const svgSecondary = containerSecondary.select("svg");
+      svgPrimary.style("height", h + "px").style("width", w + "px");
+      svgSecondary.style("height", h + "px").style("width", w + "px");
+      // @ts-ignore
+      setTimeout(function () {
+          containerPrimary.style("display", null);
+          svgPrimary.style("display", null);
+          containerSecondary.style("display", "none");
+          svgSecondary.style("display", "none");
+          // @ts-ignore
+          updatePie(d.supply, containerPrimary, d.source.name, d.target.name, d.value);
+      }, 500);
+      const tipData = {
+          chart: true,
+          // @ts-ignore
+          mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
+          text: tiptext
+      };
+      window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
+      window.dispatchEvent(new CustomEvent("hide-menu"));
+  }
+  /**
+   * @param d
+   * @param config
+   */
+  function displayNodeBreakdown(d, config) {
+      var _a;
+      if (config.chart.highlighted) {
+          config.chart.highlighted.style('opacity', config.filters.opacity.low);
+      }
+      config.chart.highlighted = config.chart.svg.selectAll(".link")
+          .filter((l) => l.source === d || l.target === d);
+      (_a = config.chart.highlighted) === null || _a === void 0 ? void 0 : _a.transition().style('opacity', config.filters.opacity.high);
+      const nodesource = [], nodetarget = [];
+      config.chart.svg.selectAll(".link")
+          .filter((l) => l.target === d)[0]
+          .forEach((l) => nodesource.push({ label: l.__data__.source.name, value: l.__data__.value }));
+      config.chart.svg.selectAll(".link")
+          .filter((l) => l.source === d)[0]
+          .forEach((l) => nodetarget.push({ label: l.__data__.target.name, value: l.__data__.value }));
+      if (nodesource.length === 0) {
+          nodesource.push({ label: "None", value: 0 });
+      }
+      if (nodetarget.length === 0) {
+          nodetarget.push({ label: "None", value: 0 });
+      }
+      let tiptext = "<tr><td colspan=2 style='font-weight:bold;'>" + d.name;
+      tiptext += "</td></tr><tr><td>Incoming</td><td>";
+      // @ts-ignore
+      tiptext += formatNumber(d3.sum(nodesource, function (d) { return d.value; }));
+      tiptext += " Calls</td></tr><tr><td>Outgoing</td><td>";
+      // @ts-ignore
+      tiptext += formatNumber(d3.sum(nodetarget, function (d) { return d.value; })) + " Calls</td></tr>";
+      // @ts-ignore
+      let outin = formatNumber(d3.sum(nodetarget, function (d) { return d.value; }) / d3.sum(nodesource, function (d) { return d.value; }));
+      // @ts-ignore
+      if ((d3.sum(nodesource, function (d) { return d.value; }) === 0) ||
+          // @ts-ignore
+          (d3.sum(nodetarget, function (d) { return d.value; }) === 0)) {
+          outin = "--";
+      }
+      tiptext += "<tr><td>OUT / IN</td><td>" + outin + "</td></tr>";
+      // @ts-ignore
+      const container = d3.select(".breakdown-charts");
+      let h = parseInt(container.style("height"));
+      let w = parseInt(container.style("width"));
+      h = w = Math.max(h, w);
+      const containerPrimary = container.select(".breakdown-primary");
+      const svgPrimary = containerPrimary.select("svg");
+      const containerSecondary = container.select(".breakdown-secondary");
+      const svgSecondary = containerSecondary.select("svg");
+      if (nodesource[0].label !== "None" && nodetarget[0].label !== "None") {
+          svgPrimary.style("height", (h / 2) + "px").style("width", w + "px");
+          svgSecondary.style("height", (h / 2) + "px").style("width", w + "px");
+      }
+      else {
+          svgPrimary.style("height", h + "px").style("width", w + "px");
+          svgSecondary.style("height", h + "px").style("width", w + "px");
+      }
+      // @ts-ignore
+      setTimeout(function () {
+          // @ts-ignore
+          if (nodesource[0].label !== "None") {
+              containerPrimary.style("display", null);
+              svgPrimary.style("display", null);
+              // @ts-ignore
+              updatePie(nodesource, containerPrimary, "Incoming", d.name, d3.sum(nodesource, function (d) { return d.value; }));
+          }
+          else {
+              containerPrimary.style("display", "none");
+              svgPrimary.style("display", "none");
+          }
+          // @ts-ignore
+          if (nodetarget[0].label !== "None") {
+              containerSecondary.style("display", null);
+              svgSecondary.style("display", null);
+              // @ts-ignore
+              updatePie(nodetarget, containerSecondary, d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.value; }));
+          }
+          else {
+              containerSecondary.style("display", "none");
+              svgSecondary.style("display", "none");
+          }
+      }, 500);
+      const tipData = {
+          chart: true,
+          // @ts-ignore
+          mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
+          text: tiptext
+      };
+      window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
+      window.dispatchEvent(new CustomEvent("hide-menu"));
   }
 
   /**
@@ -890,23 +1080,23 @@ var App = (function (exports) {
           const es = config.db.dq.estimated;
           const ms = config.db.dq.missing;
           let state = i.length + es.length + ms.length;
-          status.src = state < 6 ? config.status.green.src : state < 10 ? config.status.amber.src : config.status.red.src;
-          container.title = state < 6 ? config.status.green.title : state < 10 ? config.status.amber.title : config.status.red.title;
+          status.src = state < 10 ? config.status.green.src : state < 15 ? config.status.amber.src : config.status.red.src;
+          container.title = state < 10 ? config.status.green.title : state < 15 ? config.status.amber.title : config.status.red.title;
           let qt = `<p class="th-fg-color">Data availability for <b>${getScreenDate(config.querystring.day)}</b></p>`;
           qt += `<p><b class="th-fg-color">`;
           if (state === 0) {
               qt += `Complete</b> All data is available in the database.</p>`;
           }
-          else if (state < 3) {
+          else if (state < 5) {
               qt += `Very High</b></p>`;
           }
-          else if (state < 6) {
+          else if (state < 10) {
               qt += `High</b></p>`;
           }
-          else if (state < 10) {
+          else if (state < 15) {
               qt += `Medium</b></p>`;
           }
-          else if (state < 14) {
+          else if (state < 20) {
               qt += `Fair</b></p>`;
           }
           else {
@@ -1122,14 +1312,7 @@ var App = (function (exports) {
                   }
               }
               return function (part) {
-                  return function (d) {
-                      if (d.source.x < d.target.x) {
-                          return forwardLink(part, d);
-                      }
-                      else {
-                          return backwardLink(part, d);
-                      }
-                  };
+                  return (d) => (d.source.x < d.target.x) ? forwardLink(part, d) : backwardLink(part, d);
               };
           },
           size: (n) => {
@@ -1160,10 +1343,12 @@ var App = (function (exports) {
           links.forEach(function (link) {
               let source = link.source, target = link.target;
               if (typeof source === "number") {
-                  source = link.source = nodes[link.source];
+                  const key = link.source;
+                  source = link.source = nodes[key];
               }
               if (typeof target === "number") {
-                  target = link.target = nodes[link.target];
+                  const key = link.target;
+                  target = link.target = nodes[key];
               }
               source.sourceLinks.push(link);
               target.targetLinks.push(link);
@@ -1188,7 +1373,7 @@ var App = (function (exports) {
        */
       function computeNodeStructure() {
           let nodeStack = [], index = 0;
-          nodes.forEach(function (node) {
+          nodes.forEach((node) => {
               if (!node.index) {
                   connect(node);
               }
@@ -1199,7 +1384,7 @@ var App = (function (exports) {
               node.onStack = true;
               nodeStack.push(node);
               if (node.sourceLinks) {
-                  node.sourceLinks.forEach(function (sourceLink) {
+                  node.sourceLinks.forEach((sourceLink) => {
                       let target = sourceLink.target;
                       if (!target.hasOwnProperty('index')) {
                           connect(target);
@@ -1237,28 +1422,20 @@ var App = (function (exports) {
           components.forEach(function (component, i) {
               bfs(component.root, function (node) {
                   let result = node.sourceLinks
-                      .filter(function (sourceLink) {
-                      return sourceLink.target.component === i;
-                  })
-                      .map(function (sourceLink) {
-                      return sourceLink.target;
-                  });
+                      .filter((sourceLink) => sourceLink.target.component === i)
+                      .map((sourceLink) => sourceLink.target);
                   return result;
               });
           });
           // @ts-ignore
           let componentsByBreadth = d3.nest()
-              .key(function (d) {
-              return d.x;
-          })
+              .key((d) => d.x)
               // @ts-ignore
               .sortKeys(d3.ascending)
               .entries(components)
-              .map(function (d) {
-              return d.values;
-          });
+              .map(d => d.values);
           let max = -1, nextMax = -1;
-          componentsByBreadth.forEach(function (c) {
+          componentsByBreadth.forEach((c) => {
               c.forEach(function (component) {
                   component.x = max + 1;
                   component.scc.forEach(function (node) {
@@ -1273,15 +1450,11 @@ var App = (function (exports) {
               });
               max = nextMax;
           });
-          nodes.filter(function (node) {
-              let outLinks = node.sourceLinks.filter(function (link) {
-                  return link.source.name !== link.target.name;
-              });
+          nodes.filter((node) => {
+              let outLinks = node.sourceLinks.filter((link) => link.source.name !== link.target.name);
               return (outLinks.length === 0);
           })
-              .forEach(function (node) {
-              node.x = max;
-          });
+              .forEach((node) => node.x = max);
           scaleNodeBreadths((size[0] - nodeWidth) / Math.max(max, 1));
           function layerComponents() {
               let remainingComponents = components, nextComponents, visitedIndex, x = 0;
@@ -1327,29 +1500,23 @@ var App = (function (exports) {
       function computeNodeBreadthsVertical(iterations) {
           // @ts-ignore
           let nodesByBreadth = d3.nest()
-              .key(function (d) {
-              return d.y;
-          })
+              .key((d) => d.y)
               // @ts-ignore
               .sortKeys(d3.ascending)
               .entries(nodes)
-              .map(function (d) {
-              return d.values;
-          });
+              .map(d => d.values);
           // this bit is actually the node sizes (widths)
           //var ky = (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value)
           // this should be only source nodes surely (level 1)
           // @ts-ignore
           let ky = (size[0] - (nodesByBreadth[0].length - 1) * nodePadding) / d3.sum(nodesByBreadth[0], value);
-          nodesByBreadth.forEach(function (nodes) {
-              nodes.forEach(function (node, i) {
+          nodesByBreadth.forEach((nodes) => {
+              nodes.forEach((node, i) => {
                   node.x = i;
                   node.dy = node.value * ky;
               });
           });
-          links.forEach(function (link) {
-              link.dy = link.value * ky;
-          });
+          links.forEach((link) => link.dy = link.value * ky);
           resolveCollisions();
           for (let alpha = 1; iterations > 0; --iterations) {
               relaxLeftToRight(alpha);
@@ -1417,16 +1584,14 @@ var App = (function (exports) {
               });
           }
           function ascendingDepth(a, b) {
-              //return a.y - b.y; // flows go up
-              return b.x - a.x; // flows go down
-              //return a.x - b.x;
+              return b.x - a.x;
           }
       }
       /**
        * @param kx
        */
       function scaleNodeBreadths(kx) {
-          nodes.forEach(function (node) {
+          nodes.forEach((node) => {
               if (alignment === "horizontal") {
                   node.x *= kx;
               }
@@ -1441,15 +1606,11 @@ var App = (function (exports) {
       function computeNodeDepthsHorizontal(iterations) {
           // @ts-ignore
           let nodesByBreadth = d3.nest()
-              .key(function (d) {
-              return d.x;
-          })
+              .key((d) => d.x)
               // @ts-ignore
               .sortKeys(d3.ascending)
               .entries(nodes)
-              .map(function (d) {
-              return d.values;
-          });
+              .map((d) => d.values);
           initializeNodeDepth();
           resolveCollisions();
           for (let alpha = 1; iterations > 0; --iterations) {
@@ -1493,7 +1654,8 @@ var App = (function (exports) {
               }
           }
           function relaxRightToLeft(alpha) {
-              nodesByBreadth.slice().reverse().forEach(function (nodes) {
+              nodesByBreadth.slice().reverse()
+                  .forEach((nodes) => {
                   nodes.forEach(function (node) {
                       if (node.sourceLinks.length) {
                           // @ts-ignore
@@ -1543,9 +1705,8 @@ var App = (function (exports) {
           let remainingNodes = nodes, nextNodes, y = 0;
           while (remainingNodes.length) {
               nextNodes = [];
-              remainingNodes.forEach(function (node) {
+              remainingNodes.forEach((node) => {
                   node.y = y;
-                  //node.dx = nodeWidth;
                   node.sourceLinks.forEach(function (link) {
                       if (nextNodes.indexOf(link.target) < 0) {
                           nextNodes.push(link.target);
@@ -1561,37 +1722,37 @@ var App = (function (exports) {
       }
       // this moves all end points (sinks!) to the most extreme bottom
       function moveSinksDown(y) {
-          nodes.forEach(function (node) {
+          nodes.forEach((node) => {
               if (!node.sourceLinks.length) {
                   node.y = y - 1;
               }
           });
       }
       function computeLinkDepths() {
-          nodes.forEach(function (node) {
+          nodes.forEach((node) => {
               node.sourceLinks.sort(ascendingTargetDepth);
               node.targetLinks.sort(ascendingSourceDepth);
           });
-          nodes.forEach(function (node) {
+          nodes.forEach((node) => {
               let sy = 0, ty = 0;
-              node.sourceLinks.forEach(function (link) {
+              node.sourceLinks.forEach((link) => {
                   link.sy = sy;
                   sy += link.dy;
               });
-              node.targetLinks.forEach(function (link) {
+              node.targetLinks.forEach((link) => {
                   link.ty = ty;
                   ty += link.dy;
               });
           });
           function ascendingSourceDepth(a, b) {
-              return alignment === "horizontal" ?
-                  a.source.y - b.source.y :
-                  a.source.x - b.source.x;
+              return alignment === "horizontal"
+                  ? a.source.y - b.source.y
+                  : a.source.x - b.source.x;
           }
           function ascendingTargetDepth(a, b) {
-              return alignment === "horizontal" ?
-                  a.target.y - b.target.y :
-                  a.target.x - b.target.x;
+              return alignment === "horizontal"
+                  ? a.target.y - b.target.y
+                  : a.target.x - b.target.x;
           }
       }
       function center(node) {
@@ -1613,8 +1774,8 @@ var App = (function (exports) {
           config.chart.height = chart.offsetHeight - config.chart.margin.bottom - 130;
       }
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.style.width = config.chart.width + config.chart.margin.left + config.chart.margin.right;
-      svg.style.height = config.chart.height + config.chart.margin.top + config.chart.margin.bottom;
+      svg.style.width = config.chart.width + config.chart.margin.left + config.chart.margin.right + "px";
+      svg.style.height = config.chart.height + config.chart.margin.top + config.chart.margin.bottom + "px";
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       g.style.transform = "translate(" + config.chart.margin.left + "," + config.chart.margin.top + ")";
       svg.appendChild(g);
@@ -1624,7 +1785,6 @@ var App = (function (exports) {
       window.addEventListener("sankey-chart", () => loadSankeyChart(config));
   }
   function loadSankeyChart(config) {
-      // @ts-ignore
       const svg = config.chart.svg;
       svg.selectAll("g").remove();
       config.chart.sankey = sankeyModel()
@@ -1641,26 +1801,24 @@ var App = (function (exports) {
           .enter()
           .append("g")
           .attr("class", "link")
-          .sort(function (j, i) { return i.dy - j.dy; });
+          .sort((j, i) => i.dy - j.dy);
       const path = config.chart.sankey.reversibleLink();
       let h, f, e;
       if (path) {
-          h = linkCollection.append("path") //path0
+          h = linkCollection.append("path")
               .attr("d", path(0));
-          f = linkCollection.append("path") //path1
+          f = linkCollection.append("path")
               .attr("d", path(1));
-          e = linkCollection.append("path") //path2
+          e = linkCollection.append("path")
               .attr("d", path(2));
       }
-      linkCollection.attr("fill", function (i) {
-          return i.fill ? i.fill : i.source.fill;
-      })
+      linkCollection.
+          attr("fill", (i) => i.fill ? i.fill : i.source.fill)
           .attr("opacity", config.filters.opacity.low)
           .on("click", function (d) {
           // @ts-ignore
           d3.event.stopPropagation();
-          // @ts-ignore
-          displayLinkBreakdown(this, d, config);
+          window.dispatchEvent(new CustomEvent("link-breakdown", { detail: { element: this, data: d } }));
       });
       const nodeCollection = svg.append("g")
           .selectAll(".node")
@@ -1668,13 +1826,13 @@ var App = (function (exports) {
           .enter()
           .append("g")
           .attr("class", "node")
-          .attr("transform", function (i) { return "translate(" + i.x + "," + i.y + ")"; })
+          .attr("transform", (i) => `translate(${i.x},${i.y})`)
           // @ts-ignore
           .call(d3.behavior.drag()
-          .origin(function (i) { return i; })
+          .origin((i) => i)
           .on("dragstart", function (d) {
-          // @ts-ignore
-          this.parentNode.appendChild(this);
+          var _a;
+          (_a = this.parentNode) === null || _a === void 0 ? void 0 : _a.appendChild(this);
           // @ts-ignore
           d.initialPosition = d3.select(this).attr("transform");
       })
@@ -1682,24 +1840,24 @@ var App = (function (exports) {
           .on("dragend", function (d) {
           // @ts-ignore
           if (d.initialPosition === d3.select(this).attr("transform")) {
-              displayNodeBreakdown(d, config);
+              window.dispatchEvent(new CustomEvent("node-breakdown", { detail: { element: this, data: d } }));
           }
       }));
       nodeCollection.append("rect")
-          .attr("height", function (i) { return i.dy; })
+          .attr("height", (i) => i.dy)
           .attr("width", config.chart.sankey.nodeWidth())
-          .style("fill", function (i) { return i.color = i.fill; })
+          .style("fill", (i) => i.color = i.fill)
           // @ts-ignore
-          .style("stroke", function (i) { return d3.rgb(i.color).darker(2); });
+          .style("stroke", (i) => d3.rgb(i.color).darker(2));
       nodeCollection.append("text")
           .classed("node-label-outer", true)
           .attr("x", -6)
-          .attr("y", function (i) { return i.dy / 2; })
+          .attr("y", (i) => i.dy / 2)
           .attr("dy", ".35em")
           .attr("text-anchor", "end")
           .attr("transform", null)
-          .text(function (i) { return i.name; })
-          .filter(function (i) { return i.x < config.chart.width / 2; })
+          .text((i) => i.name)
+          .filter((i) => i.x < config.chart.width / 2)
           .attr("x", 6 + config.chart.sankey.nodeWidth())
           .attr("text-anchor", "start");
       nodeCollection.append("text")
@@ -1744,195 +1902,6 @@ var App = (function (exports) {
               e.attr("d", path(2));
           }
       }
-  }
-  /**
-   * @param a
-   * @param d
-   * @param config
-   */
-  function displayLinkBreakdown(a, d, config) {
-      if (config.chart.highlighted) {
-          config.chart.highlighted.style('opacity', config.filters.opacity.low);
-      }
-      // @ts-ignore
-      d3.select(".breakdown-secondary")
-          .style("display", "none");
-      // @ts-ignore
-      config.chart.highlighted = d3.select(a);
-      config.chart.highlighted.style('opacity', config.filters.opacity.high);
-      let tiptext = "<tr><td style='font-weight:bold;'>" + d.source.name;
-      tiptext += "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;'>";
-      tiptext += d.target.name + "</td></tr><tr><td>Calls</td><td>";
-      tiptext += formatNumber(d.value) + "</td><td> Calls</td></tr>";
-      // @ts-ignore
-      const container = d3.select(".breakdown-charts");
-      let h = parseInt(container.style("height"));
-      let w = parseInt(container.style("width"));
-      h = w = Math.max(h, w);
-      const containerPrimary = container.select(".breakdown-primary");
-      const svgPrimary = containerPrimary.select("svg");
-      const containerSecondary = container.select(".breakdown-secondary");
-      const svgSecondary = containerSecondary.select("svg");
-      svgPrimary.style("height", h + "px").style("width", w + "px");
-      svgSecondary.style("height", h + "px").style("width", w + "px");
-      // @ts-ignore
-      setTimeout(function () {
-          containerPrimary.style("display", null);
-          svgPrimary.style("display", null);
-          containerSecondary.style("display", "none");
-          svgSecondary.style("display", "none");
-          // @ts-ignore
-          updatepie(d.supply, containerPrimary, d.source.name, d.target.name, d.value);
-      }, 500);
-      const tipData = {
-          chart: true,
-          // @ts-ignore
-          mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
-          text: tiptext
-      };
-      window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
-      window.dispatchEvent(new CustomEvent("hide-menu"));
-  }
-  /**
-   * @param d
-   * @param config
-   */
-  function displayNodeBreakdown(d, config) {
-      if (config.chart.highlighted) {
-          config.chart.highlighted.style('opacity', config.filters.opacity.low);
-      }
-      config.chart.highlighted = config.chart.svg.selectAll(".link")
-          // @ts-ignore
-          .filter(function (l) { return l.source === d || l.target === d; });
-      config.chart.highlighted.transition()
-          .style('opacity', config.filters.opacity.high);
-      const nodesource = [], nodetarget = [];
-      config.chart.svg.selectAll(".link")
-          .filter((l) => l.target === d)[0]
-          .forEach((l) => nodesource.push({ label: l.__data__.source.name, value: l.__data__.value }));
-      config.chart.svg.selectAll(".link")
-          .filter((l) => l.source === d)[0]
-          .forEach((l) => nodetarget.push({ label: l.__data__.target.name, value: l.__data__.value }));
-      if (nodesource.length === 0) {
-          nodesource.push({ label: "None", value: 0 });
-      }
-      if (nodetarget.length === 0) {
-          nodetarget.push({ label: "None", value: 0 });
-      }
-      let tiptext = "<tr><td colspan=2 style='font-weight:bold;'>" + d.name;
-      tiptext += "</td></tr><tr><td>Incoming</td><td>";
-      // @ts-ignore
-      tiptext += formatNumber(d3.sum(nodesource, function (d) { return d.value; }));
-      tiptext += " Calls</td></tr><tr><td>Outgoing</td><td>";
-      // @ts-ignore
-      tiptext += formatNumber(d3.sum(nodetarget, function (d) { return d.value; })) + " Calls</td></tr>";
-      // @ts-ignore
-      let outin = formatNumber(d3.sum(nodetarget, function (d) { return d.value; }) / d3.sum(nodesource, function (d) { return d.value; }));
-      // @ts-ignore
-      if ((d3.sum(nodesource, function (d) { return d.value; }) === 0) ||
-          // @ts-ignore
-          (d3.sum(nodetarget, function (d) { return d.value; }) === 0)) {
-          outin = "--";
-      }
-      tiptext += "<tr><td>OUT / IN</td><td>" + outin + "</td></tr>";
-      // @ts-ignore
-      const container = d3.select(".breakdown-charts");
-      let h = parseInt(container.style("height"));
-      let w = parseInt(container.style("width"));
-      h = w = Math.max(h, w);
-      const containerPrimary = container.select(".breakdown-primary");
-      const svgPrimary = containerPrimary.select("svg");
-      const containerSecondary = container.select(".breakdown-secondary");
-      const svgSecondary = containerSecondary.select("svg");
-      if (nodesource[0].label !== "None" && nodetarget[0].label !== "None") {
-          svgPrimary.style("height", (h / 2) + "px").style("width", w + "px");
-          svgSecondary.style("height", (h / 2) + "px").style("width", w + "px");
-      }
-      else {
-          svgPrimary.style("height", h + "px").style("width", w + "px");
-          svgSecondary.style("height", h + "px").style("width", w + "px");
-      }
-      // @ts-ignore
-      setTimeout(function () {
-          // @ts-ignore
-          if (nodesource[0].label !== "None") {
-              containerPrimary.style("display", null);
-              svgPrimary.style("display", null);
-              // @ts-ignore
-              updatepie(nodesource, containerPrimary, "Incoming", d.name, d3.sum(nodesource, function (d) { return d.value; }));
-          }
-          else {
-              containerPrimary.style("display", "none");
-              svgPrimary.style("display", "none");
-          }
-          // @ts-ignore
-          if (nodetarget[0].label !== "None") {
-              containerSecondary.style("display", null);
-              svgSecondary.style("display", null);
-              // @ts-ignore
-              updatepie(nodetarget, containerSecondary, d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.value; }));
-          }
-          else {
-              containerSecondary.style("display", "none");
-              svgSecondary.style("display", "none");
-          }
-      }, 500);
-      const tipData = {
-          chart: true,
-          // @ts-ignore
-          mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
-          text: tiptext
-      };
-      window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
-      window.dispatchEvent(new CustomEvent("hide-menu"));
-  }
-  /**
-   * @param data
-   * @param placeholder
-   * @param placelabel1
-   * @param placelabel2
-   * @param pievalue
-   */
-  function updatepie(data, placeholder, placelabel1, placelabel2, pievalue) {
-      // @ts-ignore
-      nv.addGraph(function () {
-          // @ts-ignore
-          const chart = nv.models.pieChart()
-              // @ts-ignore
-              .x(function (d) { return d.label; })
-              // @ts-ignore
-              .y(function (d) { return d.value; })
-              .showLabels(true) //Display pie labels
-              .labelThreshold(0.05) //Configure the minimum slice size for labels to show up
-              .labelType("percent") //Configure what type of data to show in the label. Can be "key", "value" or "percent"
-              .donut(true) //Turn on Donut mode.
-              .donutRatio(0.35); //Configure how big you want the donut hole size to be.
-          const svg = placeholder.select("svg");
-          svg.selectAll(".centerpielabel").remove();
-          const cx = parseInt(placeholder.style("width")) / 2;
-          const cy = parseInt(placeholder.style("height")) / 2 + 20;
-          svg.datum(data).transition().duration(350).call(chart);
-          svg.append("text")
-              .transition().duration(400)
-              .attr("x", cx)
-              .attr("y", cy - 10)
-              .attr("class", "centerpielabel")
-              .text(placelabel1);
-          svg.append("text")
-              .transition().duration(400)
-              .attr("x", cx)
-              .attr("y", cy + 4)
-              .attr("class", "centerpielabel")
-              .text(placelabel2);
-          const pietext = formatNumber(pievalue);
-          svg.append("text")
-              .transition().duration(400)
-              .attr("x", cx)
-              .attr("y", cy + 18)
-              .attr("class", "centerpielabel")
-              .text(pietext);
-          return chart;
-      });
   }
 
   /**

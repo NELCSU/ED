@@ -1,12 +1,14 @@
+import type { TConfig } from "../../typings/ED";
+
 /**
  * Creates user control
  * @param config
  */
-export function initUIThemes(config: any) {
+export function initUIThemes(config: TConfig) {
   const select = document.getElementById("Colors") as HTMLSelectElement;
   if (select) {
     select.title = "Select a color scheme for this page";
-    config.themes.forEach(function(theme: string, n: number) {
+    config.themes.forEach(function (theme: string, n: number) {
       const opt = document.createElement("option") as HTMLOptionElement;
       opt.value = "" + n;
       opt.text = theme;
