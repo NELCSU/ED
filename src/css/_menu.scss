@@ -1,0 +1,37 @@
+@use 'globals';
+
+select {
+  direction: rtl;
+  height: 1.5em;
+  width: 130px;
+}
+
+input:hover,
+select:hover,
+option:hover {
+  cursor: pointer;
+}
+
+.call-options {
+  @include globals.fx($dir: column);
+}
+
+.panel-right.ready {
+  transform: translateX(100%);
+}
+
+.menu-button {
+  @include globals.fx;
+  @include globals.fx-center;
+
+  font-weight: bold;
+  padding: 5px;
+}
+
+.panel-row {
+  @include globals.fx;
+
+  align-items: center;
+  justify-content: space-between;
+  min-height: 1.3em;
+}

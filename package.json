@@ -6,8 +6,8 @@
   "scripts": {
     "build": "npm-run-all --parallel compile-js compile-scss compile-css",
     "compile-js": "rollup -cw",
-    "compile-scss": "sass src/css:docs/css --watch",
-    "compile-css": "postcss docs/css/**/*.css -r -c postcss.config.js",
+    "compile-scss": "sass src/css:docs/css --no-source-map --watch",
+    "compile-css": "postcss docs/css/index.css --no-map -o docs/css/index.css -c postcss.config.js --watch",
     "eslint": "eslint -c .eslintrc.json --ext .ts --ext .js ./src",
     "https": "http-server ./docs -a localhost -p 5000 -o",
     "http": "http-server ./docs -a localhost -p 5000 -o --ssl --key private/key.pem --cert private/cert.pem",
@@ -62,7 +62,7 @@
     "rollup-plugin-typescript2": "^0.27.0",
     "sass": "^1.26.3",
     "stylelint": "^13.3.2",
-    "ts-jest": "^25.3.1",
+    "ts-jest": "^25.4.0",
     "typescript": "^3.8.3"
   }
 }

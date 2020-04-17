@@ -1,0 +1,8 @@
+@use 'globals';
+
+.data-quality {
+  @include globals.reset;
+
+  font-size: 15px;
+  text-align: left;
+}

@@ -1,0 +1,61 @@
+@use 'globals';
+
+.breakdown {
+  @include globals.transition($property: opacity);
+
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+  padding: 4px;
+  position: fixed;
+  width: 40%;
+  z-index: 2000;
+}
+
+.breakdown-message {
+  width: 90%;
+}
+
+.breakdown-message > table {
+  width: 100%;
+}
+
+.breakdown-close {
+  @include globals.fx;
+  @include globals.fx-center;
+
+  cursor: pointer;
+  font-size: 2em;
+  font-weight: bold;
+  height: 20px;
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  width: 20px;
+}
+
+.breakdown-close::after {
+  content: "\00d7";
+  display: inline-block;
+}
+
+.breakdown-charts {
+  @include globals.fx($dir: column, $wrap: wrap);
+  @include globals.maxsize;
+
+  font-size: 0.9em;
+  z-index: 100000;
+}
+
+.breakdown.left {
+  left: 5px;
+  position: fixed;
+  top: 12%;
+}
+
+.breakdown.right {
+  position: fixed;
+  right: 5px;
+  top: 12%;
+}

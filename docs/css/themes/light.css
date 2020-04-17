@@ -1,72 +1,70 @@
 body {
-  background: #ffffff;
-  color: #000000;
-  fill: #000000;
-}
-
-svg {
-  font-weight: normal;
+  background: #fff;
 }
 
 .panel-right {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 
 .menu-button {
-  background-color: #ff6600;
-  color: #ffffff;
+  background-color: #f60;
+  color: #fff;
 }
 
 .border {
-  border: 1px solid #cccccc;
+  border: 1px solid #ccc;
 }
 
 .border-left {
-  border-left: 1px solid #cccccc;
+  border-left: 1px solid #ccc;
 }
 
 rect.chart-legend {
-  fill: #FFFFFF;
-  stroke: #cccccc;
+  fill: #fff;
+  stroke: #ccc;
 }
 
 text.chart-legend {
-  fill: #ff6600;
+  fill: #f60;
 }
 
 .handle {
-  background: #ff6600;
-  color: #111111;
+  background: #f60;
+  color: #222;
+}
+
+.node-label {
+  fill: #222;
 }
 
 .nv-label text {
-  fill: #ff6600;
+  fill: #f60;
 }
 
 .nv-legend-text {
-  fill: #000000;
+  fill: #000;
 }
 
 .nv-pie path {
-  stroke: #222222;
+  stroke: #222;
 }
 
 .th-fg-color {
-  color: #ff6600;
+  color: #f60;
 }
 
 .breakdown {
-  background: rgba(255,255,255,0.9);
-  border-color: rgba(0,0,0,0.2);
+  background: #fff;
+  border-color: #222;
 }
 
 .breakdown-close {
-  background-color: #ff6600;
-  color: #ffffff;
+  background-color: #f60;
+  color: #fff;
 }
 
 select {
-  background: #eeeeee;
-  border-color: rgba(0,0,0,0.2);
-  color: #000000;
+  background: #ccc;
+  border-color: #222;
+  color: #000;
 }

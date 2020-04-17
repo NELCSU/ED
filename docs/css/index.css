@@ -1,3 +1,4 @@
+@charset "UTF-8";
 html,
 body {
   font-family: "Trebuchet MS", "Open Sans", "Segoe UI light", "Verdana", "Tahoma", "Helvetica", sans-serif;
@@ -5,19 +6,18 @@ body {
   margin: 0;
   overflow: hidden;
   padding: 0;
+  width: 100%;
+}
+
+svg {
+  font-weight: normal;
 }
 
 h1 {
   display: inline-block;
   font-size: 1.5em;
   font-weight: bold;
-  line-height: 31.1em;
-}
-
-select {
-  direction: rtl;
-  height: 1.5em;
-  width: 130px;
+  line-height: 30em;
 }
 
 a,
@@ -31,44 +31,6 @@ a:focus {
   text-decoration: underline;
 }
 
-input:hover,
-select:hover,
-option:hover {
-  cursor: pointer;
-}
-
-.call-options {
-  display: flex;
-  flex-flow: column;
-}
-
-.centerpielabel {
-  font-weight: bold;
-  text-anchor: middle;
-}
-
-.chart-legend {
-  cursor: move;
-  opacity: 1;
-}
-
-rect.chart-legend {
-  fill-opacity: 1;
-}
-
-text.chart-legend {
-  font-size: 0.8em;
-  font-weight: bold;
-  opacity: 1;
-}
-
-.data-quality {
-  font-size: 15px;
-  margin: 0px;
-  padding: 0px;
-  text-align: left;
-}
-
 .dev-mode {
   background-color: yellow;
   color: #000;
@@ -79,7 +41,7 @@ text.chart-legend {
   padding: 5px;
   position: fixed;
   text-align: center;
-  top: 0px;
+  top: 0;
   width: 20%;
   z-index: 1;
 }
@@ -88,6 +50,7 @@ text.chart-legend {
   align-items: flex-start;
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   justify-content: center;
 }
 
@@ -95,51 +58,62 @@ text.chart-legend {
   display: none;
 }
 
-.link {
-  stroke: #000;
-  stroke-opacity: .3;
-}
-
-.link:hover {
-  stroke-opacity: .7;
-}
-
-.link:hover,
-.nv-slice:hover {
-  cursor: pointer;
-}
-
 .loading {
   align-items: center;
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   height: 100%;
   justify-content: center;
-  left: 0px;
+  left: 0;
   position: fixed;
-  top: 0px;
+  text-align: center;
+  top: 0;
   width: 100%;
   z-index: 0;
 }
 
-.loading>div {
+.loading > div {
   font-size: 75px;
   font-weight: bold;
 }
 
-.node-label {
-  fill: #000000;
-  font-weight: bold;
-  text-anchor: middle;
+.panel-right {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  line-height: 26px;
+  min-width: 220px;
+  padding: 15px;
+  position: fixed;
+  right: 0;
+  top: 40px;
+  transition: all 500ms ease-in-out;
+  width: 25%;
+  z-index: 600000;
 }
 
-.node rect {
-  cursor: move;
-  fill-opacity: .9;
-  shape-rendering: crispEdges;
+#chart {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
 }
 
-.node text {
-  pointer-events: none;
+#content {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transition: opacity 500ms ease-in-out;
+  width: 100%;
 }
 
 .pagetitle {
@@ -151,123 +125,11 @@ text.chart-legend {
   text-align: center;
 }
 
-.panel-right {
-  display: flex;
-  flex-direction: column;
-  line-height: 26px;
-  min-width: 220px;
-  padding: 15px;
-  position: fixed;
-  right: 0px;
-  top: 40px;
-  transition: all 500ms;
-  width: 25%;
-  z-index: 600000;
-}
-
-.panel-right.ready {
-  transform: translateX(100%);
-}
-
-.menu-button {
-  align-items: center;
-  display: flex;
-  font-weight: bold;
-  justify-content: center;
-  padding: 5px;
-}
-
-.panel-row {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  min-height: 1.3em;
-}
-
-.breakdown {
-  border: 1px solid;
-  font-size: 12px;
-  font-weight: bold;
-  line-height: 1;
-  padding: 4px;
-  position: fixed;
-  transition: opacity 500ms;
-  width: 40%;
-  z-index: 2000;
-}
-
-.breakdown-message {
-  width: 90%;
-}
-
-.breakdown-message>table {
-  width: 100%;
-}
-
-.breakdown-close {
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  font-size: 2em;
-  font-weight: bold;
-  height: 20px;
-  justify-content: center;
-  position: absolute;
-  right: 5px;
-  top: 5px;
-  width: 20px;
-}
-
-.breakdown-close:after {
-  content: "\00d7";
-  display: inline-block;
-}
-
-.breakdown-charts {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  font-size: 0.9em;
-  height: 100%;
-  z-index: 100000;
-}
-
-.breakdown.left {
-  left: 5px;
-  position: fixed;
-  top: 12%;
-}
-
-.breakdown.right {
-  position: fixed;
-  right: 5px;
-  top: 12%;
-}
-
-#chart {
-  align-items: center;
-  display: flex;
-  height: 100%;
-  justify-content: center;
-  width: 100%;
-}
-
-#content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  left: 0px;
-  position: absolute;
-  top: 0px;
-  transition: opacity 500ms;
-  width: 100%;
-}
-
 #titlebar {
   align-items: center;
   display: flex;
   flex-direction: row;
-  flex-wrap: none;
+  flex-wrap: nowrap;
   height: 7%;
   justify-content: space-between;
   width: 100%;
@@ -277,6 +139,7 @@ text.chart-legend {
   align-items: center;
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   height: 100%;
   justify-content: flex-start;
 }
@@ -296,4 +159,167 @@ text.chart-legend {
 #lblDayStatus,
 #lblCallStatus {
   margin-left: 5px;
+}
+
+select {
+  direction: rtl;
+  height: 1.5em;
+  width: 130px;
+}
+
+input:hover,
+select:hover,
+option:hover {
+  cursor: pointer;
+}
+
+.call-options {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.panel-right.ready {
+  transform: translateX(100%);
+}
+
+.menu-button {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  font-weight: bold;
+  justify-content: center;
+  padding: 5px;
+  text-align: center;
+}
+
+.panel-row {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  min-height: 1.3em;
+}
+
+.chart-legend {
+  cursor: move;
+  opacity: 1;
+}
+
+rect.chart-legend {
+  fill-opacity: 1;
+}
+
+text.chart-legend {
+  font-size: 0.8em;
+  font-weight: bold;
+  opacity: 1;
+}
+
+.link {
+  stroke: #000;
+  stroke-opacity: 0.3;
+}
+
+.link:hover {
+  stroke-opacity: 0.7;
+}
+
+.link:hover,
+.nv-slice:hover {
+  cursor: pointer;
+}
+
+.node-label {
+  fill: #000;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+.node rect {
+  cursor: move;
+  fill-opacity: 0.9;
+  shape-rendering: crispEdges;
+}
+
+.node text {
+  pointer-events: none;
+}
+
+.data-quality {
+  font-size: 15px;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.centerpielabel {
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+.breakdown {
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+  padding: 4px;
+  position: fixed;
+  transition: opacity 500ms ease-in-out;
+  width: 40%;
+  z-index: 2000;
+}
+
+.breakdown-message {
+  width: 90%;
+}
+
+.breakdown-message > table {
+  width: 100%;
+}
+
+.breakdown-close {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  font-size: 2em;
+  font-weight: bold;
+  height: 20px;
+  justify-content: center;
+  position: absolute;
+  right: 5px;
+  text-align: center;
+  top: 5px;
+  width: 20px;
+}
+
+.breakdown-close::after {
+  content: "×";
+  display: inline-block;
+}
+
+.breakdown-charts {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  height: 100%;
+  width: 100%;
+  z-index: 100000;
+}
+
+.breakdown.left {
+  left: 5px;
+  position: fixed;
+  top: 12%;
+}
+
+.breakdown.right {
+  position: fixed;
+  right: 5px;
+  top: 12%;
 }
