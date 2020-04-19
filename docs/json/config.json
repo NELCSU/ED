@@ -103,6 +103,7 @@
       "src": "./images/circle.svg", 
       "title": "Green status"
     },
+    "message": "",
     "red": {
       "src": "./images/triangle.svg", 
       "title": "Red status"

@@ -872,7 +872,6 @@ var App = (function (exports) {
           setTimeout(() => clear(), 500);
       }
       /**
-       * @param d
        * @param config
        */
       function displayBreakdown(config) {
@@ -897,9 +896,22 @@ var App = (function (exports) {
           container === null || container === void 0 ? void 0 : container.classList.remove("ready");
           window.dispatchEvent(new CustomEvent("hide-menu"));
       }
-      window.addEventListener("dq-breakdown", () => true);
+      /**
+       * @param config
+       */
+      function displayStatus(config) {
+          clear();
+          if (message) {
+              message.innerHTML = config.status.message;
+          }
+          chart2.style.display = "none";
+          chart1.style.display = "none";
+          container === null || container === void 0 ? void 0 : container.classList.remove("ready");
+          window.dispatchEvent(new CustomEvent("hide-menu"));
+      }
       window.addEventListener("hide-breakdown", () => hide(config));
-      window.addEventListener("chart-breakdown", () => displayBreakdown(config));
+      window.addEventListener("show-status", () => displayStatus(config));
+      window.addEventListener("show-breakdown", () => displayBreakdown(config));
   }
 
   /**
@@ -912,13 +924,7 @@ var App = (function (exports) {
       container.addEventListener("click", function (e) {
           e.stopImmediatePropagation();
           window.dispatchEvent(new CustomEvent("hide-menu"));
-          const tipData = {
-              chart: false,
-              // @ts-ignore
-              mouseX: 0,
-              text: config.db.dq.text
-          };
-          window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
+          window.dispatchEvent(new CustomEvent("show-status"));
       });
       window.addEventListener("data-quality", () => {
           const i = config.db.dq.interpolated[config.querystring.day];
@@ -927,51 +933,51 @@ var App = (function (exports) {
           let state = i.length + es.length + ms.length;
           status.src = state < 10 ? config.status.green.src : state < 15 ? config.status.amber.src : config.status.red.src;
           container.title = state < 10 ? config.status.green.title : state < 15 ? config.status.amber.title : config.status.red.title;
-          let qt = `<p class="th-fg-color">Data availability for <b>${getScreenDate(config.querystring.day)}</b></p>`;
-          qt += `<p><b class="th-fg-color">`;
+          let qt = `<div class="data-quality">Data availability for <b>${getScreenDate(config.querystring.day)}</b>: `;
           if (state === 0) {
-              qt += `Complete</b> All data is available in the database.</p>`;
+              qt += `Complete.<br>All data is available in the database.`;
           }
           else if (state < 5) {
-              qt += `Very High</b></p>`;
+              qt += `Very High`;
           }
           else if (state < 10) {
-              qt += `High</b></p>`;
+              qt += `High`;
           }
           else if (state < 15) {
-              qt += `Medium</b></p>`;
+              qt += `Medium`;
           }
           else if (state < 20) {
-              qt += `Fair</b></p>`;
+              qt += `Fair`;
           }
           else {
-              qt += `Low</b></p>`;
+              qt += `Low`;
           }
           if (ms.length > 0) {
-              qt += `<p><b class="th-fg-color">Missing data:</b> `;
+              qt += `<br><br>Missing data: `;
               qt += JSON.stringify(ms)
                   .replace(/\"/g, "")
                   .replace(/\,/g, ", ")
                   .replace(/\[/g, "")
-                  .replace(/\]/g, "") + ".</p>";
+                  .replace(/\]/g, "") + ".";
           }
           if (es.length > 0) {
-              qt += `<p><b class="th-fg-color">Estimated data:</b> `;
+              qt += `<br>Estimated data: `;
               qt += JSON.stringify(es)
                   .replace(/\"/g, "")
                   .replace(/\,/g, ", ")
                   .replace(/\[/g, "")
-                  .replace(/\]/g, "") + ".</p>";
+                  .replace(/\]/g, "") + ".";
           }
           if (i.length > 0) {
-              qt += `<p><b class="th-fg-color">Interpolated data:</b><br>`;
+              qt += `<br>Interpolated data: `;
               qt += JSON.stringify(i)
                   .replace(/\"/g, "")
                   .replace(/\,/g, ", ")
                   .replace(/\[/g, "")
-                  .replace(/\]/g, "") + ".</p>";
+                  .replace(/\]/g, "") + ".";
           }
-          config.db.dq.text = qt;
+          qt += `</div>`;
+          config.status.message = qt;
       });
   }
 
@@ -1683,7 +1689,7 @@ var App = (function (exports) {
           config.breakdown.message = text;
           config.breakdown.chart1 = d.supply;
           config.breakdown.chart2 = [];
-          window.dispatchEvent(new CustomEvent("chart-breakdown"));
+          window.dispatchEvent(new CustomEvent("show-breakdown"));
       });
       const nodeCollection = svg.append("g")
           .selectAll(".node")
@@ -1737,7 +1743,7 @@ var App = (function (exports) {
               config.breakdown.message = text;
               config.breakdown.chart1 = nodesource;
               config.breakdown.chart2 = nodetarget;
-              window.dispatchEvent(new CustomEvent("chart-breakdown"));
+              window.dispatchEvent(new CustomEvent("show-breakdown"));
           }
       }));
       nodeCollection.append("rect")

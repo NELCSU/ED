@@ -250,8 +250,6 @@ text.chart-legend {
 
 .data-quality {
   font-size: 15px;
-  margin: 0;
-  padding: 0;
   text-align: left;
 }
 
@@ -325,6 +323,7 @@ text.chart-legend {
   flex-wrap: nowrap;
   height: 100%;
   justify-content: center;
+  margin-left: 10px;
   max-width: 40%;
   text-align: center;
 }

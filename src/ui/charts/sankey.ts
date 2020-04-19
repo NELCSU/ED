@@ -67,6 +67,7 @@ export function loadSankeyChart(config: TConfig) {
       if (config.chart.highlighted) {
         config.chart.highlighted.style('opacity', config.filters.opacity.low);
       }
+
       // @ts-ignore
       config.chart.highlighted = d3.select(this);
       config.chart.highlighted.style('opacity', config.filters.opacity.high);
@@ -78,7 +79,7 @@ export function loadSankeyChart(config: TConfig) {
       config.breakdown.chart1 = d.supply;
       config.breakdown.chart2 = [];
 
-      window.dispatchEvent(new CustomEvent("chart-breakdown"));
+      window.dispatchEvent(new CustomEvent("show-breakdown"));
     });
 
   const nodeCollection = svg.append("g")
@@ -140,7 +141,7 @@ export function loadSankeyChart(config: TConfig) {
             config.breakdown.chart1 = nodesource;
             config.breakdown.chart2 = nodetarget;
 
-            window.dispatchEvent(new CustomEvent("chart-breakdown"));
+            window.dispatchEvent(new CustomEvent("show-breakdown"));
           }
         })
       );

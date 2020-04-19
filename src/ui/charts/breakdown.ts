@@ -46,7 +46,6 @@ export function initBreakdown(config: TConfig) {
 	}
 
 	/**
-	 * @param d 
 	 * @param config
 	 */
 	function displayBreakdown(config: TConfig) {
@@ -78,7 +77,24 @@ export function initBreakdown(config: TConfig) {
 		window.dispatchEvent(new CustomEvent("hide-menu"));
 	}
 
-  window.addEventListener("dq-breakdown", () => true);
-  window.addEventListener("hide-breakdown", () => hide(config));
-  window.addEventListener("chart-breakdown", () => displayBreakdown(config));
+	/**
+	 * @param config
+	 */
+	function displayStatus(config: TConfig) {
+		clear();
+		
+		if (message) {
+			message.innerHTML = config.status.message;
+		}
+
+		chart2.style.display = "none";
+		chart1.style.display = "none";
+
+		container?.classList.remove("ready");
+		window.dispatchEvent(new CustomEvent("hide-menu"));
+	}
+
+	window.addEventListener("hide-breakdown", () => hide(config));
+	window.addEventListener("show-status", () => displayStatus(config));
+  window.addEventListener("show-breakdown", () => displayBreakdown(config));
 }
