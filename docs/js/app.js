@@ -222,7 +222,7 @@ var App = (function (exports) {
       const density = document.getElementById("Density");
       config.filters.density = 5;
       density.addEventListener("change", (e) => {
-          config.filters.density = e.target.value;
+          config.filters.density = +e.target.value;
           window.dispatchEvent(new CustomEvent("filter-action"));
       });
   }
@@ -233,7 +233,7 @@ var App = (function (exports) {
   function initOpacitySlider(config) {
       const opacity = document.getElementById("Opacity");
       opacity.addEventListener("change", (e) => {
-          config.filters.opacity.low = e.target.value;
+          config.filters.opacity.low = +e.target.value;
           window.dispatchEvent(new CustomEvent("filter-action"));
       });
   }
@@ -244,6 +244,8 @@ var App = (function (exports) {
   function initSankeyLegend(config) {
       const leg = document.getElementById("Legend");
       leg.addEventListener("input", () => leg.checked ? show() : hide());
+      config.legend.move.x = config.chart.width;
+      config.legend.move.y = 10;
       window.addEventListener("show-legend", () => {
           if (!leg.checked) {
               return;
@@ -279,6 +281,7 @@ var App = (function (exports) {
               d.y += d3.event.dy;
               // @ts-ignore
               d3.select(this)
+                  // @ts-ignore
                   .attr("transform", (d) => `translate(${[d.x, d.y]})`);
           })
               .on("dragend", (d) => {
@@ -756,7 +759,7 @@ var App = (function (exports) {
    * @param config
    */
   function initMenu(config) {
-      const menu = document.querySelector(".panel-right");
+      const menu = document.querySelector(".menu");
       const menuButton = document.querySelector(".menu-button");
       if (menu && menuButton) {
           menuButton.addEventListener("click", e => {
@@ -786,275 +789,117 @@ var App = (function (exports) {
       });
   }
 
-  /**
-   * @param data
-   * @param placeholder
-   * @param placelabel1
-   * @param placelabel2
-   * @param pievalue
-   */
-  function updatePie(data, placeholder, placelabel1, placelabel2, pievalue) {
+  function drawColumnChart(node, data) {
       // @ts-ignore
-      nv.addGraph(function () {
-          // @ts-ignore
-          const chart = nv.models.pieChart()
-              // @ts-ignore
-              .x(function (d) { return d.label; })
-              // @ts-ignore
-              .y(function (d) { return d.value; })
-              .showLabels(true) //Display pie labels
-              .labelThreshold(0.05) //Configure the minimum slice size for labels to show up
-              .labelType("percent") //Configure what type of data to show in the label. Can be "key", "value" or "percent"
-              .donut(true) //Turn on Donut mode.
-              .donutRatio(0.35); //Configure how big you want the donut hole size to be.
-          const svg = placeholder.select("svg");
-          svg.selectAll(".centerpielabel").remove();
-          const cx = parseInt(placeholder.style("width")) / 2;
-          const cy = parseInt(placeholder.style("height")) / 2 + 20;
-          svg.datum(data).transition().duration(350).call(chart);
-          svg.append("text")
-              .transition().duration(400)
-              .attr("x", cx)
-              .attr("y", cy - 10)
-              .attr("class", "centerpielabel")
-              .text(placelabel1);
-          svg.append("text")
-              .transition().duration(400)
-              .attr("x", cx)
-              .attr("y", cy + 4)
-              .attr("class", "centerpielabel")
-              .text(placelabel2);
-          const pietext = formatNumber(pievalue);
-          svg.append("text")
-              .transition().duration(400)
-              .attr("x", cx)
-              .attr("y", cy + 18)
-              .attr("class", "centerpielabel")
-              .text(pietext);
-          return chart;
-      });
+      const container = d3.select(node);
+      const margin = { top: 20, right: 10, bottom: 35, left: 20 };
+      const h = node.clientHeight;
+      let w = node.clientWidth;
+      const width = w - margin.left - margin.right;
+      const height = h - margin.top - margin.bottom;
+      // @ts-ignore
+      const x = d3.scale.ordinal().rangeRoundBands([0, width], 0.1);
+      // @ts-ignore
+      const y = d3.scale.linear().range([height, 0]);
+      // @ts-ignore
+      const xAxis = d3.svg.axis()
+          .scale(x)
+          .orient("bottom")
+          .ticks(6);
+      const svg = container.append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      x.domain(data.map((d) => d.label));
+      // @ts-ignore
+      y.domain([0, d3.max(data, (d) => d.value)]);
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+      svg.selectAll(".bar")
+          .data(data).enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("fill", (d) => d.color ? d.color : "steelblue")
+          .attr("x", (d) => x(d.label))
+          .attr("width", x.rangeBand())
+          .attr("y", (d) => y(d.value))
+          .attr("height", (d) => height - y(d.value))
+          .append("title")
+          .text((d) => `${d.label}: ${d.value} % calls`);
   }
 
   /**
    * @param config
    */
   function initBreakdown(config) {
-      const body = document.querySelector("body");
-      const container = document.createElement("div");
-      container.classList.add("breakdown", "left");
-      container.style.opacity = "0";
-      container.addEventListener("click", e => e.stopImmediatePropagation());
-      body.appendChild(container);
+      const container = document.querySelector(".breakdown");
+      container === null || container === void 0 ? void 0 : container.addEventListener("click", e => e.stopImmediatePropagation());
+      const message = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-message");
+      const chart1 = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-chart1");
+      const chart2 = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-chart2");
       const close = document.createElement("div");
       close.classList.add("breakdown-close");
       close.addEventListener("click", (e) => {
           e.stopImmediatePropagation();
           hide(config);
       });
-      container.appendChild(close);
-      const text = document.createElement("div");
-      text.classList.add("breakdown-message");
-      container.appendChild(text);
-      const chartContainer = document.createElement("div");
-      chartContainer.classList.add("breakdown-charts");
-      chartContainer.style.height = Math.min(config.chart.height - 100, config.chart.width) + "px";
-      container.appendChild(chartContainer);
-      const chart1 = document.createElement("div");
-      chart1.classList.add("breakdown-primary");
-      chart1.style.display = "none";
-      chartContainer.appendChild(chart1);
-      const svg1 = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg1.style.height = "200px";
-      svg1.style.width = "200px";
-      chart1.appendChild(svg1);
-      const chart2 = document.createElement("div");
-      chart2.classList.add("breakdown-secondary");
-      chart2.style.display = "none";
-      chartContainer.appendChild(chart2);
-      const svg2 = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg2.style.height = "200px";
-      svg2.style.width = "200px";
-      chart2.appendChild(svg2);
+      container === null || container === void 0 ? void 0 : container.appendChild(close);
+      function clear() {
+          if (message) {
+              message.innerHTML = "";
+          }
+          if (chart1) {
+              chart1.innerHTML = "";
+              chart1.style.display = "";
+          }
+          if (chart2) {
+              chart2.innerHTML = "";
+              chart1.style.display = "";
+          }
+      }
       /**
        * @param config
        */
       function hide(config) {
-          container.style.opacity = "0";
-          container.style.zIndex = "-10";
+          container === null || container === void 0 ? void 0 : container.classList.add("ready");
           if (config.chart.highlighted) {
               config.chart.highlighted.style('opacity', config.filters.opacity.low);
               config.chart.highlighted = undefined;
           }
-          svg1.innerHTML = "";
-          svg2.innerHTML = "";
+          setTimeout(() => clear(), 500);
       }
       /**
        * @param d
+       * @param config
        */
-      function show(d) {
-          if (d.x || d.y) {
-              container.classList.remove("right");
-              container.classList.remove("left");
-              container.style.left = d.x + "px";
-              container.style.top = d.y + "px";
+      function displayBreakdown(config) {
+          clear();
+          if (message) {
+              message.innerHTML = config.breakdown.message;
           }
-          else if (d.mouseX !== undefined && d.mouseX > window.innerWidth * 0.5) {
-              container.classList.remove("right");
-              container.classList.add("left");
+          if (config.breakdown.chart2.length === 0) {
+              chart2.style.display = "none";
           }
-          else {
-              container.classList.add("right");
-              container.classList.remove("left");
+          if (config.breakdown.chart1.length === 0) {
+              chart1.style.display = "none";
           }
-          chartContainer.style.display = d.chart ? "" : "none";
-          container.style.opacity = "1";
-          container.style.zIndex = "10";
-          text.innerHTML = `<table style="text-align:center;">${d.text}</table>`;
+          if (chart2 && config.breakdown.chart2.length > 0) {
+              chart2.innerHTML = " ";
+              drawColumnChart(chart2, config.breakdown.chart2);
+          }
+          if (chart1 && config.breakdown.chart1.length > 0) {
+              chart1.innerHTML = " ";
+              drawColumnChart(chart1, config.breakdown.chart1);
+          }
+          container === null || container === void 0 ? void 0 : container.classList.remove("ready");
+          window.dispatchEvent(new CustomEvent("hide-menu"));
       }
-      window.addEventListener("show-breakdown", (e) => show(e.detail));
+      window.addEventListener("dq-breakdown", () => true);
       window.addEventListener("hide-breakdown", () => hide(config));
-      window.addEventListener("link-breakdown", (e) => displayLinkBreakdown(e.detail.element, e.detail.data, config));
-      window.addEventListener("node-breakdown", (e) => displayNodeBreakdown(e.detail.data, config));
-  }
-  /**
-   * @param a
-   * @param d
-   * @param config
-   */
-  function displayLinkBreakdown(a, d, config) {
-      if (config.chart.highlighted) {
-          config.chart.highlighted.style('opacity', config.filters.opacity.low);
-      }
-      // @ts-ignore
-      d3.select(".breakdown-secondary")
-          .style("display", "none");
-      // @ts-ignore
-      config.chart.highlighted = d3.select(a);
-      config.chart.highlighted.style('opacity', config.filters.opacity.high);
-      let tiptext = "<tr><td style='font-weight:bold;'>" + d.source.name;
-      tiptext += "</td><td style='font-size:24px;'>→</td><td style='font-weight:bold;'>";
-      tiptext += d.target.name + "</td></tr><tr><td>Calls</td><td>";
-      tiptext += formatNumber(d.value) + "</td><td> Calls</td></tr>";
-      // @ts-ignore
-      const container = d3.select(".breakdown-charts");
-      let h = parseInt(container.style("height"));
-      let w = parseInt(container.style("width"));
-      h = w = Math.max(h, w);
-      const containerPrimary = container.select(".breakdown-primary");
-      const svgPrimary = containerPrimary.select("svg");
-      const containerSecondary = container.select(".breakdown-secondary");
-      const svgSecondary = containerSecondary.select("svg");
-      svgPrimary.style("height", h + "px").style("width", w + "px");
-      svgSecondary.style("height", h + "px").style("width", w + "px");
-      // @ts-ignore
-      setTimeout(function () {
-          containerPrimary.style("display", null);
-          svgPrimary.style("display", null);
-          containerSecondary.style("display", "none");
-          svgSecondary.style("display", "none");
-          // @ts-ignore
-          updatePie(d.supply, containerPrimary, d.source.name, d.target.name, d.value);
-      }, 500);
-      const tipData = {
-          chart: true,
-          // @ts-ignore
-          mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
-          text: tiptext
-      };
-      window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
-      window.dispatchEvent(new CustomEvent("hide-menu"));
-  }
-  /**
-   * @param d
-   * @param config
-   */
-  function displayNodeBreakdown(d, config) {
-      var _a;
-      if (config.chart.highlighted) {
-          config.chart.highlighted.style('opacity', config.filters.opacity.low);
-      }
-      config.chart.highlighted = config.chart.svg.selectAll(".link")
-          .filter((l) => l.source === d || l.target === d);
-      (_a = config.chart.highlighted) === null || _a === void 0 ? void 0 : _a.transition().style('opacity', config.filters.opacity.high);
-      const nodesource = [], nodetarget = [];
-      config.chart.svg.selectAll(".link")
-          .filter((l) => l.target === d)[0]
-          .forEach((l) => nodesource.push({ label: l.__data__.source.name, value: l.__data__.value }));
-      config.chart.svg.selectAll(".link")
-          .filter((l) => l.source === d)[0]
-          .forEach((l) => nodetarget.push({ label: l.__data__.target.name, value: l.__data__.value }));
-      if (nodesource.length === 0) {
-          nodesource.push({ label: "None", value: 0 });
-      }
-      if (nodetarget.length === 0) {
-          nodetarget.push({ label: "None", value: 0 });
-      }
-      let tiptext = "<tr><td colspan=2 style='font-weight:bold;'>" + d.name;
-      tiptext += "</td></tr><tr><td>Incoming</td><td>";
-      // @ts-ignore
-      tiptext += formatNumber(d3.sum(nodesource, function (d) { return d.value; }));
-      tiptext += " Calls</td></tr><tr><td>Outgoing</td><td>";
-      // @ts-ignore
-      tiptext += formatNumber(d3.sum(nodetarget, function (d) { return d.value; })) + " Calls</td></tr>";
-      // @ts-ignore
-      let outin = formatNumber(d3.sum(nodetarget, function (d) { return d.value; }) / d3.sum(nodesource, function (d) { return d.value; }));
-      // @ts-ignore
-      if ((d3.sum(nodesource, function (d) { return d.value; }) === 0) ||
-          // @ts-ignore
-          (d3.sum(nodetarget, function (d) { return d.value; }) === 0)) {
-          outin = "--";
-      }
-      tiptext += "<tr><td>OUT / IN</td><td>" + outin + "</td></tr>";
-      // @ts-ignore
-      const container = d3.select(".breakdown-charts");
-      let h = parseInt(container.style("height"));
-      let w = parseInt(container.style("width"));
-      h = w = Math.max(h, w);
-      const containerPrimary = container.select(".breakdown-primary");
-      const svgPrimary = containerPrimary.select("svg");
-      const containerSecondary = container.select(".breakdown-secondary");
-      const svgSecondary = containerSecondary.select("svg");
-      if (nodesource[0].label !== "None" && nodetarget[0].label !== "None") {
-          svgPrimary.style("height", (h / 2) + "px").style("width", w + "px");
-          svgSecondary.style("height", (h / 2) + "px").style("width", w + "px");
-      }
-      else {
-          svgPrimary.style("height", h + "px").style("width", w + "px");
-          svgSecondary.style("height", h + "px").style("width", w + "px");
-      }
-      // @ts-ignore
-      setTimeout(function () {
-          // @ts-ignore
-          if (nodesource[0].label !== "None") {
-              containerPrimary.style("display", null);
-              svgPrimary.style("display", null);
-              // @ts-ignore
-              updatePie(nodesource, containerPrimary, "Incoming", d.name, d3.sum(nodesource, function (d) { return d.value; }));
-          }
-          else {
-              containerPrimary.style("display", "none");
-              svgPrimary.style("display", "none");
-          }
-          // @ts-ignore
-          if (nodetarget[0].label !== "None") {
-              containerSecondary.style("display", null);
-              svgSecondary.style("display", null);
-              // @ts-ignore
-              updatePie(nodetarget, containerSecondary, d.name, "Outgoing", d3.sum(nodetarget, function (d) { return d.value; }));
-          }
-          else {
-              containerSecondary.style("display", "none");
-              svgSecondary.style("display", "none");
-          }
-      }, 500);
-      const tipData = {
-          chart: true,
-          // @ts-ignore
-          mouseX: d3.event.sourceEvent ? d3.event.sourceEvent.pageX : d3.event.pageX,
-          text: tiptext
-      };
-      window.dispatchEvent(new CustomEvent("show-breakdown", { detail: tipData }));
-      window.dispatchEvent(new CustomEvent("hide-menu"));
+      window.addEventListener("chart-breakdown", () => displayBreakdown(config));
   }
 
   /**
@@ -1398,12 +1243,16 @@ var App = (function (exports) {
                       let component = [], currentNode;
                       do {
                           currentNode = nodeStack.pop();
-                          currentNode.onStack = false;
-                          component.push(currentNode);
+                          if (currentNode) {
+                              currentNode.onStack = false;
+                              component.push(currentNode);
+                          }
                       } while (currentNode !== node);
                       components.push({
+                          index: 0,
                           root: node,
-                          scc: component
+                          scc: component,
+                          x: 0
                       });
                   }
               }
@@ -1436,9 +1285,9 @@ var App = (function (exports) {
               .map(d => d.values);
           let max = -1, nextMax = -1;
           componentsByBreadth.forEach((c) => {
-              c.forEach(function (component) {
+              c.forEach((component) => {
                   component.x = max + 1;
-                  component.scc.forEach(function (node) {
+                  component.scc.forEach((node) => {
                       if (node.layer) {
                           node.x = node.layer;
                       }
@@ -1457,18 +1306,21 @@ var App = (function (exports) {
               .forEach((node) => node.x = max);
           scaleNodeBreadths((size[0] - nodeWidth) / Math.max(max, 1));
           function layerComponents() {
-              let remainingComponents = components, nextComponents, visitedIndex, x = 0;
+              let remainingComponents = components;
+              let nextComponents;
+              let visitedIndex = new Set();
+              let x = 0;
               while (remainingComponents.length) {
                   nextComponents = [];
-                  visitedIndex = {};
-                  remainingComponents.forEach(function (component) {
+                  visitedIndex.clear();
+                  remainingComponents.forEach((component) => {
                       component.x = x;
-                      component.scc.forEach(function (n) {
-                          n.sourceLinks.forEach(function (l) {
-                              if (!visitedIndex.hasOwnProperty(l.target.component) &&
+                      component.scc.forEach((n) => {
+                          n.sourceLinks.forEach((l) => {
+                              if (!visitedIndex.has(l.target.component) &&
                                   l.target.component !== component.index) {
                                   nextComponents.push(components[l.target.component]);
-                                  visitedIndex[l.target.component] = true;
+                                  visitedIndex.add(l.target.component);
                               }
                           });
                       });
@@ -1482,12 +1334,14 @@ var App = (function (exports) {
               while (currentCount > 0) {
                   let currentNode = queue.shift();
                   currentCount--;
-                  if (!currentNode.hasOwnProperty('x')) {
-                      currentNode.x = x;
-                      currentNode.dx = nodeWidth;
-                      let targets = extractTargets(currentNode);
-                      queue = queue.concat(targets);
-                      nextCount += targets.length;
+                  if (currentNode) {
+                      if (!currentNode.hasOwnProperty('x')) {
+                          currentNode.x = x;
+                          currentNode.dx = nodeWidth;
+                          let targets = extractTargets(currentNode);
+                          queue = queue.concat(targets);
+                          nextCount += targets.length;
+                      }
                   }
                   if (currentCount === 0) { // level change
                       x++;
@@ -1640,7 +1494,7 @@ var App = (function (exports) {
               });
           }
           function relaxLeftToRight(alpha) {
-              nodesByBreadth.forEach(function (nodes, breadth) {
+              nodesByBreadth.forEach(function (nodes) {
                   nodes.forEach(function (node) {
                       if (node.targetLinks.length) {
                           // @ts-ignore
@@ -1818,7 +1672,18 @@ var App = (function (exports) {
           .on("click", function (d) {
           // @ts-ignore
           d3.event.stopPropagation();
-          window.dispatchEvent(new CustomEvent("link-breakdown", { detail: { element: this, data: d } }));
+          if (config.chart.highlighted) {
+              config.chart.highlighted.style('opacity', config.filters.opacity.low);
+          }
+          // @ts-ignore
+          config.chart.highlighted = d3.select(this);
+          config.chart.highlighted.style('opacity', config.filters.opacity.high);
+          let text = `<p>${d.source.name} → ${d.target.name} calls</p>`;
+          text += `<p>Outgoing: ${formatNumber(d.value)} calls</p>`;
+          config.breakdown.message = text;
+          config.breakdown.chart1 = d.supply;
+          config.breakdown.chart2 = [];
+          window.dispatchEvent(new CustomEvent("chart-breakdown"));
       });
       const nodeCollection = svg.append("g")
           .selectAll(".node")
@@ -1838,9 +1703,41 @@ var App = (function (exports) {
       })
           .on("drag", dragged)
           .on("dragend", function (d) {
+          var _a;
           // @ts-ignore
           if (d.initialPosition === d3.select(this).attr("transform")) {
-              window.dispatchEvent(new CustomEvent("node-breakdown", { detail: { element: this, data: d } }));
+              if (config.chart.highlighted) {
+                  config.chart.highlighted.style('opacity', config.filters.opacity.low);
+              }
+              config.chart.highlighted = config.chart.svg.selectAll(".link")
+                  .filter((l) => l.source === d || l.target === d);
+              (_a = config.chart.highlighted) === null || _a === void 0 ? void 0 : _a.transition().style('opacity', config.filters.opacity.high);
+              const nodesource = [], nodetarget = [];
+              config.chart.svg.selectAll(".link")
+                  .filter((l) => l.target === d)[0]
+                  .forEach((l) => nodesource.push({
+                  color: "steelblue",
+                  label: l.__data__.source.name,
+                  value: l.__data__.value
+              }));
+              config.chart.svg.selectAll(".link")
+                  .filter((l) => l.source === d)[0]
+                  .forEach((l) => nodetarget.push({
+                  color: "steelblue",
+                  label: l.__data__.target.name,
+                  value: l.__data__.value
+              }));
+              // @ts-ignore
+              let src = d3.sum(nodesource, d => d.value);
+              // @ts-ignore
+              let tgt = d3.sum(nodetarget, d => d.value);
+              let text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
+              text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
+              text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+              config.breakdown.message = text;
+              config.breakdown.chart1 = nodesource;
+              config.breakdown.chart2 = nodetarget;
+              window.dispatchEvent(new CustomEvent("chart-breakdown"));
           }
       }));
       nodeCollection.append("rect")
@@ -2043,12 +1940,12 @@ var App = (function (exports) {
     return map;
   }
 
-  function Set() {}
+  function Set$1() {}
 
   var proto = map$1.prototype;
 
-  Set.prototype = set.prototype = {
-    constructor: Set,
+  Set$1.prototype = set.prototype = {
+    constructor: Set$1,
     has: proto.has,
     add: function(value) {
       value += "";
@@ -2064,10 +1961,10 @@ var App = (function (exports) {
   };
 
   function set(object, f) {
-    var set = new Set;
+    var set = new Set$1;
 
     // Copy constructor.
-    if (object instanceof Set) object.each(function(value) { set.add(value); });
+    if (object instanceof Set$1) object.each(function(value) { set.add(value); });
 
     // Otherwise, assume it’s an array.
     else if (object) {

@@ -8,6 +8,9 @@ export function initSankeyLegend(config: TConfig) {
 	const leg = document.getElementById("Legend") as HTMLInputElement;
 	leg.addEventListener("input", () => leg.checked ? show() : hide());
 
+	config.legend.move.x = config.chart.width;
+	config.legend.move.y = 10;
+
 	window.addEventListener("show-legend", () => {
 		if (!leg.checked) { return; }
 		show();
@@ -45,7 +48,8 @@ export function initSankeyLegend(config: TConfig) {
 				d.y += d3.event.dy;
 				// @ts-ignore
 				d3.select(this)
-					.attr("transform", (d: any) => `translate(${[d.x, d.y]})`);
+				// @ts-ignore
+					.attr("transform", (d: TPoint) => `translate(${[d.x, d.y]})`);
 			})
 			.on("dragend", (d: TPoint) => {
 				config.legend.move.x = d.x;

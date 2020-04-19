@@ -1,6 +1,6 @@
 import { sankeyModel } from "./sankey-model";
 import { formatNumber } from "../../utils/format";
-import type { D3Selection, TConfig, TNode, TLink } from "../../typings/ED";
+import type { D3Selection, TBreakdown, TConfig, TNode, TLink } from "../../typings/ED";
 
 /**
  * @param config 
@@ -63,7 +63,22 @@ export function loadSankeyChart(config: TConfig) {
     .on("click", function (this: Element, d: TLink) {
       // @ts-ignore
       d3.event.stopPropagation();
-      window.dispatchEvent(new CustomEvent("link-breakdown", { detail: { element: this, data: d } }));
+
+      if (config.chart.highlighted) {
+        config.chart.highlighted.style('opacity', config.filters.opacity.low);
+      }
+      // @ts-ignore
+      config.chart.highlighted = d3.select(this);
+      config.chart.highlighted.style('opacity', config.filters.opacity.high);
+
+      let text = `<p>${d.source.name} → ${d.target.name} calls</p>`;
+      text += `<p>Outgoing: ${formatNumber(d.value)} calls</p>`;
+  
+      config.breakdown.message = text;
+      config.breakdown.chart1 = d.supply;
+      config.breakdown.chart2 = [];
+
+      window.dispatchEvent(new CustomEvent("chart-breakdown"));
     });
 
   const nodeCollection = svg.append("g")
@@ -85,7 +100,47 @@ export function loadSankeyChart(config: TConfig) {
         .on("dragend", function (this: Element, d: TNode) {
           // @ts-ignore
           if (d.initialPosition === d3.select(this).attr("transform")) {
-            window.dispatchEvent(new CustomEvent("node-breakdown", { detail: { element: this, data: d } }));
+            if (config.chart.highlighted) {
+              config.chart.highlighted.style('opacity', config.filters.opacity.low);
+            }
+            config.chart.highlighted = config.chart.svg.selectAll(".link")
+              .filter((l: TLink) => l.source === d || l.target === d);
+            
+            config.chart.highlighted?.transition()
+              .style('opacity', config.filters.opacity.high);
+              
+            const nodesource: TBreakdown[] = [], nodetarget: TBreakdown[] = [];
+          
+            config.chart.svg.selectAll(".link")
+              .filter((l: TLink) => l.target === d)[0]
+                .forEach((l: TLink) => nodesource.push({
+                  color: "steelblue",
+                  label: l.__data__.source.name, 
+                  value: l.__data__.value
+                }));
+          
+            config.chart.svg.selectAll(".link")
+              .filter((l: TLink) => l.source === d)[0]
+                .forEach((l: TLink) => nodetarget.push({
+                  color: "steelblue",
+                  label: l.__data__.target.name,
+                  value: l.__data__.value
+                }));
+          
+            // @ts-ignore
+            let src = d3.sum(nodesource, d => d.value);
+            // @ts-ignore
+            let tgt = d3.sum(nodetarget, d => d.value);
+          
+            let text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
+            text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
+            text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+
+            config.breakdown.message = text;
+            config.breakdown.chart1 = nodesource;
+            config.breakdown.chart2 = nodetarget;
+
+            window.dispatchEvent(new CustomEvent("chart-breakdown"));
           }
         })
       );

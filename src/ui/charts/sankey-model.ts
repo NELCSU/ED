@@ -1,4 +1,4 @@
-import type { TLink, TNode, TSankey } from "../../typings/ED";
+import type { TLink, TNode, TNodeComponent, TSankey } from "../../typings/ED";
 
 export function sankeyModel() {
   const sankey: TSankey = {
@@ -86,7 +86,7 @@ export function sankeyModel() {
       nodePadding = +n;
       return sankey;
     },
-    nodes: (n: any[] | undefined) => {
+    nodes: (n: TNode[] | undefined) => {
       if (n === undefined) {
         return nodes;
       }
@@ -151,11 +151,11 @@ export function sankeyModel() {
        * @param part 
        * @param d 
        */
-      function backwardLink(part: number, d: any) {
+      function backwardLink(part: number, d: TLink) {
         let curveExtension = 30;
         let curveDepth = 15;
   
-        function getDir(d: any): number {
+        function getDir(d: TLink): number {
           return d.source.y + d.sy > d.target.y + d.ty ? -1 : 1;
         }
   
@@ -204,7 +204,7 @@ export function sankeyModel() {
         }
       }
   
-      return function (part: any) {
+      return function (part: number) {
         return (d: TLink) => (d.source.x < d.target.x) ? forwardLink(part, d) : backwardLink(part, d);
       };
     },
@@ -222,7 +222,7 @@ export function sankeyModel() {
   let size = [1, 1];
   let nodes: TNode[] = [];
   let links: TLink[] = [];
-  const components: any[] = [];
+  const components: TNodeComponent[] = [];
 
   /**
    * @description
@@ -239,11 +239,11 @@ export function sankeyModel() {
       let source = link.source,
           target = link.target;
       if (typeof source === "number") {
-        const key = link.source as any;
+        const key: number = (link.source as unknown) as number;
         source = link.source = nodes[key];
       }
       if (typeof target === "number") {
-        const key = link.target as any;
+        const key: number = (link.target as unknown) as number;
         target = link.target = nodes[key];
       }
       source.sourceLinks.push(link);
@@ -271,7 +271,7 @@ export function sankeyModel() {
    * @see http://en.wikipedia.org/wiki/Tarjan's_strongly_connected_components_algorithm
    */
   function computeNodeStructure() {
-    let nodeStack: any[] = [], index = 0;
+    let nodeStack: TNode[] = [], index = 0;
 
     nodes.forEach((node: TNode) => {
       if (!node.index) {
@@ -296,17 +296,21 @@ export function sankeyModel() {
         });
 
         if (node.lowIndex === node.index) {
-          let component = [], currentNode;
+          let component = [], currentNode: TNode | undefined;
           
           do {
             currentNode = nodeStack.pop();
-            currentNode.onStack = false;
-            component.push(currentNode);
+            if (currentNode) {
+              currentNode.onStack = false;
+              component.push(currentNode);
+            }
           } while (currentNode !== node);
 
           components.push({
+            index: 0,
             root: node,
-            scc: component
+            scc: component,
+            x: 0
           });
         }
       }
@@ -314,7 +318,7 @@ export function sankeyModel() {
     
     components.forEach(function (component, i) {
       component.index = i;   
-      component.scc.forEach(function (node: any) {
+      component.scc.forEach(function (node: TNode) {
         node.component = i;
       });
     });
@@ -326,10 +330,10 @@ export function sankeyModel() {
     layerComponents();
 
     components.forEach(function (component, i) {
-      bfs(component.root, function (node: any) {
+      bfs(component.root, function (node: TNode) {
         let result = node.sourceLinks
-          .filter((sourceLink: any) => sourceLink.target.component === i)
-          .map((sourceLink: any) => sourceLink.target);
+          .filter((sourceLink: TLink) => sourceLink.target.component === i)
+          .map((sourceLink: TLink) => sourceLink.target);
         return result;
       });
     });
@@ -344,10 +348,10 @@ export function sankeyModel() {
 
     let max = -1, nextMax = -1;
     
-    componentsByBreadth.forEach((c: any[]) => {
-      c.forEach(function (component: any) {
+    componentsByBreadth.forEach((c: TNodeComponent[]) => {
+      c.forEach((component: TNodeComponent) => {
         component.x = max + 1;
-        component.scc.forEach(function (node: any) {
+        component.scc.forEach((node: TNode) => {
           if (node.layer) {
             node.x = node.layer;
           } else {
@@ -368,19 +372,22 @@ export function sankeyModel() {
     scaleNodeBreadths((size[0] - nodeWidth) / Math.max(max, 1));
 
     function layerComponents() {    
-      let remainingComponents = components, nextComponents: any[], visitedIndex: any, x = 0;
+      let remainingComponents = components;
+      let nextComponents: TNodeComponent[];
+      let visitedIndex: Set<number> = new Set();
+      let x = 0;
 
       while (remainingComponents.length) {
         nextComponents = [];
-        visitedIndex = {};
-        remainingComponents.forEach(function (component) {
+        visitedIndex.clear();
+        remainingComponents.forEach((component) => {
           component.x = x;
-          component.scc.forEach(function (n: any) {
-            n.sourceLinks.forEach(function (l: any) {
-              if (!visitedIndex.hasOwnProperty(l.target.component) &&
+          component.scc.forEach((n: TNode) => {
+            n.sourceLinks.forEach((l: TLink) => {
+              if (!visitedIndex.has(l.target.component) &&
                 l.target.component !== component.index) {
                 nextComponents.push(components[l.target.component]);
-                visitedIndex[l.target.component] = true;
+                visitedIndex.add(l.target.component);
               }
             });
           });
@@ -390,19 +397,21 @@ export function sankeyModel() {
       }
     }
 
-    function bfs(node: any, extractTargets: any) {
+    function bfs(node: TNode, extractTargets: Function) {
       let queue = [node], currentCount = 1, nextCount = 0, x = 0;
 
       while (currentCount > 0) {
         let currentNode = queue.shift();
         currentCount--;
 
-        if (!currentNode.hasOwnProperty('x')) {
-          currentNode.x = x;
-          currentNode.dx = nodeWidth;
-          let targets = extractTargets(currentNode);
-          queue = queue.concat(targets);
-          nextCount += targets.length;
+        if (currentNode) {
+          if (!currentNode.hasOwnProperty('x')) {
+            currentNode.x = x;
+            currentNode.dx = nodeWidth;
+            let targets = extractTargets(currentNode);
+            queue = queue.concat(targets);
+            nextCount += targets.length;
+          }
         }
 
         if (currentCount === 0) { // level change
@@ -561,7 +570,7 @@ export function sankeyModel() {
       });
       
       nodesByBreadth.forEach(function (nodes) {
-        nodes.forEach(function (node: any, i: number) {
+        nodes.forEach(function (node: TNode, i: number) {
           if (ky !== undefined) {
             node.y = i;
             node.dy = node.value * ky;
@@ -577,8 +586,8 @@ export function sankeyModel() {
     }
 
     function relaxLeftToRight(alpha: number) {
-      nodesByBreadth.forEach(function (nodes, breadth) {
-        nodes.forEach(function (node: any) {
+      nodesByBreadth.forEach(function (nodes) {
+        nodes.forEach(function (node: TNode) {
           if (node.targetLinks.length) {
             // @ts-ignore
             let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
@@ -605,7 +614,7 @@ export function sankeyModel() {
         });
 
       
-      function weightedTarget(link: any) {
+      function weightedTarget(link: TLink) {
         return center(link.target) * link.value;
       }
     }
@@ -699,13 +708,13 @@ export function sankeyModel() {
       });
     });
 
-    function ascendingSourceDepth(a: any, b: any) {
+    function ascendingSourceDepth(a: TLink, b: TLink) {
       return alignment === "horizontal"
         ? a.source.y - b.source.y
         : a.source.x - b.source.x;
     }
 
-    function ascendingTargetDepth(a: any, b: any) {
+    function ascendingTargetDepth(a: TLink, b: TLink) {
       return alignment === "horizontal" 
         ? a.target.y - b.target.y
         : a.target.x - b.target.x;

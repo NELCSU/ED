@@ -10,7 +10,7 @@ body {
   fill: $color1;
 }
 
-.panel-right {
+.menu {
   background-color: $color2;
 }
 
@@ -67,7 +67,7 @@ text.chart-legend {
 }
 
 .breakdown-close {
-  background-color: $color2;
+  background-color: rgba(22, 22, 22, 0.8);
   border: 1px solid $color3;
   color: $color1;
 }

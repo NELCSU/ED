@@ -1,5 +1,5 @@
 import { formatNumber } from "../../utils/format";
-import type { D3Selection, TBreakChart } from "../../typings/ED";
+import type { D3Selection, TBreakdown } from "../../typings/ED";
 
 /**
  * @param data 
@@ -8,7 +8,7 @@ import type { D3Selection, TBreakChart } from "../../typings/ED";
  * @param placelabel2 
  * @param pievalue 
  */
-export function updatePie(data: TBreakChart[], placeholder: D3Selection, placelabel1: string, placelabel2: string, pievalue: number) {
+export function updatePie(data: TBreakdown[], placeholder: D3Selection, placelabel1: string, placelabel2: string, pievalue: number) {
 	// @ts-ignore
 	nv.addGraph(function () {
 		// @ts-ignore

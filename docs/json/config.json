@@ -1,4 +1,9 @@
 {
+  "breakdown": {
+    "chart1": [],
+    "chart2": [],
+    "message": ""
+  },
   "chart": {
     "height": 600,
     "highlighted": null,

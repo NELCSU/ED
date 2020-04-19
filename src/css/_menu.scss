@@ -16,7 +16,21 @@ option:hover {
   @include globals.fx($dir: column);
 }
 
-.panel-right.ready {
+.menu {
+  @include globals.fx($dir: column);
+  @include globals.transition;
+
+  line-height: 26px;
+  min-width: 220px;
+  padding: 15px;
+  position: fixed;
+  right: 0;
+  top: 40px;
+  width: 25%;
+  z-index: 600000;
+}
+
+.menu.ready {
   transform: translateX(100%);
 }
 

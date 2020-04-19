@@ -1,24 +1,19 @@
 @use 'globals';
 
 .breakdown {
-  @include globals.transition($property: opacity);
+  @include globals.fx;
+  @include globals.transition;
 
-  border: 1px solid;
-  font-size: 12px;
-  font-weight: bold;
-  line-height: 1;
-  padding: 4px;
+  bottom: 0;
+  height: 33%;
+  left: 0;
   position: fixed;
-  width: 40%;
-  z-index: 2000;
-}
-
-.breakdown-message {
-  width: 90%;
-}
-
-.breakdown-message > table {
   width: 100%;
+  z-index: 600000;
+}
+
+.breakdown.ready {
+  transform: translateY(100%);
 }
 
 .breakdown-close {
@@ -26,7 +21,7 @@
   @include globals.fx-center;
 
   cursor: pointer;
-  font-size: 2em;
+  font-size: 24px;
   font-weight: bold;
   height: 20px;
   position: absolute;
@@ -40,22 +35,26 @@
   display: inline-block;
 }
 
-.breakdown-charts {
-  @include globals.fx($dir: column, $wrap: wrap);
-  @include globals.maxsize;
+.breakdown-message,
+.breakdown-chart1,
+.breakdown-chart2 {
+  @include globals.fx($dir: column);
+  @include globals.fx-center;
 
-  font-size: 0.9em;
-  z-index: 100000;
+  flex-grow: 1;
+  height: 100%;
 }
 
-.breakdown.left {
-  left: 5px;
-  position: fixed;
-  top: 12%;
+.breakdown-message {
+  @include globals.fx($dir: column);
+  @include globals.fx-center;
+
+  height: 100%;
+  max-width: 40%;
 }
 
-.breakdown.right {
-  position: fixed;
-  right: 5px;
-  top: 12%;
+.breakdown-chart1,
+.breakdown-chart2 {
+  flex-grow: 1;
+  height: 100%;
 }

@@ -78,21 +78,6 @@ a:focus {
   font-weight: bold;
 }
 
-.panel-right {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  line-height: 26px;
-  min-width: 220px;
-  padding: 15px;
-  position: fixed;
-  right: 0;
-  top: 40px;
-  transition: all 500ms ease-in-out;
-  width: 25%;
-  z-index: 600000;
-}
-
 #chart {
   align-items: center;
   display: flex;
@@ -179,7 +164,22 @@ option:hover {
   flex-wrap: nowrap;
 }
 
-.panel-right.ready {
+.menu {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  line-height: 26px;
+  min-width: 220px;
+  padding: 15px;
+  position: fixed;
+  right: 0;
+  top: 40px;
+  transition: all 500ms ease-in-out;
+  width: 25%;
+  z-index: 600000;
+}
+
+.menu.ready {
   transform: translateX(100%);
 }
 
@@ -255,29 +255,32 @@ text.chart-legend {
   text-align: left;
 }
 
-.centerpielabel {
-  font-weight: bold;
-  text-anchor: middle;
+.axis {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  shape-rendering: crispEdges;
+  stroke: #000;
 }
 
 .breakdown {
-  border: 1px solid;
-  font-size: 12px;
-  font-weight: bold;
-  line-height: 1;
-  padding: 4px;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 33%;
+  left: 0;
   position: fixed;
-  transition: opacity 500ms ease-in-out;
-  width: 40%;
-  z-index: 2000;
-}
-
-.breakdown-message {
-  width: 90%;
-}
-
-.breakdown-message > table {
+  transition: all 500ms ease-in-out;
   width: 100%;
+  z-index: 600000;
+}
+
+.breakdown.ready {
+  transform: translateY(100%);
 }
 
 .breakdown-close {
@@ -286,7 +289,7 @@ text.chart-legend {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  font-size: 2em;
+  font-size: 24px;
   font-weight: bold;
   height: 20px;
   justify-content: center;
@@ -302,24 +305,32 @@ text.chart-legend {
   display: inline-block;
 }
 
-.breakdown-charts {
+.breakdown-message,
+.breakdown-chart1,
+.breakdown-chart2 {
+  align-items: center;
   display: flex;
   flex-direction: column;
-  flex-wrap: wrap;
-  font-size: 0.9em;
+  flex-grow: 1;
+  flex-wrap: nowrap;
   height: 100%;
-  width: 100%;
-  z-index: 100000;
+  justify-content: center;
+  text-align: center;
 }
 
-.breakdown.left {
-  left: 5px;
-  position: fixed;
-  top: 12%;
+.breakdown-message {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: center;
+  max-width: 40%;
+  text-align: center;
 }
 
-.breakdown.right {
-  position: fixed;
-  right: 5px;
-  top: 12%;
+.breakdown-chart1,
+.breakdown-chart2 {
+  flex-grow: 1;
+  height: 100%;
 }

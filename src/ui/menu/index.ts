@@ -13,7 +13,7 @@ import type { TConfig } from "../../typings/ED";
  * @param config 
  */
 export function initMenu(config: TConfig) {
-  const menu = document.querySelector(".panel-right") as HTMLDivElement;
+  const menu = document.querySelector(".menu") as HTMLDivElement;
   const menuButton = document.querySelector(".menu-button") as HTMLDivElement;
 
   if (menu && menuButton) {
