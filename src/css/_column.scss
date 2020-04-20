@@ -10,3 +10,25 @@
   stroke: #000;
   shape-rendering: crispEdges;
 }
+
+rect.bar {
+  @include globals.transition;
+
+  cursor: pointer;
+}
+
+text.bar {
+  @include globals.transition;
+
+  font-size: 0.8em;
+  text-anchor: middle;
+  user-select: none;
+}
+
+g.filtered > rect {
+  fill: #ccc;
+}
+
+g.filtered > text {
+  opacity: 0;
+}

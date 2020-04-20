@@ -14,10 +14,13 @@ svg {
 }
 
 h1 {
-  display: inline-block;
   font-size: 1.5em;
   font-weight: bold;
-  line-height: 30em;
+}
+
+h2 {
+  font-size: 1.3em;
+  font-weight: bold;
 }
 
 a,
@@ -262,6 +265,29 @@ text.chart-legend {
   fill: none;
   shape-rendering: crispEdges;
   stroke: #000;
+}
+
+rect.bar {
+  cursor: pointer;
+  transition: all 500ms ease-in-out;
+}
+
+text.bar {
+  font-size: 0.8em;
+  text-anchor: middle;
+  transition: all 500ms ease-in-out;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+g.filtered > rect {
+  fill: #ccc;
+}
+
+g.filtered > text {
+  opacity: 0;
 }
 
 .breakdown {

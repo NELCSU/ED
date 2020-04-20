@@ -1,5 +1,5 @@
 import { drawColumnChart } from "../charts/column";
-import type { TConfig } from "../../typings/ED";
+import type { TConfig, TBreakdown } from "../../typings/ED";
 
 /**
  * @param config 
@@ -49,28 +49,40 @@ export function initBreakdown(config: TConfig) {
 	 * @param config
 	 */
 	function displayBreakdown(config: TConfig) {
-		clear();
+		message.innerHTML = config.breakdown.message;
 		
-		if (message) {
-			message.innerHTML = config.breakdown.message;
-		}
-
+		chart2.innerHTML = "";
 		if (config.breakdown.chart2.length === 0) {
 			chart2.style.display = "none";
+		} else {
+			chart2.style.display = "";
 		}
 
+		chart1.innerHTML = "";
 		if (config.breakdown.chart1.length === 0) {
 			chart1.style.display = "none";
+		} else {
+			chart1.style.display = "";
 		}
 
 		if (chart2 && config.breakdown.chart2.length > 0) {
-			chart2.innerHTML = " ";
-			drawColumnChart(chart2, config.breakdown.chart2);
+			if (config.breakdown.chart2.length === 1) {
+				const d: TBreakdown = config.breakdown.chart2[0];
+				chart2.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
+			} else {
+				chart2.innerHTML = " ";
+				drawColumnChart(chart2, config.breakdown.chart2);
+			}
 		}
 
 		if (chart1 && config.breakdown.chart1.length > 0) {
-			chart1.innerHTML = " ";
-			drawColumnChart(chart1, config.breakdown.chart1);
+			if (config.breakdown.chart1.length === 1) {
+				const d: TBreakdown = config.breakdown.chart1[0];
+				chart1.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
+			} else {
+				chart1.innerHTML = " ";
+				drawColumnChart(chart1, config.breakdown.chart1);
+			}
 		}
 
 		container?.classList.remove("ready");
