@@ -8,11 +8,11 @@ import { Slicer } from "@buckneri/js-lib-slicer";
 
 export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const s = new Slicer(data.map(d => d.label));
-  const total: number = sum(data, (d: TBreakdown) => d.value);
-  const f =  (total === 100) ? format(".0%") : format(".0f");
+  const total: number = Math.round(sum(data, (d: TBreakdown) => d.value));
+  const f =  (total === 1) ? format(".0%") : format(".0f");
 
   const container = select(node);
-  const margin = { top: 30, right: 10, bottom: 35, left: 20 };
+  const margin = { top: 30, right: 10, bottom: 40, left: 20 };
   const h = node.clientHeight;
   let w = node.clientWidth;
   const width = w - margin.left - margin.right;
@@ -31,12 +31,20 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   y.domain([0, max(data, (d: any) => d.value)]);
 
   const xAxis = axisBottom(x)
-    .tickValues(x.domain().filter((d, i) => !(i % 4)));
+    .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3)));
 
   svg.append("g")
     .attr("class", "x axis")
     .attr("transform", `translate(0,${height})`)
-    .call(xAxis);
+    .call(xAxis)
+      .selectAll("text")	
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-45)")
+        .text(function(d: any) {
+          return d.length > 5 ? d.substring(0, 3) + " ..." : d;
+        });
 
   const gbar = svg.selectAll(".bar")
     .data(data).enter()
