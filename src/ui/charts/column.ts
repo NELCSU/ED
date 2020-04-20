@@ -31,20 +31,35 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   y.domain([0, max(data, (d: any) => d.value)]);
 
   const xAxis = axisBottom(x)
-    .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3)));
+    .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3) || i === data.length - 1));
 
-  svg.append("g")
+  const gAxis = svg.append("g")
     .attr("class", "x axis")
     .attr("transform", `translate(0,${height})`)
-    .call(xAxis)
-      .selectAll("text")	
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(-45)")
-        .text(function(d: any) {
-          return d.length > 5 ? d.substring(0, 3) + " ..." : d;
-        });
+    .call(xAxis);
+
+  const ticks = gAxis.selectAll(".tick");
+
+  ticks.style("cursor", "pointer")
+    .on("click", function() {
+      const tick = select(this);
+      tick.style("cursor", null);
+      tick.select("text").text((d: any) => d);
+      tick.on("click", null);
+      tick.select("title").remove();
+    });
+  
+  ticks.selectAll("text")	
+    .style("text-anchor", "end")
+    .attr("dx", "-.8em")
+    .attr("dy", ".15em")
+    .attr("transform", "rotate(-45)");
+
+  ticks.append("title")
+    .text((d: any) => `${d}\nClick to expand the text on this label`);
+
+  ticks.selectAll("text")
+    .text((d: any) => d.length > 5 ? d.substring(0, 3) + " ..." : d);
 
   const gbar = svg.selectAll(".bar")
     .data(data).enter()
@@ -75,7 +90,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   rbar.append("title")
     .text((d: TBreakdown) => `${d.label}: ${f(d.value)} calls`);
 
-  const tbar = gbar.append("text")
+  gbar.append("text")
     .classed("bar", true)
     .attr("x", x.bandwidth() / 2)
     .attr("y", -2)

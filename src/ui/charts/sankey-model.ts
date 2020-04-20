@@ -1,4 +1,6 @@
 import type { TLink, TNode, TNodeComponent, TSankey } from "../../typings/ED";
+import { interpolateNumber } from "d3-interpolate";
+import { min, rollup, sum } from "d3-array";
 
 export function sankeyModel() {
   const sankey: TSankey = {
@@ -26,15 +28,13 @@ export function sankeyModel() {
     },
     link: () => {
       let curvature = .5;
-  
       function link(d: TLink) {
         let x0, x1, i, y0, y1;
         if (alignment === "horizontal") {
           let x2, x3;
           x0 = d.source.x + d.source.dx;
           x1 = d.target.x;
-          // @ts-ignore
-          i = d3.interpolateNumber(x0, x1);
+          i = interpolateNumber(x0, x1);
           x2 = i(curvature);
           x3 = i(1 - curvature);
           y0 = d.source.y + d.sy + d.dy / 2;
@@ -49,8 +49,7 @@ export function sankeyModel() {
           x1 = d.target.x + d.ty + d.dy / 2;
           y0 = d.source.y + nodeWidth,
           y1 = d.target.y,
-          // @ts-ignore
-          i = d3.interpolateNumber(y0, y1),
+          i = interpolateNumber(y0, y1),
           y2 = i(curvature),
           y3 = i(1 - curvature);
           return "M" + x0 + "," + y0 +
@@ -114,8 +113,7 @@ export function sankeyModel() {
       function forwardLink(part: number, d: TLink) {
         let x0 = d.source.x + d.source.dx,
           x1 = d.target.x,
-          // @ts-ignore
-          xi = d3.interpolateNumber(x0, x1),
+          xi = interpolateNumber(x0, x1),
           x2 = xi(curvature),
           x3 = xi(1 - curvature),
           y0 = d.source.y + d.sy,
@@ -258,8 +256,7 @@ export function sankeyModel() {
     nodes.forEach(function (node) {
       if (!(node.value)) {
         node.value = Math.max(
-          // @ts-ignore
-          d3.sum(node.sourceLinks, value), d3.sum(node.targetLinks, value)
+          sum(node.sourceLinks, value), sum(node.targetLinks, value)
         );
       }
     });
@@ -338,13 +335,11 @@ export function sankeyModel() {
       });
     });
 
-    // @ts-ignore
-    let componentsByBreadth = d3.nest()
-      .key((d: any) => d.x)
-      // @ts-ignore
-      .sortKeys(d3.ascending)  
-      .entries(components)
-      .map(d => d.values);
+    let componentsByBreadth = Array.from(rollup(
+      components.sort((a, b) => a.x - b.x),
+      item => item,
+      d => d.x
+    ).values());
 
     let max = -1, nextMax = -1;
     
@@ -424,19 +419,13 @@ export function sankeyModel() {
   }
   
   function computeNodeBreadthsVertical(iterations: number) {
-    // @ts-ignore
-    let nodesByBreadth = d3.nest()
-      .key((d: any) => d.y)
-      // @ts-ignore
-      .sortKeys(d3.ascending)
-      .entries(nodes)
-      .map(d => d.values);
+    let nodesByBreadth = Array.from(rollup(
+      nodes.sort((a, b) => a.x - b.x),
+      item => item,
+      d => d.y
+    ).values());
 
-    // this bit is actually the node sizes (widths)
-    //var ky = (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value)
-    // this should be only source nodes surely (level 1)
-    // @ts-ignore
-    let ky = (size[0] - (nodesByBreadth[0].length - 1) * nodePadding) / d3.sum(nodesByBreadth[0], value);
+    let ky = (size[0] - (nodesByBreadth[0].length - 1) * nodePadding) / sum(nodesByBreadth[0] as any, value);
     nodesByBreadth.forEach((nodes) => {
       nodes.forEach((node: TNode, i: number) => {
         node.x = i;
@@ -460,8 +449,7 @@ export function sankeyModel() {
       nodesByBreadth.forEach(function (nodes, breadth) {
         nodes.forEach(function (node: TNode) {
           if (node.targetLinks.length) {
-            // @ts-ignore
-            let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
+            let y = sum(node.targetLinks, weightedSource) / sum(node.targetLinks, value);
             node.x += (y - center(node)) * alpha;
           }
         });
@@ -479,7 +467,7 @@ export function sankeyModel() {
           nodes.forEach(function (node: TNode) {
             if (node.sourceLinks.length) {
               // @ts-ignore
-              let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+              let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
               node.x += (y - center(node)) * alpha;
             }
           });
@@ -508,7 +496,7 @@ export function sankeyModel() {
         // If the rightmost node goes outside the bounds, push it left.
         dy = x0 - nodePadding - size[0]; // was size[1]
         if (dy > 0) {
-          x0 = node.x -= dy;
+          x0 = (<any>node).x -= dy;
           // Push any overlapping nodes left.
           for (i = n - 2; i >= 0; --i) {
             node = nodes[i];
@@ -544,13 +532,11 @@ export function sankeyModel() {
    * @param iterations 
    */
   function computeNodeDepthsHorizontal(iterations: number) {
-    // @ts-ignore
-    let nodesByBreadth = d3.nest()
-      .key((d: any) => d.x)
-      // @ts-ignore
-      .sortKeys(d3.ascending)
-      .entries(nodes)  
-      .map((d: any) => d.values);
+    let nodesByBreadth = Array.from(rollup(
+        nodes.sort((a, b) => a.x - b.x),
+        item => item,
+        d => d.x
+      ).values());
 
     initializeNodeDepth();
     resolveCollisions();
@@ -563,10 +549,8 @@ export function sankeyModel() {
     }
 
     function initializeNodeDepth() {
-      // @ts-ignore
-      let ky = d3.min(nodesByBreadth, function (nodes) {
-        // @ts-ignore
-        return (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value);
+      let ky = min(nodesByBreadth, function (nodes) {
+        return (size[1] - (nodes.length - 1) * nodePadding) / sum(nodes as any, value);
       });
       
       nodesByBreadth.forEach(function (nodes) {
@@ -589,8 +573,7 @@ export function sankeyModel() {
       nodesByBreadth.forEach(function (nodes) {
         nodes.forEach(function (node: TNode) {
           if (node.targetLinks.length) {
-            // @ts-ignore
-            let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
+            let y = sum(node.targetLinks, weightedSource) / sum(node.targetLinks, value);
             node.y += (y - center(node)) * alpha;
           }
         });
@@ -607,7 +590,7 @@ export function sankeyModel() {
           nodes.forEach(function (node: TNode) {
             if (node.sourceLinks.length) {
               // @ts-ignore
-              let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+              let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
               node.y += (y - center(node)) * alpha;
             }
           });
@@ -637,7 +620,7 @@ export function sankeyModel() {
         // If the bottommost node goes outside the bounds, push it back up.
         dy = y0 - nodePadding - size[1];
         if (dy > 0) {
-          y0 = node.y -= dy;
+          y0 = (<any>node).y -= dy;
 
           // Push any overlapping nodes back up.
           for (i = n - 2; i >= 0; --i) {

@@ -9,7 +9,7 @@ export function initDataQualityChart(config: TConfig) {
   const container = document.getElementById("lblDQStatus") as HTMLDivElement;
   const status = container.querySelector("img") as HTMLImageElement;
 
-  container.addEventListener("click", function (e) {
+  container.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     window.dispatchEvent(new CustomEvent("hide-menu"));
     window.dispatchEvent(new CustomEvent("show-status"));

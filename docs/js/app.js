@@ -1704,6 +1704,33 @@ var App = (function (exports) {
   var ascendingBisect = bisector(ascending$1);
   var bisectRight = ascendingBisect.right;
 
+  function identity$1(x) {
+    return x;
+  }
+
+  function rollup(values, reduce, ...keys) {
+    return nest(values, identity$1, reduce, keys);
+  }
+
+  function nest(values, map, reduce, keys) {
+    return (function regroup(values, i) {
+      if (i >= keys.length) return reduce(values);
+      const groups = new Map();
+      const keyof = keys[i++];
+      let index = -1;
+      for (const value of values) {
+        const key = keyof(value, ++index, values);
+        const group = groups.get(key);
+        if (group) group.push(value);
+        else groups.set(key, [value]);
+      }
+      for (const [key, values] of groups) {
+        groups.set(key, regroup(values, i));
+      }
+      return map(groups);
+    })(values, 0);
+  }
+
   function sequence(start, stop, step) {
     start = +start, stop = +stop, step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
 
@@ -1789,6 +1816,27 @@ var App = (function (exports) {
       }
     }
     return max;
+  }
+
+  function min(values, valueof) {
+    let min;
+    if (valueof === undefined) {
+      for (const value of values) {
+        if (value != null
+            && (min > value || (min === undefined && value >= value))) {
+          min = value;
+        }
+      }
+    } else {
+      let index = -1;
+      for (let value of values) {
+        if ((value = valueof(value, ++index, values)) != null
+            && (min > value || (min === undefined && value >= value))) {
+          min = value;
+        }
+      }
+    }
+    return min;
   }
 
   function sum(values, valueof) {
@@ -2153,8 +2201,8 @@ var App = (function (exports) {
     format = (format + "").trim().toLowerCase();
     return (m = reHex.exec(format)) ? (l = m[1].length, m = parseInt(m[1], 16), l === 6 ? rgbn(m) // #ff0000
         : l === 3 ? new Rgb((m >> 8 & 0xf) | (m >> 4 & 0xf0), (m >> 4 & 0xf) | (m & 0xf0), ((m & 0xf) << 4) | (m & 0xf), 1) // #f00
-        : l === 8 ? new Rgb(m >> 24 & 0xff, m >> 16 & 0xff, m >> 8 & 0xff, (m & 0xff) / 0xff) // #ff000000
-        : l === 4 ? new Rgb((m >> 12 & 0xf) | (m >> 8 & 0xf0), (m >> 8 & 0xf) | (m >> 4 & 0xf0), (m >> 4 & 0xf) | (m & 0xf0), (((m & 0xf) << 4) | (m & 0xf)) / 0xff) // #f000
+        : l === 8 ? rgba(m >> 24 & 0xff, m >> 16 & 0xff, m >> 8 & 0xff, (m & 0xff) / 0xff) // #ff000000
+        : l === 4 ? rgba((m >> 12 & 0xf) | (m >> 8 & 0xf0), (m >> 8 & 0xf) | (m >> 4 & 0xf0), (m >> 4 & 0xf) | (m & 0xf0), (((m & 0xf) << 4) | (m & 0xf)) / 0xff) // #f000
         : null) // invalid hex
         : (m = reRgbInteger.exec(format)) ? new Rgb(m[1], m[2], m[3], 1) // rgb(255, 0, 0)
         : (m = reRgbPercent.exec(format)) ? new Rgb(m[1] * 255 / 100, m[2] * 255 / 100, m[3] * 255 / 100, 1) // rgb(100%, 0%, 0%)
@@ -2536,7 +2584,7 @@ var App = (function (exports) {
 
   var unit = [0, 1];
 
-  function identity$1(x) {
+  function identity$2(x) {
     return x;
   }
 
@@ -2600,14 +2648,14 @@ var App = (function (exports) {
         transform,
         untransform,
         unknown,
-        clamp = identity$1,
+        clamp = identity$2,
         piecewise,
         output,
         input;
 
     function rescale() {
       var n = Math.min(domain.length, range.length);
-      if (clamp !== identity$1) clamp = clamper(domain[0], domain[n - 1]);
+      if (clamp !== identity$2) clamp = clamper(domain[0], domain[n - 1]);
       piecewise = n > 2 ? polymap : bimap;
       output = input = null;
       return scale;
@@ -2634,7 +2682,7 @@ var App = (function (exports) {
     };
 
     scale.clamp = function(_) {
-      return arguments.length ? (clamp = _ ? true : identity$1, rescale()) : clamp !== identity$1;
+      return arguments.length ? (clamp = _ ? true : identity$2, rescale()) : clamp !== identity$2;
     };
 
     scale.interpolate = function(_) {
@@ -2652,7 +2700,7 @@ var App = (function (exports) {
   }
 
   function continuous() {
-    return transformer()(identity$1, identity$1);
+    return transformer()(identity$2, identity$2);
   }
 
   function tickFormat(start, stop, count, specifier) {
@@ -2752,7 +2800,7 @@ var App = (function (exports) {
 
   var slice = Array.prototype.slice;
 
-  function identity$2(x) {
+  function identity$3(x) {
     return x;
   }
 
@@ -2801,7 +2849,7 @@ var App = (function (exports) {
 
     function axis(context) {
       var values = tickValues == null ? (scale.ticks ? scale.ticks.apply(scale, tickArguments) : scale.domain()) : tickValues,
-          format = tickFormat == null ? (scale.tickFormat ? scale.tickFormat.apply(scale, tickArguments) : identity$2) : tickFormat,
+          format = tickFormat == null ? (scale.tickFormat ? scale.tickFormat.apply(scale, tickArguments) : identity$3) : tickFormat,
           spacing = Math.max(tickSizeInner, 0) + tickPadding,
           range = scale.range(),
           range0 = +range[0] + 0.5,
@@ -3123,19 +3171,29 @@ var App = (function (exports) {
       x.domain(data.map((d) => d.label));
       y.domain([0, max(data, (d) => d.value)]);
       const xAxis = axisBottom(x)
-          .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3)));
-      svg.append("g")
+          .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3) || i === data.length - 1));
+      const gAxis = svg.append("g")
           .attr("class", "x axis")
           .attr("transform", `translate(0,${height})`)
-          .call(xAxis)
-          .selectAll("text")
+          .call(xAxis);
+      const ticks = gAxis.selectAll(".tick");
+      ticks.style("cursor", "pointer")
+          .on("click", function () {
+          const tick = select(this);
+          tick.style("cursor", null);
+          tick.select("text").text((d) => d);
+          tick.on("click", null);
+          tick.select("title").remove();
+      });
+      ticks.selectAll("text")
           .style("text-anchor", "end")
           .attr("dx", "-.8em")
           .attr("dy", ".15em")
-          .attr("transform", "rotate(-45)")
-          .text(function (d) {
-          return d.length > 5 ? d.substring(0, 3) + " ..." : d;
-      });
+          .attr("transform", "rotate(-45)");
+      ticks.append("title")
+          .text((d) => `${d}\nClick to expand the text on this label`);
+      ticks.selectAll("text")
+          .text((d) => d.length > 5 ? d.substring(0, 3) + " ..." : d);
       const gbar = svg.selectAll(".bar")
           .data(data).enter()
           .append("g")
@@ -3164,7 +3222,7 @@ var App = (function (exports) {
           .attr("height", (d) => height - y(d.value));
       rbar.append("title")
           .text((d) => `${d.label}: ${f(d.value)} calls`);
-      const tbar = gbar.append("text")
+      gbar.append("text")
           .classed("bar", true)
           .attr("x", x.bandwidth() / 2)
           .attr("y", -2)
@@ -3278,7 +3336,7 @@ var App = (function (exports) {
   function initDataQualityChart(config) {
       const container = document.getElementById("lblDQStatus");
       const status = container.querySelector("img");
-      container.addEventListener("click", function (e) {
+      container.addEventListener("click", (e) => {
           e.stopImmediatePropagation();
           window.dispatchEvent(new CustomEvent("hide-menu"));
           window.dispatchEvent(new CustomEvent("show-status"));
@@ -3371,8 +3429,7 @@ var App = (function (exports) {
                       let x2, x3;
                       x0 = d.source.x + d.source.dx;
                       x1 = d.target.x;
-                      // @ts-ignore
-                      i = d3.interpolateNumber(x0, x1);
+                      i = interpolateNumber(x0, x1);
                       x2 = i(curvature);
                       x3 = i(1 - curvature);
                       y0 = d.source.y + d.sy + d.dy / 2;
@@ -3388,8 +3445,7 @@ var App = (function (exports) {
                       x1 = d.target.x + d.ty + d.dy / 2;
                       y0 = d.source.y + nodeWidth,
                           y1 = d.target.y,
-                          // @ts-ignore
-                          i = d3.interpolateNumber(y0, y1),
+                          i = interpolateNumber(y0, y1),
                           y2 = i(curvature),
                           y3 = i(1 - curvature);
                       return "M" + x0 + "," + y0 +
@@ -3448,9 +3504,7 @@ var App = (function (exports) {
                * @param d
                */
               function forwardLink(part, d) {
-                  let x0 = d.source.x + d.source.dx, x1 = d.target.x, 
-                  // @ts-ignore
-                  xi = d3.interpolateNumber(x0, x1), x2 = xi(curvature), x3 = xi(1 - curvature), y0 = d.source.y + d.sy, y1 = d.target.y + d.ty, y2 = d.source.y + d.sy + d.dy, y3 = d.target.y + d.ty + d.dy;
+                  let x0 = d.source.x + d.source.dx, x1 = d.target.x, xi = interpolateNumber(x0, x1), x2 = xi(curvature), x3 = xi(1 - curvature), y0 = d.source.y + d.sy, y1 = d.target.y + d.ty, y2 = d.source.y + d.sy + d.dy, y3 = d.target.y + d.ty + d.dy;
                   switch (part) {
                       case 0:
                           return "M" + x0 + "," + y0 + "L" + x0 + "," + (y0 + d.dy);
@@ -3568,9 +3622,7 @@ var App = (function (exports) {
       function computeNodeValues() {
           nodes.forEach(function (node) {
               if (!(node.value)) {
-                  node.value = Math.max(
-                  // @ts-ignore
-                  d3.sum(node.sourceLinks, value), d3.sum(node.targetLinks, value));
+                  node.value = Math.max(sum(node.sourceLinks, value), sum(node.targetLinks, value));
               }
           });
       }
@@ -3639,13 +3691,7 @@ var App = (function (exports) {
                   return result;
               });
           });
-          // @ts-ignore
-          let componentsByBreadth = d3.nest()
-              .key((d) => d.x)
-              // @ts-ignore
-              .sortKeys(d3.ascending)
-              .entries(components)
-              .map(d => d.values);
+          let componentsByBreadth = Array.from(rollup(components.sort((a, b) => a.x - b.x), item => item, d => d.x).values());
           let max = -1, nextMax = -1;
           componentsByBreadth.forEach((c) => {
               c.forEach((component) => {
@@ -3715,18 +3761,8 @@ var App = (function (exports) {
           }
       }
       function computeNodeBreadthsVertical(iterations) {
-          // @ts-ignore
-          let nodesByBreadth = d3.nest()
-              .key((d) => d.y)
-              // @ts-ignore
-              .sortKeys(d3.ascending)
-              .entries(nodes)
-              .map(d => d.values);
-          // this bit is actually the node sizes (widths)
-          //var ky = (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value)
-          // this should be only source nodes surely (level 1)
-          // @ts-ignore
-          let ky = (size[0] - (nodesByBreadth[0].length - 1) * nodePadding) / d3.sum(nodesByBreadth[0], value);
+          let nodesByBreadth = Array.from(rollup(nodes.sort((a, b) => a.x - b.x), item => item, d => d.y).values());
+          let ky = (size[0] - (nodesByBreadth[0].length - 1) * nodePadding) / sum(nodesByBreadth[0], value);
           nodesByBreadth.forEach((nodes) => {
               nodes.forEach((node, i) => {
                   node.x = i;
@@ -3746,8 +3782,7 @@ var App = (function (exports) {
               nodesByBreadth.forEach(function (nodes, breadth) {
                   nodes.forEach(function (node) {
                       if (node.targetLinks.length) {
-                          // @ts-ignore
-                          let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
+                          let y = sum(node.targetLinks, weightedSource) / sum(node.targetLinks, value);
                           node.x += (y - center(node)) * alpha;
                       }
                   });
@@ -3762,7 +3797,7 @@ var App = (function (exports) {
                   nodes.forEach(function (node) {
                       if (node.sourceLinks.length) {
                           // @ts-ignore
-                          let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+                          let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
                           node.x += (y - center(node)) * alpha;
                       }
                   });
@@ -3821,13 +3856,7 @@ var App = (function (exports) {
        * @param iterations
        */
       function computeNodeDepthsHorizontal(iterations) {
-          // @ts-ignore
-          let nodesByBreadth = d3.nest()
-              .key((d) => d.x)
-              // @ts-ignore
-              .sortKeys(d3.ascending)
-              .entries(nodes)
-              .map((d) => d.values);
+          let nodesByBreadth = Array.from(rollup(nodes.sort((a, b) => a.x - b.x), item => item, d => d.x).values());
           initializeNodeDepth();
           resolveCollisions();
           for (let alpha = 1; iterations > 0; --iterations) {
@@ -3837,10 +3866,8 @@ var App = (function (exports) {
               resolveCollisions();
           }
           function initializeNodeDepth() {
-              // @ts-ignore
-              let ky = d3.min(nodesByBreadth, function (nodes) {
-                  // @ts-ignore
-                  return (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value);
+              let ky = min(nodesByBreadth, function (nodes) {
+                  return (size[1] - (nodes.length - 1) * nodePadding) / sum(nodes, value);
               });
               nodesByBreadth.forEach(function (nodes) {
                   nodes.forEach(function (node, i) {
@@ -3860,8 +3887,7 @@ var App = (function (exports) {
               nodesByBreadth.forEach(function (nodes) {
                   nodes.forEach(function (node) {
                       if (node.targetLinks.length) {
-                          // @ts-ignore
-                          let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
+                          let y = sum(node.targetLinks, weightedSource) / sum(node.targetLinks, value);
                           node.y += (y - center(node)) * alpha;
                       }
                   });
@@ -3876,7 +3902,7 @@ var App = (function (exports) {
                   nodes.forEach(function (node) {
                       if (node.sourceLinks.length) {
                           // @ts-ignore
-                          let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+                          let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
                           node.y += (y - center(node)) * alpha;
                       }
                   });
