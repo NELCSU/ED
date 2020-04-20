@@ -1791,6 +1791,25 @@ var App = (function (exports) {
     return max;
   }
 
+  function sum(values, valueof) {
+    let sum = 0;
+    if (valueof === undefined) {
+      for (let value of values) {
+        if (value = +value) {
+          sum += value;
+        }
+      }
+    } else {
+      let index = -1;
+      for (let value of values) {
+        if (value = +valueof(value, ++index, values)) {
+          sum += value;
+        }
+      }
+    }
+    return sum;
+  }
+
   function initRange(domain, range) {
     switch (arguments.length) {
       case 0: break;
@@ -3086,6 +3105,8 @@ var App = (function (exports) {
 
   function drawColumnChart(node, data) {
       const s = new Slicer(data.map(d => d.label));
+      const total = sum(data, (d) => d.value);
+      const f = (total === 100) ? format(".0%") : format(".0f");
       const container = select(node);
       const margin = { top: 30, right: 10, bottom: 35, left: 20 };
       const h = node.clientHeight;
@@ -3134,12 +3155,12 @@ var App = (function (exports) {
           .attr("y", 0)
           .attr("height", (d) => height - y(d.value));
       rbar.append("title")
-          .text((d) => `${d.label}: ${d.value} % calls`);
+          .text((d) => `${d.label}: ${f(d.value)} calls`);
       const tbar = gbar.append("text")
           .classed("bar", true)
           .attr("x", x.bandwidth() / 2)
           .attr("y", -2)
-          .text((d) => `${d.value}%`);
+          .text((d) => `${f(d.value)}`);
   }
 
   /**

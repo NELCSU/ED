@@ -1,12 +1,15 @@
 import type { TBreakdown } from "../../typings/ED";
 import { event, select } from "d3-selection";
-import { max } from "d3-array";
+import { max, sum } from "d3-array";
 import { scaleLinear, scaleBand } from "d3-scale";
 import { axisBottom } from "d3-axis";
+import { format } from "d3-format";
 import { Slicer } from "@buckneri/js-lib-slicer";
 
 export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const s = new Slicer(data.map(d => d.label));
+  const total: number = sum(data, (d: TBreakdown) => d.value);
+  const f =  (total === 100) ? format(".0%") : format(".0f");
 
   const container = select(node);
   const margin = { top: 30, right: 10, bottom: 35, left: 20 };
@@ -62,11 +65,11 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
     .attr("height", (d: TBreakdown) => height - y(d.value));
 
   rbar.append("title")
-    .text((d: TBreakdown) => `${d.label}: ${d.value} % calls`);
+    .text((d: TBreakdown) => `${d.label}: ${f(d.value)} calls`);
 
   const tbar = gbar.append("text")
     .classed("bar", true)
     .attr("x", x.bandwidth() / 2)
     .attr("y", -2)
-    .text((d: TBreakdown) => `${d.value}%`);
+    .text((d: TBreakdown) => `${f(d.value)}`);
 }
