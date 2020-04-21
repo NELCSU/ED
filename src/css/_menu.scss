@@ -31,6 +31,8 @@ option:hover {
 }
 
 .menu.ready {
+  @include globals.disabled;
+
   transform: translateX(100%);
 }
 

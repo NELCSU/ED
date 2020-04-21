@@ -1,5 +1,8 @@
 
 import type { TConfig, TPoint } from "../../typings/ED";
+import { event, select } from "d3-selection";
+import { drag } from "d3-drag";
+import { transition } from "d3-transition";
 
 /**
  * @param config 
@@ -17,8 +20,7 @@ export function initSankeyLegend(config: TConfig) {
 	});
 
 	function hide() {
-		// @ts-ignore
-		const svg = d3.select("#chart > svg");
+		const svg = select("#chart > svg");
 		svg.select(".chart-legend")
 			.transition()
 			.style("opacity", 0)
@@ -27,31 +29,27 @@ export function initSankeyLegend(config: TConfig) {
 	}
 
 	function show() {
-		// @ts-ignore
-		const svg = d3.select("#chart > svg");
+		const svg = select("#chart > svg");
 		const legend = svg.append("g")
 			.datum({ x: config.legend.move.x, y: config.legend.move.y })
 			.style("opacity", 0)
 			.classed("chart-legend", true)
 			.attr("transform", (d: TPoint) => `translate(${[d.x, d.y]})`);
 
-		legend.transition()
-			.duration(500)
-			.style("opacity", 1);
+		const t = transition()
+			.duration(500);
 
-		// @ts-ignore
-		legend.call(d3.behavior.drag()
+		legend.transition(t as any).style("opacity", 1);
+
+		legend.call(drag()
+			// @ts-ignore
 			.on("drag", function (this: Element, d: TPoint) {
-				// @ts-ignore
-				d.x += d3.event.dx;
-				// @ts-ignore
-				d.y += d3.event.dy;
-				// @ts-ignore
-				d3.select(this)
-				// @ts-ignore
-					.attr("transform", (d: TPoint) => `translate(${[d.x, d.y]})`);
+				d.x += event.dx;
+				d.y += event.dy;
+				select(this)
+					.attr("transform", (d: any) => `translate(${[d.x, d.y]})`);
 			})
-			.on("dragend", (d: TPoint) => {
+			.on("end", (d: TPoint) => {
 				config.legend.move.x = d.x;
 				config.legend.move.y = d.y;
 			})

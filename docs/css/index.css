@@ -183,7 +183,13 @@ option:hover {
 }
 
 .menu.ready {
+  cursor: not-allowed;
+  pointer-events: none;
   transform: translateX(100%);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
 }
 
 .menu-button {
@@ -290,6 +296,17 @@ g.filtered > text {
   opacity: 0;
 }
 
+img.ready {
+  cursor: pointer;
+  -webkit-filter: opacity(30%);
+          filter: opacity(30%);
+}
+
+img.ready:hover {
+  -webkit-filter: opacity(60%);
+          filter: opacity(60%);
+}
+
 .breakdown {
   bottom: 0;
   display: flex;
@@ -305,6 +322,23 @@ g.filtered > text {
 
 .breakdown.ready {
   transform: translateY(100%);
+}
+
+.breakdown-action {
+  padding-left: 10px;
+}
+
+.breakdown-bar {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 32px;
+  justify-content: space-between;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
 }
 
 .breakdown-close {

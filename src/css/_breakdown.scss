@@ -1,5 +1,14 @@
 @use 'globals';
 
+img.ready {
+  cursor: pointer;
+  filter: opacity(30%);
+}
+
+img.ready:hover {
+  filter: opacity(60%);
+}
+
 .breakdown {
   @include globals.fx;
   @include globals.transition;
@@ -14,6 +23,22 @@
 
 .breakdown.ready {
   transform: translateY(100%);
+}
+
+.breakdown-action {
+  padding-left: 10px;
+}
+
+.breakdown-bar {
+  @include globals.fx;
+
+  align-items: center;
+  height: 32px;
+  justify-content: space-between;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
 }
 
 .breakdown-close {

@@ -3,6 +3,7 @@ $font-stack: "Trebuchet MS", "Open Sans", "Segoe UI light", "Verdana", "Tahoma",
 @mixin disabled {
   cursor: not-allowed;
   pointer-events: none;
+  user-select: none;
 }
 
 @mixin fx($dir: row, $wrap: nowrap) {

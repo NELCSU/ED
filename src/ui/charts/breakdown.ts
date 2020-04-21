@@ -7,17 +7,16 @@ import type { TConfig, TBreakdown } from "../../typings/ED";
 export function initBreakdown(config: TConfig) {
 	const container = document.querySelector(".breakdown");
 	container?.addEventListener("click", e => e.stopImmediatePropagation());
+	const action = container?.querySelector(".breakdown-action") as HTMLDivElement;
 	const message = container?.querySelector(".breakdown-message") as HTMLDivElement;
 	const chart1 = container?.querySelector(".breakdown-chart1") as HTMLDivElement;
 	const chart2 = container?.querySelector(".breakdown-chart2") as HTMLDivElement;
 
-  const close = document.createElement("div");
-  close.classList.add("breakdown-close");
+  const close = document.querySelector(".breakdown-close") as HTMLDivElement;
   close.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
     hide(config);
   });
-	container?.appendChild(close);
 
 	function clear() {
 		if (message) {
@@ -65,6 +64,8 @@ export function initBreakdown(config: TConfig) {
 			chart1.style.display = "";
 		}
 
+		action.style.display = (config.breakdown.chart1.length === 0 && config.breakdown.chart2.length === 0) ? "none" : "";
+
 		if (chart2 && config.breakdown.chart2.length > 0) {
 			if (config.breakdown.chart2.length === 1) {
 				const d: TBreakdown = config.breakdown.chart2[0];
@@ -99,6 +100,7 @@ export function initBreakdown(config: TConfig) {
 			message.innerHTML = config.status.message;
 		}
 
+		action.style.display = "none";
 		chart2.style.display = "none";
 		chart1.style.display = "none";
 
