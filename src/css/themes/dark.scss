@@ -29,7 +29,7 @@ body {
 
 rect.chart-legend {
   fill: $color5;
-  stroke: $color2;
+  stroke: $color1;
 }
 
 text.chart-legend {
@@ -43,18 +43,6 @@ text.chart-legend {
 
 .node-label {
   fill: $color5;
-}
-
-.nv-label text {
-  fill: $color1;
-}
-
-.nv-legend-text {
-  fill: $color1;
-}
-
-.nv-pie path {
-  stroke: $color5;
 }
 
 .th-fg-color {

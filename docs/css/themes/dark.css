@@ -23,7 +23,7 @@ body {
 
 rect.chart-legend {
   fill: #222;
-  stroke: #111;
+  stroke: #aa8;
 }
 
 text.chart-legend {
@@ -37,18 +37,6 @@ text.chart-legend {
 
 .node-label {
   fill: #222;
-}
-
-.nv-label text {
-  fill: #aa8;
-}
-
-.nv-legend-text {
-  fill: #aa8;
-}
-
-.nv-pie path {
-  stroke: #222;
 }
 
 .th-fg-color {

@@ -333,12 +333,16 @@ img.ready:hover {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  height: 32px;
   justify-content: space-between;
   left: 0;
   position: absolute;
   top: 0;
   width: 100%;
+}
+
+.breakdown-img {
+  height: 32px;
+  width: 32px;
 }
 
 .breakdown-close {

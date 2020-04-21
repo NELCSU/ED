@@ -1,21 +1,23 @@
 import { sankeyModel } from "./sankey-model";
 import { formatNumber } from "../../utils/format";
 import type { D3Selection, TBreakdown, TConfig, TNode, TLink } from "../../typings/ED";
+import { rgb } from "d3-color";
 
 /**
  * @param config 
  */
 export function initSankeyChart(config: TConfig) {
   const chart = document.getElementById("chart");
+  const m = config.chart.margin;
   if (chart) {
-    config.chart.width = chart.offsetWidth - config.chart.margin.left - config.chart.margin.right;
-    config.chart.height = chart.offsetHeight - config.chart.margin.bottom - 130;
+    config.chart.width = chart.offsetWidth - m.left - m.right;
+    config.chart.height = chart.offsetHeight - m.bottom - 130;
   }
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
-  svg.style.width = config.chart.width + config.chart.margin.left + config.chart.margin.right + "px";
-  svg.style.height = config.chart.height + config.chart.margin.top + config.chart.margin.bottom + "px";
+  svg.style.width = config.chart.width + m.left + m.right + "px";
+  svg.style.height = config.chart.height + m.top + m.bottom + "px";
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  g.style.transform = "translate(" + config.chart.margin.left + "," + config.chart.margin.top + ")";
+  g.style.transform = "translate(" + m.left + "," + m.top + ")";
   svg.appendChild(g);
   chart?.appendChild(svg);
   // @ts-ignore
@@ -43,8 +45,7 @@ export function loadSankeyChart(config: TConfig) {
     .data(config.db.sankey.links)
     .enter()
     .append("g")
-    .attr("class", "link")
-    .sort((j: TLink, i: TLink) => i.dy - j.dy);
+      .attr("class", "link");
 
   const path = config.chart.sankey.reversibleLink();
   let h: D3Selection, f: D3Selection, e: D3Selection;
@@ -147,11 +148,12 @@ export function loadSankeyChart(config: TConfig) {
       );
 
   nodeCollection.append("rect")
-    .attr("height", (i: TNode) => i.dy)
+    .attr("height", (d: TNode) => d.dy)
     .attr("width", config.chart.sankey.nodeWidth())
-    .style("fill", (i: TNode) => i.color = i.fill)
-    // @ts-ignore
-    .style("stroke", (i: TNode) => d3.rgb(i.color).darker(2));
+    .style("fill", (d: TNode) => d.fill)
+    .style("stroke", (d: TNode) => rgb(d.fill).darker(2))
+    .append("title")
+      .text((d: TNode) => d.name);
 
   nodeCollection.append("text")
     .classed("node-label-outer", true)

@@ -1,8 +1,8 @@
-$color1: #f60;
+$color1: rgb(31, 74, 128);
 $color2: #fff;
 $color3: #000;
-$color4: #ccc;
-$color5: #222;
+$color4: rgb(182, 212, 248);
+$color5: rgb(60, 148, 255);
 
 body {
   background: $color2;
@@ -27,7 +27,7 @@ body {
 
 rect.chart-legend {
   fill: $color2;
-  stroke: $color4;
+  stroke: $color1;
 }
 
 text.chart-legend {
@@ -40,19 +40,7 @@ text.chart-legend {
 }
 
 .node-label {
-  fill: $color5;
-}
-
-.nv-label text {
-  fill: $color1;
-}
-
-.nv-legend-text {
   fill: $color3;
-}
-
-.nv-pie path {
-  stroke: $color5;
 }
 
 .th-fg-color {
@@ -72,5 +60,5 @@ text.chart-legend {
 select {
   background: $color4;
   border-color: $color5;
-  color: $color3;
+  color: $color1;
 }

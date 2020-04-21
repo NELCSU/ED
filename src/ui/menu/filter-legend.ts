@@ -1,8 +1,10 @@
 
-import type { TConfig, TPoint } from "../../typings/ED";
+import type { TConfig, TNode, TPoint } from "../../typings/ED";
 import { event, select } from "d3-selection";
 import { drag } from "d3-drag";
 import { transition } from "d3-transition";
+import { Delaunay } from "d3-delaunay";
+import { polygonLength, polygonCentroid } from "d3-polygon";
 
 /**
  * @param config 
@@ -10,9 +12,6 @@ import { transition } from "d3-transition";
 export function initSankeyLegend(config: TConfig) {
 	const leg = document.getElementById("Legend") as HTMLInputElement;
 	leg.addEventListener("input", () => leg.checked ? show() : hide());
-
-	config.legend.move.x = config.chart.width;
-	config.legend.move.y = 10;
 
 	window.addEventListener("show-legend", () => {
 		if (!leg.checked) { return; }
@@ -28,13 +27,45 @@ export function initSankeyLegend(config: TConfig) {
 			.remove();
 	}
 
+	/**
+	 * @link https://observablehq.com/@d3/voronoi-labels
+	 */
 	function show() {
 		const svg = select("#chart > svg");
+
+		let xy: number[][] = [];
+		let nw = config.chart.sankey.nodeWidth() / 2;
+		svg.selectAll("g.node").each((d: any) => {
+			xy.push([d.x + nw, d.y + (d.dy / 2)] as any);
+		});
+		const delaunay = Delaunay.from(xy);
+		const voronoi = delaunay.voronoi([-1, -1, config.chart.width + 1, config.chart.height + 1]);
+		const cells: any[] = xy.map((d, i) => [d, voronoi.cellPolygon(i)]);
+		let box: any, area = 0;
+		cells.forEach((cell: any) => {
+			const a = polygonLength(cell[1]);
+			if (a > area) {
+				area = a;
+				box = cell[1];
+			}
+		});
+		let [x, y] = polygonCentroid(box);
+		x = x > config.chart.width / 2 ? config.chart.width - 200 : 0;
+		y = y > config.chart.height / 2 ? config.chart.height - 140 : 0;
+
 		const legend = svg.append("g")
-			.datum({ x: config.legend.move.x, y: config.legend.move.y })
+			.datum({ x: x, y: y })
 			.style("opacity", 0)
-			.classed("chart-legend", true)
-			.attr("transform", (d: TPoint) => `translate(${[d.x, d.y]})`);
+			.classed("chart-legend", true);
+
+		/* DEBUG
+		svg.append("path")
+      .attr("fill", "none")
+      .attr("stroke", "#900")
+      .attr("d", voronoi.render());
+
+ 		svg.append("path")
+      .attr("d", delaunay.renderPoints(undefined, 2));*/
 
 		const t = transition()
 			.duration(500);
@@ -48,10 +79,6 @@ export function initSankeyLegend(config: TConfig) {
 				d.y += event.dy;
 				select(this)
 					.attr("transform", (d: any) => `translate(${[d.x, d.y]})`);
-			})
-			.on("end", (d: TPoint) => {
-				config.legend.move.x = d.x;
-				config.legend.move.y = d.y;
 			})
 		);
 
@@ -79,5 +106,7 @@ export function initSankeyLegend(config: TConfig) {
 				.attr("y", 15 + (1 * n))
 				.text(config.legend.labels[n]);
 		});
+
+		legend.attr("transform", (d: TPoint) => `translate(${[x, y]})`);
 	}
 }

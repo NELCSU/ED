@@ -83,11 +83,7 @@
   },
   "legend": {
     "colors": ["#FCC5C0", "#8DD3C7", "#BEBADA", "#B3DE69"],
-    "labels": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown/Not Applicable"],
-    "move": {
-      "x": 0,
-      "y": 0
-    }
+    "labels": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown/Not Applicable"]
   },
   "querystring": {
     "call": "",

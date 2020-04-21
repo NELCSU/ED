@@ -12,7 +12,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const f =  (total === 1) ? format(".0%") : format(".0f");
 
   const container = select(node);
-  const margin = { top: 30, right: 10, bottom: 40, left: 20 };
+  const margin = { top: 30, right: 10, bottom: 45, left: 20 };
   const h = node.clientHeight;
   let w = node.clientWidth;
   const width = w - margin.left - margin.right;
@@ -46,7 +46,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
       tick.style("cursor", null);
       tick.select("text").text((d: any) => d);
       tick.on("click", null);
-      tick.select("title").remove();
+      tick.select("title").text((d: any) => d);
     });
   
   ticks.selectAll("text")	
