@@ -5,27 +5,24 @@ import { scaleLinear, scaleBand } from "d3-scale";
 import { axisBottom } from "d3-axis";
 import { format } from "d3-format";
 import { Slicer } from "@buckneri/js-lib-slicer";
+import { svg } from "../../utils/d3-utils";
 
 export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const s = new Slicer(data.map(d => d.label));
   const total: number = Math.round(sum(data, (d: TBreakdown) => d.value));
-  const f =  (total === 1) ? format(".0%") : format(".0f");
-
-  const container = select(node);
+  const f = (total === 1) ? format(".0%") : format(".0f");
   const margin = { top: 30, right: 10, bottom: 45, left: 20 };
-  const h = node.clientHeight;
-  let w = node.clientWidth;
-  const width = w - margin.left - margin.right;
-  const height = h - margin.top - margin.bottom;
+  const width = node.clientWidth;
+  const rw = width - margin.left - margin.right;
+  const height = node.clientHeight;
+  const rh = height - margin.top - margin.bottom;
+  const x = scaleBand().range([0, rw]).padding(0.1);
+  const y = scaleLinear().range([rh, 0]);
 
-  const x = scaleBand().range([0, width]).padding(0.1);
-  const y = scaleLinear().range([height, 0]);
-
-  const svg = container.append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+  const sg = select(node).call(
+    svg().height(height).width(width).margin(margin)
+  );
+  const canvas = sg.select(".canvas");
 
   x.domain(data.map((d: TBreakdown) => d.label));
   y.domain([0, max(data, (d: any) => d.value)]);
@@ -33,9 +30,9 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const xAxis = axisBottom(x)
     .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3) || i === data.length - 1));
 
-  const gAxis = svg.append("g")
+  const gAxis = canvas.append("g")
     .attr("class", "x axis")
-    .attr("transform", `translate(0,${height})`)
+    .attr("transform", `translate(0,${rh})`)
     .call(xAxis);
 
   const ticks = gAxis.selectAll(".tick");
@@ -61,7 +58,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   ticks.selectAll("text")
     .text((d: any) => d.length > 5 ? d.substring(0, 3) + " ..." : d);
 
-  const gbar = svg.selectAll(".bar")
+  const gbar = canvas.selectAll(".bar")
     .data(data).enter()
     .append("g")
       .attr("transform", (d: TBreakdown) => `translate(${x(d.label)},${y(d.value)})`)
@@ -85,7 +82,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
     .attr("x", 0)
     .attr("width", x.bandwidth())
     .attr("y", 0)
-    .attr("height", (d: TBreakdown) => height - y(d.value));
+    .attr("height", (d: TBreakdown) => rh - y(d.value));
 
   rbar.append("title")
     .text((d: TBreakdown) => `${d.label}: ${f(d.value)} calls`);

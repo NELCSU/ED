@@ -5764,30 +5764,82 @@ var App = (function (exports) {
       }
   }
 
+  /**
+   * @param selection - passed by D3 call() API
+   * @example
+   * const svg = container.call(
+   *  svg()
+   *    .height(50)
+   *    .width(50)
+   *    .margin({bottom: 5, left: 10, right: 5, top: 20})
+   * );
+   * @returns - object containing SVG D3 selection object
+   */
+  function svg() {
+      let _h = 200, _w = 200, _m = { bottom: 10, left: 10, right: 10, top: 10 };
+      function _svg(selection) {
+          const svg = selection.append("svg")
+              .attr("x", 0)
+              .attr("y", 0)
+              .attr("viewBox", `0 0 ${_w} ${_h}`)
+              .attr("xmlns", "http://www.w3.org/2000/svg")
+              .attr("xmlns:xlink", "http://www.w3.org/1999/xlink");
+          svg.append("defs");
+          svg.append("g")
+              .attr("class", "canvas")
+              .attr("transform", `translate(${_m.left},${_m.top})`);
+          return svg;
+      }
+      _svg.height = (n) => {
+          if (n === undefined) {
+              return _h;
+          }
+          else {
+              _h = n;
+              return _svg;
+          }
+      };
+      _svg.margin = (m) => {
+          if (m === undefined) {
+              return _m;
+          }
+          else {
+              _m = m;
+              return _svg;
+          }
+      };
+      _svg.width = (n) => {
+          if (n === undefined) {
+              return _w;
+          }
+          else {
+              _w = n;
+              return _svg;
+          }
+      };
+      return _svg;
+  }
+
   function drawColumnChart(node, data) {
       const s = new Slicer(data.map(d => d.label));
       const total = Math.round(sum(data, (d) => d.value));
       const f = (total === 1) ? format(".0%") : format(".0f");
-      const container = select(node);
       const margin = { top: 30, right: 10, bottom: 45, left: 20 };
-      const h = node.clientHeight;
-      let w = node.clientWidth;
-      const width = w - margin.left - margin.right;
-      const height = h - margin.top - margin.bottom;
-      const x = band().range([0, width]).padding(0.1);
-      const y = linear$1().range([height, 0]);
-      const svg = container.append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-          .attr("transform", `translate(${margin.left},${margin.top})`);
+      const width = node.clientWidth;
+      const rw = width - margin.left - margin.right;
+      const height = node.clientHeight;
+      const rh = height - margin.top - margin.bottom;
+      const x = band().range([0, rw]).padding(0.1);
+      const y = linear$1().range([rh, 0]);
+      const sg = select(node).call(svg().height(height).width(width).margin(margin));
+      const canvas = sg.select(".canvas");
       x.domain(data.map((d) => d.label));
       y.domain([0, max(data, (d) => d.value)]);
       const xAxis = axisBottom(x)
           .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3) || i === data.length - 1));
-      const gAxis = svg.append("g")
+      const gAxis = canvas.append("g")
           .attr("class", "x axis")
-          .attr("transform", `translate(0,${height})`)
+          .attr("transform", `translate(0,${rh})`)
           .call(xAxis);
       const ticks = gAxis.selectAll(".tick");
       ticks.style("cursor", "pointer")
@@ -5807,7 +5859,7 @@ var App = (function (exports) {
           .text((d) => `${d}\nClick to expand the text on this label`);
       ticks.selectAll("text")
           .text((d) => d.length > 5 ? d.substring(0, 3) + " ..." : d);
-      const gbar = svg.selectAll(".bar")
+      const gbar = canvas.selectAll(".bar")
           .data(data).enter()
           .append("g")
           .attr("transform", (d) => `translate(${x(d.label)},${y(d.value)})`)
@@ -5832,7 +5884,7 @@ var App = (function (exports) {
           .attr("x", 0)
           .attr("width", x.bandwidth())
           .attr("y", 0)
-          .attr("height", (d) => height - y(d.value));
+          .attr("height", (d) => rh - y(d.value));
       rbar.append("title")
           .text((d) => `${d.label}: ${f(d.value)} calls`);
       gbar.append("text")
