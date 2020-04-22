@@ -5842,23 +5842,28 @@ var App = (function (exports) {
           .attr("transform", `translate(0,${rh})`)
           .call(xAxis);
       const ticks = gAxis.selectAll(".tick");
-      ticks.style("cursor", "pointer")
-          .on("click", function () {
-          const tick = select(this);
-          tick.style("cursor", null);
-          tick.select("text").text((d) => d);
-          tick.on("click", null);
-          tick.select("title").text((d) => d);
+      const text = ticks.selectAll("text");
+      // @ts-ignore
+      text.each(function (d) {
+          const t = select(this);
+          const w = this.getBBox().width;
+          if (w > x.bandwidth()) {
+              // @ts-ignore
+              const parent = select(this.parentNode);
+              parent.style("cursor", "pointer")
+                  .on("click", function () {
+                  const tick = select(this);
+                  tick.style("cursor", null);
+                  tick.select("text")
+                      .text((d) => d);
+                  tick.on("click", null);
+                  tick.select("title").text((d) => d);
+              });
+              parent.append("title")
+                  .text((d) => `${d}\nClick to expand the text on this label`);
+              t.text((d) => d.substring(0, Math.ceil(x.bandwidth() / 8)) + " ...");
+          }
       });
-      ticks.selectAll("text")
-          .style("text-anchor", "end")
-          .attr("dx", "-.8em")
-          .attr("dy", ".15em")
-          .attr("transform", "rotate(-45)");
-      ticks.append("title")
-          .text((d) => `${d}\nClick to expand the text on this label`);
-      ticks.selectAll("text")
-          .text((d) => d.length > 5 ? d.substring(0, 3) + " ..." : d);
       const gbar = canvas.selectAll(".bar")
           .data(data).enter()
           .append("g")
@@ -6768,27 +6773,41 @@ var App = (function (exports) {
                   .filter((l) => l.source === d || l.target === d);
               (_a = config.chart.highlighted) === null || _a === void 0 ? void 0 : _a.transition().style('opacity', config.filters.opacity.high);
               const nodesource = [], nodetarget = [];
-              config.chart.svg.selectAll(".link")
-                  .filter((l) => l.target === d)[0]
-                  .forEach((l) => nodesource.push({
-                  color: "steelblue",
-                  label: l.__data__.source.name,
-                  value: l.__data__.value
-              }));
-              config.chart.svg.selectAll(".link")
-                  .filter((l) => l.source === d)[0]
-                  .forEach((l) => nodetarget.push({
-                  color: "steelblue",
-                  label: l.__data__.target.name,
-                  value: l.__data__.value
-              }));
-              // @ts-ignore
-              let src = d3.sum(nodesource, d => d.value);
-              // @ts-ignore
-              let tgt = d3.sum(nodetarget, d => d.value);
-              let text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
-              text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
-              text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+              let text;
+              if (d.grouping) {
+                  text = `<p>Breakdown for ${d.name}</p>`;
+                  config.breakdown.message = text;
+                  d.grouping.map((e) => {
+                      nodesource.push({
+                          color: e.color ? e.color : "steelblue",
+                          label: e.label,
+                          value: e.value
+                      });
+                  });
+              }
+              else {
+                  config.chart.svg.selectAll(".link")
+                      .filter((l) => l.target === d)[0]
+                      .forEach((l) => nodesource.push({
+                      color: "steelblue",
+                      label: l.__data__.source.name,
+                      value: l.__data__.value
+                  }));
+                  config.chart.svg.selectAll(".link")
+                      .filter((l) => l.source === d)[0]
+                      .forEach((l) => nodetarget.push({
+                      color: "steelblue",
+                      label: l.__data__.target.name,
+                      value: l.__data__.value
+                  }));
+                  // @ts-ignore
+                  let src = d3.sum(nodesource, d => d.value);
+                  // @ts-ignore
+                  let tgt = d3.sum(nodetarget, d => d.value);
+                  text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
+                  text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
+                  text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+              }
               config.breakdown.message = text;
               config.breakdown.chart1 = nodesource;
               config.breakdown.chart2 = nodetarget;

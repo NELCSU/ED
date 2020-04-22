@@ -112,31 +112,45 @@ export function loadSankeyChart(config: TConfig) {
               .style('opacity', config.filters.opacity.high);
               
             const nodesource: TBreakdown[] = [], nodetarget: TBreakdown[] = [];
+            let text;
+
+            if (d.grouping) {
+              text = `<p>Breakdown for ${d.name}</p>`;
           
-            config.chart.svg.selectAll(".link")
-              .filter((l: TLink) => l.target === d)[0]
-                .forEach((l: TLink) => nodesource.push({
-                  color: "steelblue",
-                  label: l.__data__.source.name, 
-                  value: l.__data__.value
-                }));
+              config.breakdown.message = text;
+              d.grouping.map((e: TBreakdown) => {
+                nodesource.push({
+                  color: e.color ? e.color : "steelblue",
+                  label: e.label,
+                  value: e.value
+                });
+              });
+            } else {       
+              config.chart.svg.selectAll(".link")
+                .filter((l: TLink) => l.target === d)[0]
+                  .forEach((l: TLink) => nodesource.push({
+                    color: "steelblue",
+                    label: l.__data__.source.name, 
+                    value: l.__data__.value
+                  }));
           
-            config.chart.svg.selectAll(".link")
-              .filter((l: TLink) => l.source === d)[0]
-                .forEach((l: TLink) => nodetarget.push({
-                  color: "steelblue",
-                  label: l.__data__.target.name,
-                  value: l.__data__.value
-                }));
-          
-            // @ts-ignore
-            let src = d3.sum(nodesource, d => d.value);
-            // @ts-ignore
-            let tgt = d3.sum(nodetarget, d => d.value);
-          
-            let text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
-            text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
-            text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+              config.chart.svg.selectAll(".link")
+                .filter((l: TLink) => l.source === d)[0]
+                  .forEach((l: TLink) => nodetarget.push({
+                    color: "steelblue",
+                    label: l.__data__.target.name,
+                    value: l.__data__.value
+                  }));
+
+              // @ts-ignore
+              let src = d3.sum(nodesource, d => d.value);
+              // @ts-ignore
+              let tgt = d3.sum(nodetarget, d => d.value);
+
+              text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
+              text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
+              text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+            }
 
             config.breakdown.message = text;
             config.breakdown.chart1 = nodesource;

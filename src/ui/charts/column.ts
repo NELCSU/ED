@@ -36,27 +36,32 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
     .call(xAxis);
 
   const ticks = gAxis.selectAll(".tick");
-
-  ticks.style("cursor", "pointer")
-    .on("click", function() {
-      const tick = select(this);
-      tick.style("cursor", null);
-      tick.select("text").text((d: any) => d);
-      tick.on("click", null);
-      tick.select("title").text((d: any) => d);
-    });
+  const text = ticks.selectAll("text");
   
-  ticks.selectAll("text")	
-    .style("text-anchor", "end")
-    .attr("dx", "-.8em")
-    .attr("dy", ".15em")
-    .attr("transform", "rotate(-45)");
+  // @ts-ignore
+  text.each(function(this: SVGTextElement, d: string) {
+    const t = select(this);
+    const w = this.getBBox().width;
+    if (w > x.bandwidth()) {
+      // @ts-ignore
+      const parent = select(this.parentNode);
 
-  ticks.append("title")
-    .text((d: any) => `${d}\nClick to expand the text on this label`);
+      parent.style("cursor", "pointer")
+        .on("click", function(this: Element) {
+          const tick = select(this);
+          tick.style("cursor", null);
+          tick.select("text")
+            .text((d: any) => d);
+          tick.on("click", null);
+          tick.select("title").text((d: any) => d);
+        });
 
-  ticks.selectAll("text")
-    .text((d: any) => d.length > 5 ? d.substring(0, 3) + " ..." : d);
+      parent.append("title")
+        .text((d: any) => `${d}\nClick to expand the text on this label`);
+
+      t.text((d: any) => d.substring(0, Math.ceil(x.bandwidth() / 8)) + " ...");
+    }
+  });
 
   const gbar = canvas.selectAll(".bar")
     .data(data).enter()
