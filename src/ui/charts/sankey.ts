@@ -10,8 +10,8 @@ export function initSankeyChart(config: TConfig) {
   const chart = document.getElementById("chart");
   const m = config.chart.margin;
   if (chart) {
-    config.chart.width = chart.offsetWidth - m.left - m.right;
-    config.chart.height = chart.offsetHeight - m.bottom - 130;
+    config.chart.width = chart.clientWidth - m.left - m.right;
+    config.chart.height = chart.clientHeight - m.bottom - 130;
   }
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
   svg.style.width = config.chart.width + m.left + m.right + "px";
