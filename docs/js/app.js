@@ -6888,12 +6888,18 @@ var App = (function (exports) {
       for (let key in config.filters.organisations) {
           const option = document.createElement("option");
           option.textContent = config.filters.organisations[key];
-          org.appendChild(option);
+          if (option.textContent === "SEL") {
+              org.insertAdjacentElement("afterbegin", option);
+          }
+          else {
+              org.appendChild(option);
+          }
       }
       getQueryHash(config);
-      if (config.querystring.organisation) {
+      org.value = "SEL";
+      /*if (config.querystring.organisation) {
           org.value = config.querystring.organisation;
-      }
+      }*/
       org.addEventListener("change", () => __awaiter(this, void 0, void 0, function* () {
           window.dispatchEvent(new CustomEvent("org-selected", { detail: org.value }));
           config.db.file = org.options[org.selectedIndex].value + ".zip";
