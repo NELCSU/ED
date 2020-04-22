@@ -32,7 +32,10 @@ export function initSankeyLegend(config: TConfig) {
 	 */
 	function show() {
 		const svg = select("#chart > svg");
+		const rh: number = config.legend.labels.length * 32;
+		const rw: number = 150;
 
+		// determine the least node dense area of chart
 		let xy: number[][] = [];
 		let nw = config.chart.sankey.nodeWidth() / 2;
 		svg.selectAll("g.node").each((d: any) => {
@@ -50,8 +53,9 @@ export function initSankeyLegend(config: TConfig) {
 			}
 		});
 		let [x, y] = polygonCentroid(box);
-		x = x > config.chart.width / 2 ? config.chart.width - 200 : 0;
-		y = y > config.chart.height / 2 ? config.chart.height - 140 : 0;
+		x = x > config.chart.width / 2 ? config.chart.width - rw : 0;
+		y = y > config.chart.height / 2 ? config.chart.height - rh : 0;
+		//
 
 		const legend = svg.append("g")
 			.datum({ x: x, y: y })
@@ -83,8 +87,8 @@ export function initSankeyLegend(config: TConfig) {
 		);
 
 		legend.append("rect")
-			.attr("width", "200px")
-			.attr("height", "140px")
+			.attr("width", rw + "px")
+			.attr("height", rh + "px")
 			.attr("x", 0)
 			.attr("y", 0)
 			.classed("chart-legend", true);

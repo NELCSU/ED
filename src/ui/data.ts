@@ -47,6 +47,7 @@ export function processDayFile(data: string, config: TConfig) {
   for (let key in config.db.dq.interpolated) {
     config.filters.days.push(key);
 	}
+	config.filters.days.sort((a: string, b: string) => parseInt("1" + a) - parseInt("1" + b));
 	updateDayList(config);
 	updateCallList(config);
 	setQueryHash(config);

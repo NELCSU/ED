@@ -82,8 +82,8 @@
     "organisations": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
   },
   "legend": {
-    "colors": ["#FCC5C0", "#8DD3C7", "#BEBADA", "#B3DE69"],
-    "labels": ["Pathways Clinical Advisor", "Health Advisor", "Service Advisor", "Unknown/Not Applicable"]
+    "colors": ["#FCC5C0", "#8DD3C7", "#BEBADA", "#FB8072", "#FF7F00", "#A65628"],
+    "labels": ["CMC", "Starlines", "Other", "Admin", "Dental", "Worsening"]
   },
   "querystring": {
     "call": "",

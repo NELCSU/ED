@@ -4296,6 +4296,9 @@ var App = (function (exports) {
        */
       function show() {
           const svg = select("#chart > svg");
+          const rh = config.legend.labels.length * 32;
+          const rw = 150;
+          // determine the least node dense area of chart
           let xy = [];
           let nw = config.chart.sankey.nodeWidth() / 2;
           svg.selectAll("g.node").each((d) => {
@@ -4313,8 +4316,9 @@ var App = (function (exports) {
               }
           });
           let [x, y] = polygonCentroid(box);
-          x = x > config.chart.width / 2 ? config.chart.width - 200 : 0;
-          y = y > config.chart.height / 2 ? config.chart.height - 140 : 0;
+          x = x > config.chart.width / 2 ? config.chart.width - rw : 0;
+          y = y > config.chart.height / 2 ? config.chart.height - rh : 0;
+          //
           const legend = svg.append("g")
               .datum({ x: x, y: y })
               .style("opacity", 0)
@@ -4339,8 +4343,8 @@ var App = (function (exports) {
                   .attr("transform", (d) => `translate(${[d.x, d.y]})`);
           }));
           legend.append("rect")
-              .attr("width", "200px")
-              .attr("height", "140px")
+              .attr("width", rw + "px")
+              .attr("height", rh + "px")
               .attr("x", 0)
               .attr("y", 0)
               .classed("chart-legend", true);
@@ -4813,6 +4817,7 @@ var App = (function (exports) {
       for (let key in config.db.dq.interpolated) {
           config.filters.days.push(key);
       }
+      config.filters.days.sort((a, b) => parseInt("1" + a) - parseInt("1" + b));
       updateDayList(config);
       updateCallList(config);
       setQueryHash(config);
