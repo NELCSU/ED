@@ -3,23 +3,20 @@ import { formatNumber } from "../../utils/format";
 import type { D3Selection, TBreakdown, TConfig, TMargin, TNode, TLink } from "../../typings/ED";
 import { rgb } from "d3-color";
 import { event, select } from "d3-selection";
-import { sum } from "d3-array";
 import { drag } from "d3-drag";
 import { svg } from "../../utils/d3-utils";
-import { transition } from "d3";
 
 /**
  * @param config 
  */
 export function initSankeyChart(config: TConfig) {
   const chart = document.getElementById("chart") as HTMLDivElement;
-  const w = chart.clientWidth;
-  const h = chart.clientHeight;
-
   select(chart).call(
-    svg().height(h).width(w).margin(sankeyModel().margin())
+    svg()
+      .height(chart.clientHeight)
+      .width(chart.clientWidth)
+      .margin(sankeyModel().margin())
   );
-
   window.addEventListener("sankey-chart", () => loadSankeyChart(config));
   window.addEventListener("clear-chart", () => {
     if (config.sankey.select()) {
@@ -41,12 +38,14 @@ export function loadSankeyChart(config: TConfig) {
   canvas.selectAll("g").remove();
 
   config.sankey = sankeyModel()
+    //.alignVertical()
     .alignHorizontal()
     .nodeWidth(30)
     .nodePadding(config.filters.density)
     .size([w - m.left - m.right, h - m.top - m.bottom]);
 
-  config.sankey.nodes(config.db.sankey.nodes)
+  config.sankey
+    .nodes(config.db.sankey.nodes)
     .links(config.db.sankey.links)
     .layout(32);
 
@@ -101,20 +100,11 @@ export function loadSankeyChart(config: TConfig) {
         .clickDistance(1)
         // @ts-ignore
         .on("drag", function (this: SVGGElement, d: TNode) {
-          if (config.filters.move.y) {
-            if (config.filters.move.x) {
-              select(this)
-                .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(w - d.dx, event.x))) + "," + (d.y = Math.max(0, Math.min(h - d.dy, event.y))) + ")");
-            } else {
-              select(this)
-                .attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(h - d.dy, event.y))) + ")");
-            }
-          } else {
-            if (config.filters.move.x) {
-              select(this)
-                .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(w - d.dx, event.x))) + "," + d.y + ")");
-            }
-          }
+          d.y = config.filters.move.y ? Math.max(0, Math.min(h - d.dy, event.y)) : d.y;
+          d.x = config.filters.move.x ? Math.max(0, Math.min(w - d.dx, event.x)) : d.x;
+          
+          select(this).attr("transform", `translate(${d.x},${d.y})`);
+            
           config.sankey.relayout();
           const path = config.sankey.reversibleLink();
       
@@ -149,27 +139,27 @@ export function loadSankeyChart(config: TConfig) {
           value: e.value
         });
       });
-    } else {       
+    } else {
+      let src = 0;
+      let tgt = 0;
       sg.selectAll(".link")
-        // @ts-ignore
-        .filter((l: TLink) => l.target === d)[0]
-          .forEach((l: TLink) => nodesource.push({
-            color: "steelblue",
-            label: l.__data__.source.name, 
-            value: l.__data__.value
-          }));
-  
-      sg.selectAll(".link")
-          // @ts-ignore
-        .filter((l: TLink) => l.source === d)[0]
-          .forEach((l: TLink) => nodetarget.push({
-            color: "steelblue",
-            label: l.__data__.target.name,
-            value: l.__data__.value
-          }));
-
-      let src = sum(nodesource, d => d.value);
-      let tgt = sum(nodetarget, d => d.value);
+        .each(function (link: TLink) {
+          if (link.target === d) {
+            nodesource.push({
+              color: "steelblue",
+              label: link.source.name, 
+              value: link.value
+            });
+            src += link.value;
+          } else if (link.source === d) {
+            nodetarget.push({
+              color: "steelblue",
+              label: link.target.name,
+              value: link.value
+            });
+            tgt += link.value;
+          }
+        } as any);
 
       text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
       text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
@@ -187,34 +177,22 @@ export function loadSankeyChart(config: TConfig) {
     .attr("height", (d: TNode) => d.dy)
     .attr("width", config.sankey.nodeWidth())
     .style("fill", (d: TNode) => d.fill)
-    // @ts-ignore
-    .style("stroke", (d: TNode) => rgb(d.fill).darker(2))
+    .style("stroke", (d: TNode) => rgb(d.fill).darker(2) as any)
     .append("title")
-      .text((d: TNode) => d.name);
+      .text((d: TNode) => `${d.name} (${formatNumber(d.value)})`);
 
   nodeCollection.append("text")
-    .classed("node-label-outer", true)
-    .attr("x", -6)
-    .attr("y", (i: TNode) => i.dy / 2)
+    .attr("class", (d: TNode) => `node-label-outer-${d.x > w / 2 ? "right" : "left"}`)
+    .attr("x", (d: TNode) => d.x > w / 2 ? -6 : 6 + config.sankey.nodeWidth())
+    .attr("y", (d: TNode) => d.dy / 2)
     .attr("dy", ".35em")
-    .attr("text-anchor", "end")
-    .attr("transform", null)
-    .text((i: TNode) => i.name)
-    .filter((i: TNode) => i.x < w / 2)
-      .attr("x", 6 + config.sankey.nodeWidth())
-      .attr("text-anchor", "start");
+    .text((d: TNode) => d.name);
 
   nodeCollection.append("text")
     .classed("node-label", true)
-    .attr("x", function (i: TNode) { return -i.dy / 2; })
-    .attr("y", function (i: TNode) { return i.dx / 2 + 6; })
-    .attr("transform", "rotate(270)")
-    // @ts-ignore
-    .text((i: TNode) => {
-      if (i.dy > 50) {
-        return formatNumber(i.value);
-      }
-    });
+    .attr("x", (d: TNode) => -d.dy / 2)
+    .attr("y", (d: TNode) => d.dx / 2 + 6)
+    .text((d: TNode) => d.dy > 50 ? formatNumber(d.value) : "");
 
   window.dispatchEvent(new CustomEvent("show-legend"));
 }

@@ -39,7 +39,7 @@ export function initUIThemes(config: TConfig) {
   }
 
   /**
-   * Gets the selected value from user's theme choice
+   * Gets the selected value from user"s theme choice
    */
   function getThemeId(): number {
     let choice = 0;

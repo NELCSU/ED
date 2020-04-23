@@ -20,7 +20,7 @@ export function download(text: string, filename: string) {
  * @param html - HTML string to parse
  */
 export function html2text(html: string): string {
-  const ele = document.createElement('textarea');
+  const ele = document.createElement("textarea");
   ele.innerHTML = html;
   return ele.textContent || "";
 }
@@ -32,10 +32,10 @@ export function html2text(html: string): string {
 export function isInViewport(e: Element): boolean {
   const rect = e.getBoundingClientRect();
   return (
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
 }
 
