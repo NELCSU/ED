@@ -1,22 +1,27 @@
-import type { TLink, TNode, TNodeComponent, TSankey } from "../../typings/ED";
+import type { D3Selection, TLink, TMargin, TNode, TNodeComponent, TSankey } from "../../typings/ED";
 import { interpolateNumber } from "d3-interpolate";
 import { min, rollup, sum } from "d3-array";
+import { select } from "d3-selection";
 
 export function sankeyModel() {
   const sankey: TSankey = {
     alignHorizontal: () => {
-      alignment = "horizontal";
+      _alignment = "horizontal";
       return sankey;
     },
     alignVertical: () => {
-      alignment = "vertical";
+      _alignment = "vertical";
+      return sankey;
+    },
+    clear: () => {
+      _selected  = null;
       return sankey;
     },
     layout: (iterations: number) => {
       computeNodeLinks();
       computeNodeValues();
       computeNodeStructure();
-      if (alignment === "horizontal") {
+      if (_alignment === "horizontal") {
         computeNodeBreadthsHorizontal();
         computeNodeDepthsHorizontal(iterations);
       } else {
@@ -30,7 +35,7 @@ export function sankeyModel() {
       let curvature = .5;
       function link(d: TLink) {
         let x0, x1, i, y0, y1;
-        if (alignment === "horizontal") {
+        if (_alignment === "horizontal") {
           let x2, x3;
           x0 = d.source.x + d.source.dx;
           x1 = d.target.x;
@@ -76,6 +81,13 @@ export function sankeyModel() {
         return links;
       }
       links = n;
+      return sankey;
+    },
+    margin: (m: TMargin | undefined) => {
+      if (m === undefined) {
+        return _margin;
+      }
+      _margin = m;
       return sankey;
     },
     nodePadding: (n: number | undefined) => {
@@ -206,6 +218,20 @@ export function sankeyModel() {
         return (d: TLink) => (d.source.x < d.target.x) ? forwardLink(part, d) : backwardLink(part, d);
       };
     },
+    select: (selector: string | undefined) => {
+      if (selector !== undefined) {
+        _selected = select(selector);
+        if (_selected.classed("node")) {
+          const d = _selected.datum();
+          _selected = select(_selected.node().ownerSVGElement)
+            // @ts-ignore
+            .selectAll(".link").filter((l: TLink) => l.source === d || l.target === d);
+        }
+
+        return sankey;
+      }
+      return _selected;
+    },
     size: (n: number[] | undefined) => {
       if (n === undefined) {
         return size;
@@ -214,9 +240,11 @@ export function sankeyModel() {
       return sankey;
     }
   };
-  let alignment = "horizontal";
+  let _alignment = "horizontal";
+  let _margin = { bottom: 25, left: 20, right: 40, top: 20 };
   let nodeWidth = 24;
   let nodePadding = 8;
+  let _selected: D3Selection | null = null;
   let size = [1, 1];
   let nodes: TNode[] = [];
   let links: TLink[] = [];
@@ -519,7 +547,7 @@ export function sankeyModel() {
    */
   function scaleNodeBreadths(kx: number) {
     nodes.forEach((node: TNode) => {
-      if (alignment === "horizontal") {
+      if (_alignment === "horizontal") {
         node.x *= kx;
       } else {
         node.y *= kx;
@@ -690,13 +718,13 @@ export function sankeyModel() {
     });
 
     function ascendingSourceDepth(a: TLink, b: TLink) {
-      return alignment === "horizontal"
+      return _alignment === "horizontal"
         ? a.source.y - b.source.y
         : a.source.x - b.source.x;
     }
 
     function ascendingTargetDepth(a: TLink, b: TLink) {
-      return alignment === "horizontal" 
+      return _alignment === "horizontal" 
         ? a.target.y - b.target.y
         : a.target.x - b.target.x;
     }

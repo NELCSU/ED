@@ -25,6 +25,7 @@ export function start() {
       e.stopImmediatePropagation();
       window.dispatchEvent(new CustomEvent("hide-breakdown", { detail: config }));
       window.dispatchEvent(new CustomEvent("hide-menu"));
+      window.dispatchEvent(new CustomEvent("clear-chart"));
     });
   });
 }

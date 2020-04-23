@@ -20,7 +20,8 @@ export function initSankeyLegend(config: TConfig) {
 
 	function hide() {
 		const svg = select("#chart > svg");
-		svg.select(".chart-legend")
+		const canvas = svg.select(".canvas");
+		canvas.select(".chart-legend")
 			.transition()
 			.style("opacity", 0)
 			.transition()
@@ -31,33 +32,37 @@ export function initSankeyLegend(config: TConfig) {
 	 * @link https://observablehq.com/@d3/voronoi-labels
 	 */
 	function show() {
-		const svg = select("#chart > svg");
+		const svg = document.querySelector("#chart > svg") as SVGSVGElement;
+		const box: DOMRect = svg.getBoundingClientRect();
+		const h = box.height;
+		const w = box.width;
+		const canvas = select(svg).select("g.canvas");
 		const rh: number = config.legend.labels.length * 32;
 		const rw: number = 150;
 
 		// determine the least node dense area of chart
 		let xy: number[][] = [];
-		let nw = config.chart.sankey.nodeWidth() / 2;
-		svg.selectAll("g.node").each((d: any) => {
+		let nw = config.sankey.nodeWidth() / 2;
+		canvas.selectAll("g.node").each((d: any) => {
 			xy.push([d.x + nw, d.y + (d.dy / 2)] as any);
 		});
 		const delaunay = Delaunay.from(xy);
-		const voronoi = delaunay.voronoi([-1, -1, config.chart.width + 1, config.chart.height + 1]);
+		const voronoi = delaunay.voronoi([-1, -1, w + 1, h + 1]);
 		const cells: any[] = xy.map((d, i) => [d, voronoi.cellPolygon(i)]);
-		let box: any, area = 0;
+		let bx: any, area = 0;
 		cells.forEach((cell: any) => {
 			const a = polygonLength(cell[1]);
 			if (a > area) {
 				area = a;
-				box = cell[1];
+				bx = cell[1];
 			}
 		});
-		let [x, y] = polygonCentroid(box);
-		x = x > config.chart.width / 2 ? config.chart.width - rw : 0;
-		y = y > config.chart.height / 2 ? config.chart.height - rh : 0;
+		let [x, y] = polygonCentroid(bx);
+		x = x > w / 2 ? w - rw : 0;
+		y = y > h / 2 ? h - rh : 0;
 		//
 
-		const legend = svg.append("g")
+		const legend = canvas.append("g")
 			.datum({ x: x, y: y })
 			.style("opacity", 0)
 			.classed("chart-legend", true);

@@ -11,7 +11,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const s = new Slicer(data.map(d => d.label));
   const total: number = Math.round(sum(data, (d: TBreakdown) => d.value));
   const f = (total === 1) ? format(".0%") : format(".0f");
-  const margin = { top: 30, right: 10, bottom: 45, left: 20 };
+  const margin = { top: 30, right: 10, bottom: 30, left: 20 };
   const width = node.clientWidth;
   const rw = width - margin.left - margin.right;
   const height = node.clientHeight;

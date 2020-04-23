@@ -4285,7 +4285,8 @@ var App = (function (exports) {
       });
       function hide() {
           const svg = select("#chart > svg");
-          svg.select(".chart-legend")
+          const canvas = svg.select(".canvas");
+          canvas.select(".chart-legend")
               .transition()
               .style("opacity", 0)
               .transition()
@@ -4295,31 +4296,35 @@ var App = (function (exports) {
        * @link https://observablehq.com/@d3/voronoi-labels
        */
       function show() {
-          const svg = select("#chart > svg");
+          const svg = document.querySelector("#chart > svg");
+          const box = svg.getBoundingClientRect();
+          const h = box.height;
+          const w = box.width;
+          const canvas = select(svg).select("g.canvas");
           const rh = config.legend.labels.length * 32;
           const rw = 150;
           // determine the least node dense area of chart
           let xy = [];
-          let nw = config.chart.sankey.nodeWidth() / 2;
-          svg.selectAll("g.node").each((d) => {
+          let nw = config.sankey.nodeWidth() / 2;
+          canvas.selectAll("g.node").each((d) => {
               xy.push([d.x + nw, d.y + (d.dy / 2)]);
           });
           const delaunay = Delaunay.from(xy);
-          const voronoi = delaunay.voronoi([-1, -1, config.chart.width + 1, config.chart.height + 1]);
+          const voronoi = delaunay.voronoi([-1, -1, w + 1, h + 1]);
           const cells = xy.map((d, i) => [d, voronoi.cellPolygon(i)]);
-          let box, area = 0;
+          let bx, area = 0;
           cells.forEach((cell) => {
               const a = polygonLength(cell[1]);
               if (a > area) {
                   area = a;
-                  box = cell[1];
+                  bx = cell[1];
               }
           });
-          let [x, y] = polygonCentroid(box);
-          x = x > config.chart.width / 2 ? config.chart.width - rw : 0;
-          y = y > config.chart.height / 2 ? config.chart.height - rh : 0;
+          let [x, y] = polygonCentroid(bx);
+          x = x > w / 2 ? w - rw : 0;
+          y = y > h / 2 ? h - rh : 0;
           //
-          const legend = svg.append("g")
+          const legend = canvas.append("g")
               .datum({ x: x, y: y })
               .style("opacity", 0)
               .classed("chart-legend", true);
@@ -5780,6 +5785,8 @@ var App = (function (exports) {
           const svg = selection.append("svg")
               .attr("x", 0)
               .attr("y", 0)
+              .attr("height", "100%")
+              .attr("width", "100%")
               .attr("viewBox", `0 0 ${_w} ${_h}`)
               .attr("xmlns", "http://www.w3.org/2000/svg")
               .attr("xmlns:xlink", "http://www.w3.org/1999/xlink");
@@ -5823,7 +5830,7 @@ var App = (function (exports) {
       const s = new Slicer(data.map(d => d.label));
       const total = Math.round(sum(data, (d) => d.value));
       const f = (total === 1) ? format(".0%") : format(".0f");
-      const margin = { top: 30, right: 10, bottom: 45, left: 20 };
+      const margin = { top: 30, right: 10, bottom: 30, left: 20 };
       const width = node.clientWidth;
       const rw = width - margin.left - margin.right;
       const height = node.clientHeight;
@@ -5909,7 +5916,7 @@ var App = (function (exports) {
       const close = document.querySelector(".breakdown-close");
       close.addEventListener("click", (e) => {
           e.stopImmediatePropagation();
-          hide(config);
+          hide();
       });
       function clear() {
           if (message) {
@@ -5929,10 +5936,6 @@ var App = (function (exports) {
        */
       function hide(config) {
           container === null || container === void 0 ? void 0 : container.classList.add("ready");
-          if (config.chart.highlighted) {
-              config.chart.highlighted.style('opacity', config.filters.opacity.low);
-              config.chart.highlighted = undefined;
-          }
           setTimeout(() => clear(), 500);
       }
       /**
@@ -5992,7 +5995,7 @@ var App = (function (exports) {
           container === null || container === void 0 ? void 0 : container.classList.remove("ready");
           window.dispatchEvent(new CustomEvent("hide-menu"));
       }
-      window.addEventListener("hide-breakdown", () => hide(config));
+      window.addEventListener("hide-breakdown", () => hide());
       window.addEventListener("show-status", () => displayStatus(config));
       window.addEventListener("show-breakdown", () => displayBreakdown(config));
   }
@@ -6067,18 +6070,22 @@ var App = (function (exports) {
   function sankeyModel() {
       const sankey = {
           alignHorizontal: () => {
-              alignment = "horizontal";
+              _alignment = "horizontal";
               return sankey;
           },
           alignVertical: () => {
-              alignment = "vertical";
+              _alignment = "vertical";
+              return sankey;
+          },
+          clear: () => {
+              _selected = null;
               return sankey;
           },
           layout: (iterations) => {
               computeNodeLinks();
               computeNodeValues();
               computeNodeStructure();
-              if (alignment === "horizontal") {
+              if (_alignment === "horizontal") {
                   computeNodeBreadthsHorizontal();
                   computeNodeDepthsHorizontal(iterations);
               }
@@ -6093,7 +6100,7 @@ var App = (function (exports) {
               let curvature = .5;
               function link(d) {
                   let x0, x1, i, y0, y1;
-                  if (alignment === "horizontal") {
+                  if (_alignment === "horizontal") {
                       let x2, x3;
                       x0 = d.source.x + d.source.dx;
                       x1 = d.target.x;
@@ -6138,6 +6145,13 @@ var App = (function (exports) {
                   return links;
               }
               links = n;
+              return sankey;
+          },
+          margin: (m) => {
+              if (m === undefined) {
+                  return _margin;
+              }
+              _margin = m;
               return sankey;
           },
           nodePadding: (n) => {
@@ -6245,6 +6259,19 @@ var App = (function (exports) {
                   return (d) => (d.source.x < d.target.x) ? forwardLink(part, d) : backwardLink(part, d);
               };
           },
+          select: (selector) => {
+              if (selector !== undefined) {
+                  _selected = select(selector);
+                  if (_selected.classed("node")) {
+                      const d = _selected.datum();
+                      _selected = select(_selected.node().ownerSVGElement)
+                          // @ts-ignore
+                          .selectAll(".link").filter((l) => l.source === d || l.target === d);
+                  }
+                  return sankey;
+              }
+              return _selected;
+          },
           size: (n) => {
               if (n === undefined) {
                   return size;
@@ -6253,9 +6280,11 @@ var App = (function (exports) {
               return sankey;
           }
       };
-      let alignment = "horizontal";
+      let _alignment = "horizontal";
+      let _margin = { bottom: 25, left: 20, right: 40, top: 20 };
       let nodeWidth = 24;
       let nodePadding = 8;
+      let _selected = null;
       let size = [1, 1];
       let nodes = [];
       let links = [];
@@ -6511,7 +6540,7 @@ var App = (function (exports) {
        */
       function scaleNodeBreadths(kx) {
           nodes.forEach((node) => {
-              if (alignment === "horizontal") {
+              if (_alignment === "horizontal") {
                   node.x *= kx;
               }
               else {
@@ -6654,12 +6683,12 @@ var App = (function (exports) {
               });
           });
           function ascendingSourceDepth(a, b) {
-              return alignment === "horizontal"
+              return _alignment === "horizontal"
                   ? a.source.y - b.source.y
                   : a.source.x - b.source.x;
           }
           function ascendingTargetDepth(a, b) {
-              return alignment === "horizontal"
+              return _alignment === "horizontal"
                   ? a.target.y - b.target.y
                   : a.target.x - b.target.x;
           }
@@ -6678,58 +6707,59 @@ var App = (function (exports) {
    */
   function initSankeyChart(config) {
       const chart = document.getElementById("chart");
-      const m = config.chart.margin;
-      if (chart) {
-          config.chart.width = chart.clientWidth - m.left - m.right;
-          config.chart.height = chart.clientHeight - m.bottom - 130;
-      }
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.style.width = config.chart.width + m.left + m.right + "px";
-      svg.style.height = config.chart.height + m.top + m.bottom + "px";
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.style.transform = "translate(" + m.left + "," + m.top + ")";
-      svg.appendChild(g);
-      chart === null || chart === void 0 ? void 0 : chart.appendChild(svg);
-      config.chart.svg = select(svg);
+      const w = chart.clientWidth;
+      const h = chart.clientHeight;
+      select(chart).call(svg().height(h).width(w).margin(sankeyModel().margin()));
       window.addEventListener("sankey-chart", () => loadSankeyChart(config));
+      window.addEventListener("clear-chart", () => {
+          if (config.sankey.select()) {
+              config.sankey.select().transition().style("opacity", config.filters.opacity.low);
+          }
+          config.sankey.clear();
+      });
   }
   function loadSankeyChart(config) {
-      const svg = config.chart.svg;
-      svg.selectAll("g").remove();
-      config.chart.sankey = sankeyModel()
+      const sg = select("#chart > svg");
+      const chart = document.getElementById("chart");
+      const w = chart.clientWidth;
+      const h = chart.clientHeight;
+      const m = sankeyModel().margin();
+      const canvas = sg.select("g.canvas");
+      canvas.selectAll("g").remove();
+      config.sankey = sankeyModel()
           .alignHorizontal()
           .nodeWidth(30)
           .nodePadding(config.filters.density)
-          .size([config.chart.width, config.chart.height]);
-      config.chart.sankey.nodes(config.db.sankey.nodes)
+          .size([w - m.left - m.right, h - m.top - m.bottom]);
+      config.sankey.nodes(config.db.sankey.nodes)
           .links(config.db.sankey.links)
           .layout(32);
-      const linkCollection = svg.append("g")
+      const linkCollection = canvas.append("g")
           .selectAll(".link")
           .data(config.db.sankey.links)
           .enter()
           .append("g")
           .attr("class", "link");
-      const path = config.chart.sankey.reversibleLink();
-      let h, f, e;
+      const path = config.sankey.reversibleLink();
+      let p, f, e;
       if (path) {
-          h = linkCollection.append("path")
+          p = linkCollection.append("path")
               .attr("d", path(0));
           f = linkCollection.append("path")
               .attr("d", path(1));
           e = linkCollection.append("path")
               .attr("d", path(2));
       }
-      linkCollection.
-          attr("fill", (i) => i.fill ? i.fill : i.source.fill)
-          .attr("opacity", config.filters.opacity.low)
+      linkCollection
+          .attr("fill", (i) => i.fill ? i.fill : i.source.fill)
+          .style("opacity", config.filters.opacity.low)
           .on("click", function (d) {
           event.stopPropagation();
-          if (config.chart.highlighted) {
-              config.chart.highlighted.style('opacity', config.filters.opacity.low);
+          if (config.sankey.select()) {
+              config.sankey.select().transition().style("opacity", config.filters.opacity.low);
           }
-          config.chart.highlighted = select(this);
-          config.chart.highlighted.style('opacity', config.filters.opacity.high);
+          config.sankey.select(this);
+          config.sankey.select().transition().style("opacity", config.filters.opacity.high);
           let text = `<p>${d.source.name} → ${d.target.name} calls</p>`;
           text += `<p>Outgoing: ${formatNumber(d.value)} calls</p>`;
           config.breakdown.message = text;
@@ -6737,7 +6767,7 @@ var App = (function (exports) {
           config.breakdown.chart2 = [];
           window.dispatchEvent(new CustomEvent("show-breakdown"));
       });
-      const nodeCollection = svg.append("g")
+      const nodeCollection = canvas.append("g")
           .selectAll(".node")
           .data(config.db.sankey.nodes)
           .enter()
@@ -6746,40 +6776,39 @@ var App = (function (exports) {
           .attr("transform", (i) => `translate(${i.x},${i.y})`)
           .call(drag()
           .clickDistance(1)
-          .on("drag", function (d, i) {
+          // @ts-ignore
+          .on("drag", function (d) {
           if (config.filters.move.y) {
               if (config.filters.move.x) {
                   select(this)
-                      .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(config.chart.width - d.dx, event.x))) + "," + (d.y = Math.max(0, Math.min(config.chart.height - d.dy, event.y))) + ")");
+                      .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(w - d.dx, event.x))) + "," + (d.y = Math.max(0, Math.min(h - d.dy, event.y))) + ")");
               }
               else {
                   select(this)
-                      .attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(config.chart.height - d.dy, event.y))) + ")");
+                      .attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(h - d.dy, event.y))) + ")");
               }
           }
           else {
               if (config.filters.move.x) {
                   select(this)
-                      .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(config.chart.width - d.dx, event.x))) + "," + d.y + ")");
+                      .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(w - d.dx, event.x))) + "," + d.y + ")");
               }
           }
-          config.chart.sankey.relayout();
-          const path = config.chart.sankey.reversibleLink();
+          config.sankey.relayout();
+          const path = config.sankey.reversibleLink();
           if (path) {
               f.attr("d", path(1));
-              h.attr("d", path(0));
+              p.attr("d", path(0));
               e.attr("d", path(2));
           }
       }));
       nodeCollection.on("click", function (d) {
-          var _a;
           event.stopPropagation();
-          if (config.chart.highlighted) {
-              config.chart.highlighted.style('opacity', config.filters.opacity.low);
+          if (config.sankey.select()) {
+              config.sankey.select().transition().style("opacity", config.filters.opacity.low);
           }
-          config.chart.highlighted = config.chart.svg.selectAll(".link")
-              .filter((l) => l.source === d || l.target === d);
-          (_a = config.chart.highlighted) === null || _a === void 0 ? void 0 : _a.transition().style('opacity', config.filters.opacity.high);
+          config.sankey.select(this);
+          config.sankey.select().transition().style("opacity", config.filters.opacity.high);
           const nodesource = [], nodetarget = [];
           let text;
           if (d.grouping) {
@@ -6794,14 +6823,16 @@ var App = (function (exports) {
               });
           }
           else {
-              config.chart.svg.selectAll(".link")
+              sg.selectAll(".link")
+                  // @ts-ignore
                   .filter((l) => l.target === d)[0]
                   .forEach((l) => nodesource.push({
                   color: "steelblue",
                   label: l.__data__.source.name,
                   value: l.__data__.value
               }));
-              config.chart.svg.selectAll(".link")
+              sg.selectAll(".link")
+                  // @ts-ignore
                   .filter((l) => l.source === d)[0]
                   .forEach((l) => nodetarget.push({
                   color: "steelblue",
@@ -6821,8 +6852,9 @@ var App = (function (exports) {
       });
       nodeCollection.append("rect")
           .attr("height", (d) => d.dy)
-          .attr("width", config.chart.sankey.nodeWidth())
+          .attr("width", config.sankey.nodeWidth())
           .style("fill", (d) => d.fill)
+          // @ts-ignore
           .style("stroke", (d) => rgb(d.fill).darker(2))
           .append("title")
           .text((d) => d.name);
@@ -6834,14 +6866,15 @@ var App = (function (exports) {
           .attr("text-anchor", "end")
           .attr("transform", null)
           .text((i) => i.name)
-          .filter((i) => i.x < config.chart.width / 2)
-          .attr("x", 6 + config.chart.sankey.nodeWidth())
+          .filter((i) => i.x < w / 2)
+          .attr("x", 6 + config.sankey.nodeWidth())
           .attr("text-anchor", "start");
       nodeCollection.append("text")
           .classed("node-label", true)
           .attr("x", function (i) { return -i.dy / 2; })
           .attr("y", function (i) { return i.dx / 2 + 6; })
           .attr("transform", "rotate(270)")
+          // @ts-ignore
           .text((i) => {
           if (i.dy > 50) {
               return formatNumber(i.value);
@@ -7212,6 +7245,7 @@ var App = (function (exports) {
               e.stopImmediatePropagation();
               window.dispatchEvent(new CustomEvent("hide-breakdown", { detail: config }));
               window.dispatchEvent(new CustomEvent("hide-menu"));
+              window.dispatchEvent(new CustomEvent("clear-chart"));
           });
       });
   }

@@ -37,10 +37,6 @@ export function initBreakdown(config: TConfig) {
    */
 	function hide (config: TConfig) {
 		container?.classList.add("ready");
-		if (config.chart.highlighted) {
-      config.chart.highlighted.style('opacity', config.filters.opacity.low);
-      config.chart.highlighted = undefined;
-		}
 		setTimeout(() => clear(), 500);
 	}
 

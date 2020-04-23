@@ -29,6 +29,8 @@ export function svg(): TSVGGenerator {
     const svg = selection.append("svg")
       .attr("x", 0)
       .attr("y", 0)
+      .attr("height", "100%")
+      .attr("width", "100%")
       .attr("viewBox", `0 0 ${_w} ${_h}`)
       .attr("xmlns", "http://www.w3.org/2000/svg")
       .attr("xmlns:xlink", "http://www.w3.org/1999/xlink");
