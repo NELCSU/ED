@@ -11,10 +11,10 @@ export async function fetchDataStore(config: TConfig): Promise<ArrayBuffer> {
 		return new Promise((resolve, reject) => {
 			// @ts-ignore
 			JSZipUtils.getBinaryContent(file, (err: Error, rawdata: ArrayBuffer) => {
-					if (err) {
-						reject(err);
-					}
-					resolve(rawdata);
+				if (err) {
+					reject(err);
+				}
+				resolve(rawdata);
 			});
 		});
 	};

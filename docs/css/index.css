@@ -201,6 +201,10 @@ option:hover {
   justify-content: center;
   padding: 5px;
   text-align: center;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
 }
 
 .panel-row {

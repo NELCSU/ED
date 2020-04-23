@@ -4334,14 +4334,13 @@ var App = (function (exports) {
           const t = transition()
               .duration(500);
           legend.transition(t).style("opacity", 1);
-          legend.call(drag()
-              // @ts-ignore
-              .on("drag", function (d) {
+          function dragged(d) {
               d.x += event.dx;
               d.y += event.dy;
-              select(this)
-                  .attr("transform", (d) => `translate(${[d.x, d.y]})`);
-          }));
+              legend.attr("transform", (d) => `translate(${[d.x, d.y]})`);
+          }
+          // @ts-ignore
+          legend.call(drag().on("drag", dragged));
           legend.append("rect")
               .attr("width", rw + "px")
               .attr("height", rh + "px")
@@ -5843,12 +5842,10 @@ var App = (function (exports) {
           .call(xAxis);
       const ticks = gAxis.selectAll(".tick");
       const text = ticks.selectAll("text");
-      // @ts-ignore
-      text.each(function (d) {
+      text.each(function () {
           const t = select(this);
           const w = this.getBBox().width;
           if (w > x.bandwidth()) {
-              // @ts-ignore
               const parent = select(this.parentNode);
               parent.style("cursor", "pointer")
                   .on("click", function () {
@@ -6467,7 +6464,6 @@ var App = (function (exports) {
                   .forEach(function (nodes) {
                   nodes.forEach(function (node) {
                       if (node.sourceLinks.length) {
-                          // @ts-ignore
                           let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
                           node.x += (y - center(node)) * alpha;
                       }
@@ -6572,7 +6568,6 @@ var App = (function (exports) {
                   .forEach((nodes) => {
                   nodes.forEach(function (node) {
                       if (node.sourceLinks.length) {
-                          // @ts-ignore
                           let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
                           node.y += (y - center(node)) * alpha;
                       }
@@ -6695,8 +6690,7 @@ var App = (function (exports) {
       g.style.transform = "translate(" + m.left + "," + m.top + ")";
       svg.appendChild(g);
       chart === null || chart === void 0 ? void 0 : chart.appendChild(svg);
-      // @ts-ignore
-      config.chart.svg = d3.select(svg);
+      config.chart.svg = select(svg);
       window.addEventListener("sankey-chart", () => loadSankeyChart(config));
   }
   function loadSankeyChart(config) {
@@ -6730,13 +6724,11 @@ var App = (function (exports) {
           attr("fill", (i) => i.fill ? i.fill : i.source.fill)
           .attr("opacity", config.filters.opacity.low)
           .on("click", function (d) {
-          // @ts-ignore
-          d3.event.stopPropagation();
+          event.stopPropagation();
           if (config.chart.highlighted) {
               config.chart.highlighted.style('opacity', config.filters.opacity.low);
           }
-          // @ts-ignore
-          config.chart.highlighted = d3.select(this);
+          config.chart.highlighted = select(this);
           config.chart.highlighted.style('opacity', config.filters.opacity.high);
           let text = `<p>${d.source.name} → ${d.target.name} calls</p>`;
           text += `<p>Outgoing: ${formatNumber(d.value)} calls</p>`;
@@ -6752,68 +6744,81 @@ var App = (function (exports) {
           .append("g")
           .attr("class", "node")
           .attr("transform", (i) => `translate(${i.x},${i.y})`)
-          // @ts-ignore
-          .call(d3.behavior.drag()
-          .origin((i) => i)
-          .on("dragstart", function (d) {
-          var _a;
-          (_a = this.parentNode) === null || _a === void 0 ? void 0 : _a.appendChild(this);
-          // @ts-ignore
-          d.initialPosition = d3.select(this).attr("transform");
-      })
-          .on("drag", dragged)
-          .on("dragend", function (d) {
-          var _a;
-          // @ts-ignore
-          if (d.initialPosition === d3.select(this).attr("transform")) {
-              if (config.chart.highlighted) {
-                  config.chart.highlighted.style('opacity', config.filters.opacity.low);
-              }
-              config.chart.highlighted = config.chart.svg.selectAll(".link")
-                  .filter((l) => l.source === d || l.target === d);
-              (_a = config.chart.highlighted) === null || _a === void 0 ? void 0 : _a.transition().style('opacity', config.filters.opacity.high);
-              const nodesource = [], nodetarget = [];
-              let text;
-              if (d.grouping) {
-                  text = `<p>Breakdown for ${d.name}</p>`;
-                  config.breakdown.message = text;
-                  d.grouping.map((e) => {
-                      nodesource.push({
-                          color: e.color ? e.color : "steelblue",
-                          label: e.label,
-                          value: e.value
-                      });
-                  });
+          .call(drag()
+          .clickDistance(1)
+          .on("drag", function (d, i) {
+          if (config.filters.move.y) {
+              if (config.filters.move.x) {
+                  select(this)
+                      .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(config.chart.width - d.dx, event.x))) + "," + (d.y = Math.max(0, Math.min(config.chart.height - d.dy, event.y))) + ")");
               }
               else {
-                  config.chart.svg.selectAll(".link")
-                      .filter((l) => l.target === d)[0]
-                      .forEach((l) => nodesource.push({
-                      color: "steelblue",
-                      label: l.__data__.source.name,
-                      value: l.__data__.value
-                  }));
-                  config.chart.svg.selectAll(".link")
-                      .filter((l) => l.source === d)[0]
-                      .forEach((l) => nodetarget.push({
-                      color: "steelblue",
-                      label: l.__data__.target.name,
-                      value: l.__data__.value
-                  }));
-                  // @ts-ignore
-                  let src = d3.sum(nodesource, d => d.value);
-                  // @ts-ignore
-                  let tgt = d3.sum(nodetarget, d => d.value);
-                  text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
-                  text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
-                  text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+                  select(this)
+                      .attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(config.chart.height - d.dy, event.y))) + ")");
               }
-              config.breakdown.message = text;
-              config.breakdown.chart1 = nodesource;
-              config.breakdown.chart2 = nodetarget;
-              window.dispatchEvent(new CustomEvent("show-breakdown"));
+          }
+          else {
+              if (config.filters.move.x) {
+                  select(this)
+                      .attr("transform", "translate(" + (d.x = Math.max(0, Math.min(config.chart.width - d.dx, event.x))) + "," + d.y + ")");
+              }
+          }
+          config.chart.sankey.relayout();
+          const path = config.chart.sankey.reversibleLink();
+          if (path) {
+              f.attr("d", path(1));
+              h.attr("d", path(0));
+              e.attr("d", path(2));
           }
       }));
+      nodeCollection.on("click", function (d) {
+          var _a;
+          event.stopPropagation();
+          if (config.chart.highlighted) {
+              config.chart.highlighted.style('opacity', config.filters.opacity.low);
+          }
+          config.chart.highlighted = config.chart.svg.selectAll(".link")
+              .filter((l) => l.source === d || l.target === d);
+          (_a = config.chart.highlighted) === null || _a === void 0 ? void 0 : _a.transition().style('opacity', config.filters.opacity.high);
+          const nodesource = [], nodetarget = [];
+          let text;
+          if (d.grouping) {
+              text = `<p>Breakdown for ${d.name}</p>`;
+              config.breakdown.message = text;
+              d.grouping.map((e) => {
+                  nodesource.push({
+                      color: e.color ? e.color : "steelblue",
+                      label: e.label,
+                      value: e.value
+                  });
+              });
+          }
+          else {
+              config.chart.svg.selectAll(".link")
+                  .filter((l) => l.target === d)[0]
+                  .forEach((l) => nodesource.push({
+                  color: "steelblue",
+                  label: l.__data__.source.name,
+                  value: l.__data__.value
+              }));
+              config.chart.svg.selectAll(".link")
+                  .filter((l) => l.source === d)[0]
+                  .forEach((l) => nodetarget.push({
+                  color: "steelblue",
+                  label: l.__data__.target.name,
+                  value: l.__data__.value
+              }));
+              let src = sum(nodesource, d => d.value);
+              let tgt = sum(nodetarget, d => d.value);
+              text = `<p>${d.name}</p><p>Incoming: ${formatNumber(src)} calls</p>`;
+              text += `<p>Outgoing: ${formatNumber(tgt)} calls</p>`;
+              text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+          }
+          config.breakdown.message = text;
+          config.breakdown.chart1 = nodesource;
+          config.breakdown.chart2 = nodetarget;
+          window.dispatchEvent(new CustomEvent("show-breakdown"));
+      });
       nodeCollection.append("rect")
           .attr("height", (d) => d.dy)
           .attr("width", config.chart.sankey.nodeWidth())
@@ -6843,37 +6848,6 @@ var App = (function (exports) {
           }
       });
       window.dispatchEvent(new CustomEvent("show-legend"));
-      function dragged(i) {
-          if (config.filters.move.y) {
-              if (config.filters.move.x) {
-                  // @ts-ignore
-                  d3.select(this)
-                      // @ts-ignore
-                      .attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.chart.width - i.dx, d3.event.x))) + "," + (i.y = Math.max(0, Math.min(config.chart.height - i.dy, d3.event.y))) + ")");
-              }
-              else {
-                  // @ts-ignore
-                  d3.select(this)
-                      // @ts-ignore
-                      .attr("transform", "translate(" + i.x + "," + (i.y = Math.max(0, Math.min(config.chart.height - i.dy, d3.event.y))) + ")");
-              }
-          }
-          else {
-              if (config.filters.move.x) {
-                  // @ts-ignore
-                  d3.select(this)
-                      // @ts-ignore
-                      .attr("transform", "translate(" + (i.x = Math.max(0, Math.min(config.chart.width - i.dx, d3.event.x))) + "," + i.y + ")");
-              }
-          }
-          config.chart.sankey.relayout();
-          const path = config.chart.sankey.reversibleLink();
-          if (path) {
-              f.attr("d", path(1));
-              h.attr("d", path(0));
-              e.attr("d", path(2));
-          }
-      }
   }
 
   /**

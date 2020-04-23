@@ -466,7 +466,6 @@ export function sankeyModel() {
         .forEach(function (nodes) {
           nodes.forEach(function (node: TNode) {
             if (node.sourceLinks.length) {
-              // @ts-ignore
               let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
               node.x += (y - center(node)) * alpha;
             }
@@ -589,7 +588,6 @@ export function sankeyModel() {
         .forEach((nodes: TNode[]) => {
           nodes.forEach(function (node: TNode) {
             if (node.sourceLinks.length) {
-              // @ts-ignore
               let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, value);
               node.y += (y - center(node)) * alpha;
             }

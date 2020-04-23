@@ -76,15 +76,13 @@ export function initSankeyLegend(config: TConfig) {
 
 		legend.transition(t as any).style("opacity", 1);
 
-		legend.call(drag()
-			// @ts-ignore
-			.on("drag", function (this: Element, d: TPoint) {
-				d.x += event.dx;
-				d.y += event.dy;
-				select(this)
-					.attr("transform", (d: any) => `translate(${[d.x, d.y]})`);
-			})
-		);
+		function dragged(d: TPoint) {
+			d.x += event.dx;
+			d.y += event.dy;
+			legend.attr("transform", (d: any) => `translate(${[d.x, d.y]})`);
+		}
+		// @ts-ignore
+		legend.call(drag().on("drag", dragged));
 
 		legend.append("rect")
 			.attr("width", rw + "px")

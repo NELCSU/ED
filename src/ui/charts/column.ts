@@ -38,13 +38,11 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const ticks = gAxis.selectAll(".tick");
   const text = ticks.selectAll("text");
   
-  // @ts-ignore
-  text.each(function(this: SVGTextElement, d: string) {
+  text.each(function(this: SVGTextElement) {
     const t = select(this);
     const w = this.getBBox().width;
     if (w > x.bandwidth()) {
-      // @ts-ignore
-      const parent = select(this.parentNode);
+      const parent = select(this.parentNode as SVGGElement);
 
       parent.style("cursor", "pointer")
         .on("click", function(this: Element) {
@@ -61,7 +59,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
 
       t.text((d: any) => d.substring(0, Math.ceil(x.bandwidth() / 8)) + " ...");
     }
-  });
+  } as any);
 
   const gbar = canvas.selectAll(".bar")
     .data(data).enter()
