@@ -16,7 +16,7 @@
     "imagemin": "imagemin src/images/* --out-dir=docs/images",
     "start": "pm2 start npm -- start-app -w",
     "start-app": "npm run http",
-    "test": "npm run dev-serve",
+    "test": "npm run http",
     "test-compile": "jest --config jestconfig.json",
     "update-all": "npm run update-jszip",
     "update-jszip": "ncp node_modules/jszip/dist docs/lib/jszip"
@@ -77,7 +77,7 @@
     "postcss-sorting": "^5.0.1",
     "rollup": "^2.7.2",
     "rollup-plugin-typescript2": "^0.27.0",
-    "sass": "^1.26.3",
+    "sass": "^1.26.5",
     "stylelint": "^13.3.3",
     "ts-jest": "^25.4.0",
     "typescript": "^3.8.3"

@@ -39,27 +39,31 @@ export function initSankeyLegend(config: TConfig) {
 		const canvas = select(svg).select("g.canvas");
 		const rh: number = config.legend.labels.length * 32;
 		const rw: number = 150;
+		const m = config.sankey.margin();
+		const nw = config.sankey.nodeWidth() / 2;
 
 		// determine the least node dense area of chart
 		let xy: number[][] = [];
-		let nw = config.sankey.nodeWidth() / 2;
-		canvas.selectAll("g.node").each((d: any) => {
-			xy.push([d.x + nw, d.y + (d.dy / 2)] as any);
+		const nodes = canvas.selectAll("g.node").data();
+		nodes.forEach((d: any) => {
+			xy.push([d.x1 - nw, d.y1 - (d.y0 / 2)] as any);
 		});
 		const delaunay = Delaunay.from(xy);
-		const voronoi = delaunay.voronoi([-1, -1, w + 1, h + 1]);
+		const voronoi = delaunay.voronoi([-1, -1, w - m.left - m.right + 1, h - m.top - m.bottom + 1]);
 		const cells: any[] = xy.map((d, i) => [d, voronoi.cellPolygon(i)]);
 		let bx: any, area = 0;
 		cells.forEach((cell: any) => {
-			const a = polygonLength(cell[1]);
-			if (a > area) {
-				area = a;
-				bx = cell[1];
-			}
+			try {
+				const a = polygonLength(cell[1]);
+				if (a > area) {
+					area = a;
+					bx = cell[1];
+				}
+			} catch {}
 		});
 		let [x, y] = polygonCentroid(bx);
-		x = x > w / 2 ? w - rw : 0;
-		y = y > h / 2 ? h - rh : 0;
+		x = x > w / 2 ? w - rw - m.right : 0 + m.left;
+		y = y > h / 2 ? h - rh - m.bottom : 0 + m.top;
 		//
 
 		const legend = canvas.append("g")
@@ -67,14 +71,9 @@ export function initSankeyLegend(config: TConfig) {
 			.style("opacity", 0)
 			.classed("chart-legend", true);
 
-		/* DEBUG
-		svg.append("path")
-      .attr("fill", "none")
-      .attr("stroke", "#900")
-      .attr("d", voronoi.render());
-
- 		svg.append("path")
-      .attr("d", delaunay.renderPoints(undefined, 2));*/
+		/*// DEBUG
+		canvas.append("path").attr("fill", "none").attr("stroke", "#900").attr("d", voronoi.render());
+		canvas.append("path").attr("d", delaunay.renderPoints(undefined, 2));*/
 
 		const t = transition()
 			.duration(500);
@@ -102,7 +101,6 @@ export function initSankeyLegend(config: TConfig) {
 
 			g.append("circle")
 				.style("fill", item)
-				.style("opacity", config.filters.opacity.high)
 				.attr("r", 10)
 				.attr("cx", 10)
 				.attr("cy", 10 + (1 * n));

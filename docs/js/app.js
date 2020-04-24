@@ -1138,6 +1138,12 @@ var App = (function (exports) {
     return point(node, event);
   }
 
+  function selectAll(selector) {
+    return typeof selector === "string"
+        ? new Selection([document.querySelectorAll(selector)], [document.documentElement])
+        : new Selection([selector == null ? [] : selector], root);
+  }
+
   function touch(node, touches, identifier) {
     if (arguments.length < 3) identifier = touches, touches = sourceEvent().changedTouches;
 
@@ -4303,39 +4309,39 @@ var App = (function (exports) {
           const canvas = select(svg).select("g.canvas");
           const rh = config.legend.labels.length * 32;
           const rw = 150;
+          const m = config.sankey.margin();
+          const nw = config.sankey.nodeWidth() / 2;
           // determine the least node dense area of chart
           let xy = [];
-          let nw = config.sankey.nodeWidth() / 2;
-          canvas.selectAll("g.node").each((d) => {
-              xy.push([d.x + nw, d.y + (d.dy / 2)]);
+          const nodes = canvas.selectAll("g.node").data();
+          nodes.forEach((d) => {
+              xy.push([d.x1 - nw, d.y1 - (d.y0 / 2)]);
           });
           const delaunay = Delaunay.from(xy);
-          const voronoi = delaunay.voronoi([-1, -1, w + 1, h + 1]);
+          const voronoi = delaunay.voronoi([-1, -1, w - m.left - m.right + 1, h - m.top - m.bottom + 1]);
           const cells = xy.map((d, i) => [d, voronoi.cellPolygon(i)]);
           let bx, area = 0;
           cells.forEach((cell) => {
-              const a = polygonLength(cell[1]);
-              if (a > area) {
-                  area = a;
-                  bx = cell[1];
+              try {
+                  const a = polygonLength(cell[1]);
+                  if (a > area) {
+                      area = a;
+                      bx = cell[1];
+                  }
               }
+              catch (_a) { }
           });
           let [x, y] = polygonCentroid(bx);
-          x = x > w / 2 ? w - rw : 0;
-          y = y > h / 2 ? h - rh : 0;
+          x = x > w / 2 ? w - rw - m.right : 0 + m.left;
+          y = y > h / 2 ? h - rh - m.bottom : 0 + m.top;
           //
           const legend = canvas.append("g")
               .datum({ x: x, y: y })
               .style("opacity", 0)
               .classed("chart-legend", true);
-          /* DEBUG
-          svg.append("path")
-        .attr("fill", "none")
-        .attr("stroke", "#900")
-        .attr("d", voronoi.render());
-
-          svg.append("path")
-        .attr("d", delaunay.renderPoints(undefined, 2));*/
+          /*// DEBUG
+          canvas.append("path").attr("fill", "none").attr("stroke", "#900").attr("d", voronoi.render());
+          canvas.append("path").attr("d", delaunay.renderPoints(undefined, 2));*/
           const t = transition()
               .duration(500);
           legend.transition(t).style("opacity", 1);
@@ -4357,7 +4363,6 @@ var App = (function (exports) {
                   .style("transform", `translate(10px, ${20 + (25 * n)}px)`);
               g.append("circle")
                   .style("fill", item)
-                  .style("opacity", config.filters.opacity.high)
                   .attr("r", 10)
                   .attr("cx", 10)
                   .attr("cy", 10 + (1 * n));
@@ -4901,33 +4906,6 @@ var App = (function (exports) {
   var ascendingBisect = bisector(ascending$1);
   var bisectRight = ascendingBisect.right;
 
-  function identity$2(x) {
-    return x;
-  }
-
-  function rollup(values, reduce, ...keys) {
-    return nest(values, identity$2, reduce, keys);
-  }
-
-  function nest(values, map, reduce, keys) {
-    return (function regroup(values, i) {
-      if (i >= keys.length) return reduce(values);
-      const groups = new Map();
-      const keyof = keys[i++];
-      let index = -1;
-      for (const value of values) {
-        const key = keyof(value, ++index, values);
-        const group = groups.get(key);
-        if (group) group.push(value);
-        else groups.set(key, [value]);
-      }
-      for (const [key, values] of groups) {
-        groups.set(key, regroup(values, i));
-      }
-      return map(groups);
-    })(values, 0);
-  }
-
   function sequence(start, stop, step) {
     start = +start, stop = +stop, step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
 
@@ -5201,7 +5179,7 @@ var App = (function (exports) {
 
   var unit = [0, 1];
 
-  function identity$3(x) {
+  function identity$2(x) {
     return x;
   }
 
@@ -5265,14 +5243,14 @@ var App = (function (exports) {
         transform,
         untransform,
         unknown,
-        clamp = identity$3,
+        clamp = identity$2,
         piecewise,
         output,
         input;
 
     function rescale() {
       var n = Math.min(domain.length, range.length);
-      if (clamp !== identity$3) clamp = clamper(domain[0], domain[n - 1]);
+      if (clamp !== identity$2) clamp = clamper(domain[0], domain[n - 1]);
       piecewise = n > 2 ? polymap : bimap;
       output = input = null;
       return scale;
@@ -5299,7 +5277,7 @@ var App = (function (exports) {
     };
 
     scale.clamp = function(_) {
-      return arguments.length ? (clamp = _ ? true : identity$3, rescale()) : clamp !== identity$3;
+      return arguments.length ? (clamp = _ ? true : identity$2, rescale()) : clamp !== identity$2;
     };
 
     scale.interpolate = function(_) {
@@ -5317,7 +5295,7 @@ var App = (function (exports) {
   }
 
   function continuous() {
-    return transformer()(identity$3, identity$3);
+    return transformer()(identity$2, identity$2);
   }
 
   function tickFormat(start, stop, count, specifier) {
@@ -5417,7 +5395,7 @@ var App = (function (exports) {
 
   var slice = Array.prototype.slice;
 
-  function identity$4(x) {
+  function identity$3(x) {
     return x;
   }
 
@@ -5466,7 +5444,7 @@ var App = (function (exports) {
 
     function axis(context) {
       var values = tickValues == null ? (scale.ticks ? scale.ticks.apply(scale, tickArguments) : scale.domain()) : tickValues,
-          format = tickFormat == null ? (scale.tickFormat ? scale.tickFormat.apply(scale, tickArguments) : identity$4) : tickFormat,
+          format = tickFormat == null ? (scale.tickFormat ? scale.tickFormat.apply(scale, tickArguments) : identity$3) : tickFormat,
           spacing = Math.max(tickSizeInner, 0) + tickPadding,
           range = scale.range(),
           range0 = +range[0] + 0.5,
@@ -6067,536 +6045,626 @@ var App = (function (exports) {
       });
   }
 
-  function ascXDepth(a, b) {
-      return b.x - a.x;
+  var pi = Math.PI,
+      tau$1 = 2 * pi,
+      epsilon$2 = 1e-6,
+      tauEpsilon = tau$1 - epsilon$2;
+
+  function Path$1() {
+    this._x0 = this._y0 = // start of current subpath
+    this._x1 = this._y1 = null; // end of current subpath
+    this._ = "";
   }
-  function ascXDepthSource(a, b) {
-      return a.source.x - b.source.x;
+
+  function path() {
+    return new Path$1;
   }
-  function ascYDepth(a, b) {
-      return a.y - b.y;
+
+  Path$1.prototype = path.prototype = {
+    constructor: Path$1,
+    moveTo: function(x, y) {
+      this._ += "M" + (this._x0 = this._x1 = +x) + "," + (this._y0 = this._y1 = +y);
+    },
+    closePath: function() {
+      if (this._x1 !== null) {
+        this._x1 = this._x0, this._y1 = this._y0;
+        this._ += "Z";
+      }
+    },
+    lineTo: function(x, y) {
+      this._ += "L" + (this._x1 = +x) + "," + (this._y1 = +y);
+    },
+    quadraticCurveTo: function(x1, y1, x, y) {
+      this._ += "Q" + (+x1) + "," + (+y1) + "," + (this._x1 = +x) + "," + (this._y1 = +y);
+    },
+    bezierCurveTo: function(x1, y1, x2, y2, x, y) {
+      this._ += "C" + (+x1) + "," + (+y1) + "," + (+x2) + "," + (+y2) + "," + (this._x1 = +x) + "," + (this._y1 = +y);
+    },
+    arcTo: function(x1, y1, x2, y2, r) {
+      x1 = +x1, y1 = +y1, x2 = +x2, y2 = +y2, r = +r;
+      var x0 = this._x1,
+          y0 = this._y1,
+          x21 = x2 - x1,
+          y21 = y2 - y1,
+          x01 = x0 - x1,
+          y01 = y0 - y1,
+          l01_2 = x01 * x01 + y01 * y01;
+
+      // Is the radius negative? Error.
+      if (r < 0) throw new Error("negative radius: " + r);
+
+      // Is this path empty? Move to (x1,y1).
+      if (this._x1 === null) {
+        this._ += "M" + (this._x1 = x1) + "," + (this._y1 = y1);
+      }
+
+      // Or, is (x1,y1) coincident with (x0,y0)? Do nothing.
+      else if (!(l01_2 > epsilon$2));
+
+      // Or, are (x0,y0), (x1,y1) and (x2,y2) collinear?
+      // Equivalently, is (x1,y1) coincident with (x2,y2)?
+      // Or, is the radius zero? Line to (x1,y1).
+      else if (!(Math.abs(y01 * x21 - y21 * x01) > epsilon$2) || !r) {
+        this._ += "L" + (this._x1 = x1) + "," + (this._y1 = y1);
+      }
+
+      // Otherwise, draw an arc!
+      else {
+        var x20 = x2 - x0,
+            y20 = y2 - y0,
+            l21_2 = x21 * x21 + y21 * y21,
+            l20_2 = x20 * x20 + y20 * y20,
+            l21 = Math.sqrt(l21_2),
+            l01 = Math.sqrt(l01_2),
+            l = r * Math.tan((pi - Math.acos((l21_2 + l01_2 - l20_2) / (2 * l21 * l01))) / 2),
+            t01 = l / l01,
+            t21 = l / l21;
+
+        // If the start tangent is not coincident with (x0,y0), line to.
+        if (Math.abs(t01 - 1) > epsilon$2) {
+          this._ += "L" + (x1 + t01 * x01) + "," + (y1 + t01 * y01);
+        }
+
+        this._ += "A" + r + "," + r + ",0,0," + (+(y01 * x20 > x01 * y20)) + "," + (this._x1 = x1 + t21 * x21) + "," + (this._y1 = y1 + t21 * y21);
+      }
+    },
+    arc: function(x, y, r, a0, a1, ccw) {
+      x = +x, y = +y, r = +r, ccw = !!ccw;
+      var dx = r * Math.cos(a0),
+          dy = r * Math.sin(a0),
+          x0 = x + dx,
+          y0 = y + dy,
+          cw = 1 ^ ccw,
+          da = ccw ? a0 - a1 : a1 - a0;
+
+      // Is the radius negative? Error.
+      if (r < 0) throw new Error("negative radius: " + r);
+
+      // Is this path empty? Move to (x0,y0).
+      if (this._x1 === null) {
+        this._ += "M" + x0 + "," + y0;
+      }
+
+      // Or, is (x0,y0) not coincident with the previous point? Line to (x0,y0).
+      else if (Math.abs(this._x1 - x0) > epsilon$2 || Math.abs(this._y1 - y0) > epsilon$2) {
+        this._ += "L" + x0 + "," + y0;
+      }
+
+      // Is this arc empty? We’re done.
+      if (!r) return;
+
+      // Does the angle go the wrong way? Flip the direction.
+      if (da < 0) da = da % tau$1 + tau$1;
+
+      // Is this a complete circle? Draw two arcs to complete the circle.
+      if (da > tauEpsilon) {
+        this._ += "A" + r + "," + r + ",0,1," + cw + "," + (x - dx) + "," + (y - dy) + "A" + r + "," + r + ",0,1," + cw + "," + (this._x1 = x0) + "," + (this._y1 = y0);
+      }
+
+      // Is this arc non-empty? Draw an arc!
+      else if (da > epsilon$2) {
+        this._ += "A" + r + "," + r + ",0," + (+(da >= pi)) + "," + cw + "," + (this._x1 = x + r * Math.cos(a1)) + "," + (this._y1 = y + r * Math.sin(a1));
+      }
+    },
+    rect: function(x, y, w, h) {
+      this._ += "M" + (this._x0 = this._x1 = +x) + "," + (this._y0 = this._y1 = +y) + "h" + (+w) + "v" + (+h) + "h" + (-w) + "Z";
+    },
+    toString: function() {
+      return this._;
+    }
+  };
+
+  function constant$4(x) {
+    return function constant() {
+      return x;
+    };
   }
-  function ascYDepthSource(a, b) {
-      return a.source.y - b.source.y;
+
+  function x(p) {
+    return p[0];
   }
-  function ascTargetDepthH(a, b) {
-      return a.target.y - b.target.y;
+
+  function y(p) {
+    return p[1];
   }
-  function ascTargetDepthV(a, b) {
-      return a.target.x - b.target.x;
+
+  var slice$1 = Array.prototype.slice;
+
+  function linkSource(d) {
+    return d.source;
   }
-  function center$1(node) {
-      return node.y + node.dy / 2;
+
+  function linkTarget(d) {
+    return d.target;
   }
-  function computeLinkDepths(nodes, align) {
-      nodes.forEach((node) => {
-          node.sourceLinks.sort(align === "horizontal" ? ascTargetDepthH : ascTargetDepthV);
-          node.targetLinks.sort(align === "horizontal" ? ascYDepthSource : ascXDepthSource);
-      });
-      nodes.forEach((node) => {
-          let sy = 0, ty = 0;
-          node.sourceLinks.forEach((link) => {
-              link.sy = sy;
-              sy += link.dy;
-          });
-          node.targetLinks.forEach((link) => {
-              link.ty = ty;
-              ty += link.dy;
-          });
-      });
+
+  function link(curve) {
+    var source = linkSource,
+        target = linkTarget,
+        x$1 = x,
+        y$1 = y,
+        context = null;
+
+    function link() {
+      var buffer, argv = slice$1.call(arguments), s = source.apply(this, argv), t = target.apply(this, argv);
+      if (!context) context = buffer = path();
+      curve(context, +x$1.apply(this, (argv[0] = s, argv)), +y$1.apply(this, argv), +x$1.apply(this, (argv[0] = t, argv)), +y$1.apply(this, argv));
+      if (buffer) return context = null, buffer + "" || null;
+    }
+
+    link.source = function(_) {
+      return arguments.length ? (source = _, link) : source;
+    };
+
+    link.target = function(_) {
+      return arguments.length ? (target = _, link) : target;
+    };
+
+    link.x = function(_) {
+      return arguments.length ? (x$1 = typeof _ === "function" ? _ : constant$4(+_), link) : x$1;
+    };
+
+    link.y = function(_) {
+      return arguments.length ? (y$1 = typeof _ === "function" ? _ : constant$4(+_), link) : y$1;
+    };
+
+    link.context = function(_) {
+      return arguments.length ? ((context = _ == null ? null : _), link) : context;
+    };
+
+    return link;
   }
-  // Assign the breadth (x-position) for each strongly connected component,
-  // followed by assigning breadth within the component.
-  function computeNodeBreadthsHorizontal(nodes, components, width, size, align) {
-      layerComponents();
-      components.forEach((component, i) => bfs(component.root, (node) => node.sourceLinks
-          .filter((sourceLink) => sourceLink.target.component === i)
-          .map((sourceLink) => sourceLink.target)));
-      let componentsByBreadth = Array.from(rollup(components.sort((a, b) => a.x - b.x), item => item, d => d.x).values());
-      let max = -1, nextMax = -1;
-      componentsByBreadth.forEach((c) => {
-          c.forEach((component) => {
-              component.x = max + 1;
-              component.scc.forEach((node) => {
-                  node.x = node.layer ? node.layer : component.x + node.x;
-                  nextMax = Math.max(nextMax, node.x);
-              });
-          });
-          max = nextMax;
-      });
-      nodes.filter(n => n.sourceLinks.filter((l) => l.source.name !== l.target.name).length === 0)
-          .forEach(n => n.x = max);
-      scaleNodeBreadths(nodes, (size - width) / Math.max(max, 1), align);
-      function layerComponents() {
-          let remainingComponents = components;
-          let nextComponents;
-          let visitedIndex = new Set();
+
+  function curveHorizontal(context, x0, y0, x1, y1) {
+    context.moveTo(x0, y0);
+    context.bezierCurveTo(x0 = (x0 + x1) / 2, y0, x0, y1, x1, y1);
+  }
+
+  function linkHorizontal() {
+    return link(curveHorizontal);
+  }
+
+  function justify(node, n) {
+      return node.sourceLinks.length ? node.depth : n - 1;
+  }
+  function constant$5(x) {
+      return function () {
+          return x;
+      };
+  }
+  function ascendingSourceBreadth(a, b) {
+      return ascendingBreadth(a.source, b.source) || a.index - b.index;
+  }
+  function ascendingTargetBreadth(a, b) {
+      return ascendingBreadth(a.target, b.target) || a.index - b.index;
+  }
+  function ascendingBreadth(a, b) {
+      return a.y0 - b.y0;
+  }
+  function value(d) {
+      return d.value;
+  }
+  function defaultId(d) {
+      return d.index;
+  }
+  function defaultNodes(graph) {
+      return graph.nodes;
+  }
+  function defaultLinks(graph) {
+      return graph.links;
+  }
+  function find(nodeById, id) {
+      const node = nodeById.get(id);
+      if (!node) {
+          throw new Error("missing: " + id);
+      }
+      return node;
+  }
+  // @ts-ignore
+  function computeLinkBreadths(nodes) {
+      for (const node of nodes) {
+          let y0 = node.y0;
+          let y1 = y0;
+          for (const link of node.sourceLinks) {
+              link.y0 = y0 + link.width / 2;
+              y0 += link.width;
+          }
+          for (const link of node.targetLinks) {
+              link.y1 = y1 + link.width / 2;
+              y1 += link.width;
+          }
+      }
+  }
+  function Sankey() {
+      let x0 = 0, y0 = 0, x1 = 1, y1 = 1; // extent
+      let dx = 24; // nodeWidth
+      // @ts-ignore
+      let dy = 8;
+      let margin = { bottom: 20, left: 20, right: 30, top: 30 };
+      let py; // nodePadding
+      let id = defaultId;
+      let align = justify;
+      // @ts-ignore
+      let sort, linkSort;
+      let nodes = defaultNodes;
+      let links = defaultLinks;
+      let iterations = 6;
+      function sankey() {
+          // @ts-ignore
+          const graph = { nodes: nodes.apply(null, arguments), links: links.apply(null, arguments) };
+          computeNodeLinks(graph);
+          computeNodeValues(graph);
+          computeNodeDepths(graph);
+          computeNodeHeights(graph);
+          computeNodeBreadths(graph);
+          computeLinkBreadths(graph.nodes);
+          return graph;
+      }
+      sankey.update = function (graph) {
+          computeLinkBreadths(graph.nodes);
+          return graph;
+      };
+      sankey.margin = function (_) {
+          return arguments.length ? (margin = _, sankey) : margin;
+      };
+      sankey.nodeId = function (_) {
+          return arguments.length ? (id = typeof _ === "function" ? _ : constant$5(_), sankey) : id;
+      };
+      sankey.nodeAlign = function (_) {
+          return arguments.length ? (align = typeof _ === "function" ? _ : constant$5(_), sankey) : align;
+      };
+      sankey.nodeSort = function (_) {
+          // @ts-ignore
+          return arguments.length ? (sort = _, sankey) : sort;
+      };
+      sankey.nodeWidth = function (_) {
+          return arguments.length ? (dx = +_, sankey) : dx;
+      };
+      sankey.nodePadding = function (_) {
+          return arguments.length ? (dy = py = +_, sankey) : dy;
+      };
+      sankey.nodes = function (_) {
+          return arguments.length ? (nodes = typeof _ === "function" ? _ : constant$5(_), sankey) : nodes;
+      };
+      sankey.links = function (_) {
+          return arguments.length ? (links = typeof _ === "function" ? _ : constant$5(_), sankey) : links;
+      };
+      sankey.linkSort = function (_) {
+          // @ts-ignore
+          return arguments.length ? (linkSort = _, sankey) : linkSort;
+      };
+      sankey.size = function (_) {
+          return arguments.length ? (x0 = y0 = 0, x1 = +_[0], y1 = +_[1], sankey) : [x1 - x0, y1 - y0];
+      };
+      sankey.extent = function (_) {
+          return arguments.length ? (x0 = +_[0][0], x1 = +_[1][0], y0 = +_[0][1], y1 = +_[1][1], sankey) : [[x0, y0], [x1, y1]];
+      };
+      sankey.iterations = function (_) {
+          return arguments.length ? (iterations = +_, sankey) : iterations;
+      };
+      // @ts-ignore
+      function computeNodeLinks({ nodes, links }) {
+          for (const [i, node] of nodes.entries()) {
+              node.index = i;
+              node.sourceLinks = [];
+              node.targetLinks = [];
+          }
+          // @ts-ignore
+          const nodeById = new Map(nodes.map((d, i) => [id(d, i, nodes), d]));
+          for (const [i, link] of links.entries()) {
+              link.index = i;
+              let { source, target } = link;
+              if (typeof source !== "object") {
+                  source = link.source = find(nodeById, source);
+              }
+              if (typeof target !== "object") {
+                  target = link.target = find(nodeById, target);
+              }
+              source.sourceLinks.push(link);
+              target.targetLinks.push(link);
+          }
+          // @ts-ignore
+          if (linkSort !== null) {
+              for (const { sourceLinks, targetLinks } of nodes) {
+                  // @ts-ignore
+                  sourceLinks.sort(linkSort);
+                  // @ts-ignore
+                  targetLinks.sort(linkSort);
+              }
+          }
+      }
+      // @ts-ignore
+      function computeNodeValues({ nodes }) {
+          for (const node of nodes) {
+              node.value = node.fixedValue === undefined
+                  ? Math.max(sum(node.sourceLinks, value), sum(node.targetLinks, value))
+                  : node.fixedValue;
+          }
+      }
+      // @ts-ignore
+      function computeNodeDepths({ nodes }) {
+          const n = nodes.length;
+          let current = new Set(nodes);
+          let next = new Set;
           let x = 0;
-          while (remainingComponents.length) {
-              nextComponents = [];
-              visitedIndex.clear();
-              remainingComponents.forEach((component) => {
-                  component.x = x;
-                  component.scc.forEach((n) => {
-                      n.sourceLinks.forEach((l) => {
-                          if (!visitedIndex.has(l.target.component) && l.target.component !== component.index) {
-                              nextComponents.push(components[l.target.component]);
-                              visitedIndex.add(l.target.component);
-                          }
-                      });
-                  });
-              });
-              remainingComponents = nextComponents;
-              ++x;
+          while (current.size) {
+              for (const node of current) {
+                  // @ts-ignore
+                  node.depth = x;
+                  // @ts-ignore
+                  for (const { target } of node.sourceLinks) {
+                      next.add(target);
+                  }
+              }
+              if (++x > n) {
+                  throw new Error("circular link");
+              }
+              current = next;
+              next = new Set;
           }
       }
-      function bfs(node, extractTargets) {
-          let queue = [node], currentCount = 1, nextCount = 0, x = 0;
-          while (currentCount > 0) {
-              let currentNode = queue.shift();
-              currentCount--;
-              if (currentNode) {
-                  if (currentNode.x === undefined) {
-                      currentNode.x = x;
-                      currentNode.dx = width;
-                      let targets = extractTargets(currentNode);
-                      queue = queue.concat(targets);
-                      nextCount += targets.length;
+      // @ts-ignore
+      function computeNodeHeights({ nodes }) {
+          const n = nodes.length;
+          let current = new Set(nodes);
+          let next = new Set;
+          let x = 0;
+          while (current.size) {
+              for (const node of current) {
+                  // @ts-ignore
+                  node.height = x;
+                  // @ts-ignore
+                  for (const { source } of node.targetLinks) {
+                      next.add(source);
                   }
               }
-              if (currentCount === 0) { // level change
-                  x++;
-                  currentCount = nextCount;
-                  nextCount = 0;
+              if (++x > n) {
+                  throw new Error("circular link");
               }
+              current = next;
+              next = new Set;
           }
       }
-  }
-  function computeNodeBreadthsVertical(nodes, links, pad, size, align, iterations) {
-      let nodesByBreadth = Array.from(rollup(nodes.sort((a, b) => a.x - b.x), item => item, d => d.y).values());
-      let ky = (size - (nodesByBreadth[0].length - 1) * pad) / sum(nodesByBreadth[0], (d) => d.value);
-      nodesByBreadth.forEach((nodes) => {
-          nodes.forEach((node, i) => {
-              node.x = i;
-              node.dy = node.value * ky;
-          });
-      });
-      links.forEach((link) => link.dy = link.value * ky);
-      resolveCollisionsV(nodesByBreadth, pad, size);
-      for (let alpha = 1; iterations > 0; --iterations) {
-          relaxLeftToRight(nodesByBreadth, alpha, align);
-          resolveCollisionsV(nodesByBreadth, pad, size);
-          relaxRightToLeft(nodesByBreadth, alpha *= .99, align);
-          resolveCollisionsV(nodesByBreadth, pad, size);
-      }
-  }
-  function computeNodeDepthsHorizontal(nodes, links, pad, size, align, iterations) {
-      let nodesByBreadth = Array.from(rollup(nodes.sort((a, b) => a.x - b.x), item => item, d => d.x).values());
-      initializeNodeDepth(nodesByBreadth, links, pad, size);
-      resolveCollisionsH(nodesByBreadth, pad, size);
-      for (let alpha = 1; iterations > 0; --iterations) {
-          relaxRightToLeft(nodesByBreadth, alpha *= .99, align);
-          resolveCollisionsH(nodesByBreadth, pad, size);
-          relaxLeftToRight(nodesByBreadth, alpha, align);
-          resolveCollisionsH(nodesByBreadth, pad, size);
-      }
-  }
-  function computeNodeDepthsVertical(nodes, width, size, align) {
-      let remainingNodes = nodes, nextNodes, y = 0;
-      while (remainingNodes.length) {
-          nextNodes = [];
-          remainingNodes.forEach((node) => {
-              node.y = y;
-              node.sourceLinks.forEach((link) => {
-                  if (nextNodes.indexOf(link.target) < 0) {
-                      nextNodes.push(link.target);
-                  }
-              });
-          });
-          remainingNodes = nextNodes;
-          ++y;
-      }
-      moveSinksDown(nodes, y);
-      scaleNodeBreadths(nodes, (size - width) / (y - 1), align);
-  }
-  /**
-   * @description
-   * Populate the sourceLinks and targetLinks for each node.
-   * Also, if the source and target are not objects, assume they are indices.
-   */
-  function computeNodeLinks(nodes, links) {
-      nodes.forEach(node => {
-          node.sourceLinks = [];
-          node.targetLinks = [];
-      });
-      links.forEach((link) => {
-          let source = link.source, target = link.target;
-          if (typeof source === "number") {
-              const key = link.source;
-              source = link.source = nodes[key];
-          }
-          if (typeof target === "number") {
-              const key = link.target;
-              target = link.target = nodes[key];
-          }
-          source.sourceLinks.push(link);
-          target.targetLinks.push(link);
-      });
-  }
-  /**
-   * @description
-   * Take the list of nodes and create a DAG of supervertices, each consisting of a strongly connected component of the graph
-   * @see http://en.wikipedia.org/wiki/Tarjan's_strongly_connected_components_algorithm
-   */
-  function computeNodeStructure(nodes, components) {
-      let nodeStack = [], index = 0;
-      nodes.forEach((node) => {
-          if (!node.index) {
-              connect(node);
-          }
-      });
-      function connect(node) {
-          node.index = index++;
-          node.lowIndex = node.index;
-          node.onStack = true;
-          nodeStack.push(node);
-          if (node.sourceLinks) {
-              node.sourceLinks.forEach((sourceLink) => {
-                  let target = sourceLink.target;
-                  if (target.index === undefined) {
-                      connect(target);
-                      node.lowIndex = Math.min(node.lowIndex, target.lowIndex);
-                  }
-                  else if (target.onStack) {
-                      node.lowIndex = Math.min(node.lowIndex, target.index);
-                  }
-              });
-              if (node.lowIndex === node.index) {
-                  let component = [], currentNode;
-                  do {
-                      currentNode = nodeStack.pop();
-                      if (currentNode) {
-                          currentNode.onStack = false;
-                          component.push(currentNode);
-                      }
-                  } while (currentNode !== node);
-                  components.push({
-                      index: 0,
-                      root: node,
-                      scc: component,
-                      x: 0
-                  });
-              }
-          }
-      }
-      components.forEach((component, i) => {
-          component.index = i;
-          component.scc.forEach((node) => node.component = i);
-      });
-  }
-  /**
-   * Compute the value (size) of each node by summing the associated links.
-   */
-  function computeNodeValues(nodes) {
-      nodes.forEach((node) => {
-          if (!(node.value)) {
-              node.value = Math.max(sum(node.sourceLinks, d => d.value), sum(node.targetLinks, d => d.value));
-          }
-      });
-  }
-  function initializeNodeDepth(nodesByBreadth, links, pad, size) {
-      let ky = min(nodesByBreadth, nodes => (size - (nodes.length - 1) * pad) / sum(nodes, (d) => d.value));
-      nodesByBreadth.forEach(nodes => {
-          nodes.forEach((node, i) => {
-              if (ky !== undefined) {
-                  node.y = i;
-                  node.dy = node.value * ky;
-              }
-          });
-      });
-      links.forEach(link => {
-          if (ky !== undefined) {
-              link.dy = link.value * ky;
-          }
-      });
-  }
-  function linkForward(part, d) {
-      let curvature = 0.5;
-      let x0 = d.source.x + d.source.dx, x1 = d.target.x, xi = interpolateNumber(x0, x1), x2 = xi(curvature), x3 = xi(1 - curvature), y0 = d.source.y + d.sy, y1 = d.target.y + d.ty, y2 = d.source.y + d.sy + d.dy, y3 = d.target.y + d.ty + d.dy;
-      switch (part) {
-          case 0:
-              return "M" + x0 + "," + y0 + "L" + x0 + "," + (y0 + d.dy);
-          case 1:
-              return "M" + x0 + "," + y0 +
-                  "C" + x2 + "," + y0 + " " + x3 + "," + y1 + " " + x1 + "," + y1 +
-                  "L" + x1 + "," + y3 +
-                  "C" + x3 + "," + y3 + " " + x2 + "," + y2 + " " + x0 + "," + y2 +
-                  "Z";
-          case 2:
-              return "M" + x1 + "," + y1 + "L" + x1 + "," + (y1 + d.dy);
-      }
-  }
-  function linkBack(part, d) {
-      let curveExtension = 30;
-      let curveDepth = 15;
-      function direction(d) {
-          return d.source.y + d.sy > d.target.y + d.ty ? -1 : 1;
-      }
-      let dt = direction(d) * curveDepth, x0 = d.source.x + d.source.dx, y0 = d.source.y + d.sy, x1 = d.target.x, y1 = d.target.y + d.ty;
-      switch (part) {
-          case 0:
-              return "M" + toPoint(x0, y0) +
-                  "C" + toPoint(x0, y0) +
-                  toPoint(x0 + curveExtension, y0) +
-                  toPoint(x0 + curveExtension, y0 + dt) +
-                  "L" + toPoint(x0 + curveExtension, y0 + dt + d.dy) +
-                  "C" + toPoint(x0 + curveExtension, y0 + d.dy) +
-                  toPoint(x0, y0 + d.dy) +
-                  toPoint(x0, y0 + d.dy) +
-                  "Z";
-          case 1:
-              return "M" + toPoint(x0 + curveExtension, y0 + dt) +
-                  "C" + toPoint(x0 + curveExtension, y0 + 3 * dt) +
-                  toPoint(x1 - curveExtension, y1 - 3 * dt) +
-                  toPoint(x1 - curveExtension, y1 - dt) +
-                  "L" + toPoint(x1 - curveExtension, y1 - dt + d.dy) +
-                  "C" + toPoint(x1 - curveExtension, y1 - 3 * dt + d.dy) +
-                  toPoint(x0 + curveExtension, y0 + 3 * dt + d.dy) +
-                  toPoint(x0 + curveExtension, y0 + dt + d.dy) +
-                  "Z";
-          case 2:
-              return "M" + toPoint(x1 - curveExtension, y1 - dt) +
-                  "C" + toPoint(x1 - curveExtension, y1) +
-                  toPoint(x1, y1) +
-                  toPoint(x1, y1) +
-                  "L" + toPoint(x1, y1 + d.dy) +
-                  "C" + toPoint(x1, y1 + d.dy) +
-                  toPoint(x1 - curveExtension, y1 + d.dy) +
-                  toPoint(x1 - curveExtension, y1 + d.dy - dt) +
-                  "Z";
-      }
-  }
-  function moveSinksDown(nodes, y) {
-      nodes.forEach((node) => {
-          if (!node.sourceLinks.length) {
-              node.y = y - 1;
-          }
-      });
-  }
-  function relaxLeftToRight(nodesByBreadth, alpha, align) {
-      nodesByBreadth.forEach(nodes => {
-          nodes.forEach((node) => {
-              if (node.targetLinks.length) {
-                  let s = sum(node.targetLinks, weightedSource) / sum(node.targetLinks, d => d.value);
-                  if (align === "horizontal") {
-                      node.y += (s - center$1(node)) * alpha;
-                  }
-                  else {
-                      node.x += (s - center$1(node)) * alpha;
-                  }
-              }
-          });
-      });
-  }
-  function relaxRightToLeft(nodesByBreadth, alpha, align) {
-      nodesByBreadth.slice().reverse()
-          .forEach(nodes => {
-          nodes.forEach((node) => {
-              if (node.sourceLinks.length) {
-                  let y = sum(node.sourceLinks, weightedTarget) / sum(node.sourceLinks, d => d.value);
-                  if (align === "horizontal") {
-                      node.y += (y - center$1(node)) * alpha;
-                  }
-                  else {
-                      node.x += (y - center$1(node)) * alpha;
-                  }
-              }
-          });
-      });
-  }
-  function resolveCollisionsH(nodesByBreadth, pad, size) {
-      nodesByBreadth.forEach(nodes => {
-          let node, dy, s = 0, n = nodes.length, i;
-          // Push any overlapping nodes down.
-          nodes.sort(ascYDepth);
-          for (i = 0; i < n; ++i) {
-              node = nodes[i];
-              dy = s - node.y;
-              if (dy > 0) {
-                  node.y += dy;
-              }
-              s = node.y + node.dy + pad;
-          }
-          // If the bottommost node goes outside the bounds, push it back up.
-          dy = s - pad - size;
-          if (dy > 0) {
-              s = node.y -= dy;
-              // Push any overlapping nodes back up.
-              for (i = n - 2; i >= 0; --i) {
-                  node = nodes[i];
-                  dy = node.y + node.dy + pad - s;
-                  if (dy > 0) {
-                      node.y -= dy;
-                  }
-                  s = node.y;
-              }
-          }
-      });
-  }
-  function resolveCollisionsV(nodesByBreadth, pad, size) {
-      nodesByBreadth.forEach(nodes => {
-          let node, dy, s = 0, n = nodes.length, i;
-          // Push any overlapping nodes right.
-          nodes.sort(ascXDepth);
-          for (i = 0; i < n; ++i) {
-              node = nodes[i];
-              dy = s - node.x;
-              if (dy > 0) {
-                  node.x += dy;
-              }
-              s = node.x + node.dy + pad;
-          }
-          // If the rightmost node goes outside the bounds, push it left.
-          dy = s - pad - size;
-          if (dy > 0) {
-              s = node.x -= dy;
-              // Push any overlapping nodes left.
-              for (i = n - 2; i >= 0; --i) {
-                  node = nodes[i];
-                  dy = node.x + node.dy + pad - s;
-                  if (dy > 0) {
-                      node.x -= dy;
-                  }
-                  s = node.x;
-              }
-          }
-      });
-  }
-  function scaleNodeBreadths(nodes, kx, align) {
-      nodes.forEach((node) => {
-          if (align === "horizontal") {
-              node.x *= kx;
-          }
-          else {
-              node.y *= kx;
-          }
-      });
-  }
-  function toPoint(x, y) {
-      return x + "," + y + " ";
-  }
-  function weightedSource(link) {
-      return center$1(link.source) * link.value;
-  }
-  function weightedTarget(link) {
-      return center$1(link.target) * link.value;
-  }
-  function sankeyModel() {
-      let _alignment = "horizontal";
-      let _margin = { bottom: 25, left: 20, right: 40, top: 20 };
-      let nodeWidth = 24;
-      let nodePadding = 8;
-      let _selected = null;
-      let size = [1, 1];
-      let nodes = [];
-      let links = [];
-      const sankey = {
-          alignHorizontal: () => {
-              _alignment = "horizontal";
-              return sankey;
-          },
-          alignVertical: () => {
-              _alignment = "vertical";
-              return sankey;
-          },
-          clear: () => {
-              _selected = null;
-              return sankey;
-          },
-          layout: (iterations) => {
-              const components = [];
-              computeNodeLinks(nodes, links);
-              computeNodeValues(nodes);
-              computeNodeStructure(nodes, components);
-              if (_alignment === "horizontal") {
-                  computeNodeBreadthsHorizontal(nodes, components, nodeWidth, size[0], _alignment);
-                  computeNodeDepthsHorizontal(nodes, links, nodePadding, size[1], _alignment, iterations);
+      // @ts-ignore
+      function computeNodeLayers({ nodes }) {
+          // @ts-ignore
+          const x = max(nodes, d => d.depth) + 1;
+          const kx = (x1 - x0 - dx) / (x - 1);
+          const columns = new Array(x);
+          for (const node of nodes) {
+              const i = Math.max(0, Math.min(x - 1, Math.floor(align.call(null, node, x))));
+              node.layer = i;
+              node.x0 = x0 + i * kx;
+              node.x1 = node.x0 + dx;
+              if (columns[i]) {
+                  columns[i].push(node);
               }
               else {
-                  computeNodeDepthsVertical(nodes, nodeWidth, size[1], _alignment);
-                  computeNodeBreadthsVertical(nodes, links, nodePadding, size[0], _alignment, iterations);
+                  columns[i] = [node];
               }
-              computeLinkDepths(nodes, _alignment);
-              return sankey;
-          },
-          links: (n) => {
-              if (n === undefined) {
-                  return links;
-              }
-              links = n;
-              return sankey;
-          },
-          margin: (m) => {
-              if (m === undefined) {
-                  return _margin;
-              }
-              _margin = m;
-              return sankey;
-          },
-          nodePadding: (n) => {
-              if (n === undefined) {
-                  return nodePadding;
-              }
-              nodePadding = +n;
-              return sankey;
-          },
-          nodes: (n) => {
-              if (n === undefined) {
-                  return nodes;
-              }
-              nodes = n;
-              return sankey;
-          },
-          nodeWidth: (n) => {
-              if (n === undefined) {
-                  return nodeWidth;
-              }
-              nodeWidth = +n;
-              return sankey;
-          },
-          relayout: () => {
-              computeLinkDepths(nodes, _alignment);
-              return sankey;
-          },
-          reversibleLink: () => {
-              return function (part) {
-                  return (d) => (d.source.x < d.target.x)
-                      ? linkForward(part, d)
-                      : linkBack(part, d);
-              };
-          },
-          select: (selector) => {
-              if (selector !== undefined) {
-                  _selected = select(selector);
-                  if (_selected.classed("node")) {
-                      const d = _selected.datum();
-                      _selected = select(_selected.node().ownerSVGElement)
-                          // @ts-ignore
-                          .selectAll(".link").filter((l) => l.source === d || l.target === d);
-                  }
-                  return sankey;
-              }
-              return _selected;
-          },
-          size: (n) => {
-              if (n === undefined) {
-                  return size;
-              }
-              size = n;
-              return sankey;
           }
-      };
+          // @ts-ignore
+          if (sort) {
+              for (const column of columns) {
+                  // @ts-ignore
+                  column.sort(sort);
+              }
+          }
+          return columns;
+      }
+      // @ts-ignore
+      function initializeNodeBreadths(columns) {
+          // @ts-ignore
+          const ky = min(columns, c => (y1 - y0 - (c.length - 1) * py) / sum(c, value));
+          for (const nodes of columns) {
+              let y = y0;
+              for (const node of nodes) {
+                  node.y0 = y;
+                  node.y1 = y + node.value * ky;
+                  // @ts-ignore
+                  y = node.y1 + py;
+                  for (const link of node.sourceLinks) {
+                      link.width = link.value * ky;
+                  }
+              }
+              // @ts-ignore
+              y = (y1 - y + py) / (nodes.length + 1);
+              for (let i = 0; i < nodes.length; ++i) {
+                  const node = nodes[i];
+                  node.y0 += y * (i + 1);
+                  node.y1 += y * (i + 1);
+              }
+              reorderLinks(nodes);
+          }
+      }
+      // @ts-ignore
+      function computeNodeBreadths(graph) {
+          const columns = computeNodeLayers(graph);
+          py = Math.min(dy, (y1 - y0) / (max(columns, c => c.length) - 1));
+          initializeNodeBreadths(columns);
+          for (let i = 0; i < iterations; ++i) {
+              const alpha = Math.pow(0.99, i);
+              const beta = Math.max(1 - alpha, (i + 1) / iterations);
+              relaxRightToLeft(columns, alpha, beta);
+              relaxLeftToRight(columns, alpha, beta);
+          }
+      }
+      // Reposition each node based on its incoming (target) links.
+      function relaxLeftToRight(columns, alpha, beta) {
+          for (let i = 1, n = columns.length; i < n; ++i) {
+              const column = columns[i];
+              for (const target of column) {
+                  let y = 0;
+                  let w = 0;
+                  for (const { source, value } of target.targetLinks) {
+                      let v = value * (target.layer - source.layer);
+                      y += targetTop(source, target) * v;
+                      w += v;
+                  }
+                  if (!(w > 0)) {
+                      continue;
+                  }
+                  let dy = (y / w - target.y0) * alpha;
+                  target.y0 += dy;
+                  target.y1 += dy;
+                  reorderNodeLinks(target);
+              }
+              // @ts-ignore
+              if (sort === undefined) {
+                  column.sort(ascendingBreadth);
+              }
+              resolveCollisions(column, beta);
+          }
+      }
+      // Reposition each node based on its outgoing (source) links.
+      function relaxRightToLeft(columns, alpha, beta) {
+          for (let n = columns.length, i = n - 2; i >= 0; --i) {
+              const column = columns[i];
+              for (const source of column) {
+                  let y = 0;
+                  let w = 0;
+                  for (const { target, value } of source.sourceLinks) {
+                      let v = value * (target.layer - source.layer);
+                      y += sourceTop(source, target) * v;
+                      w += v;
+                  }
+                  if (!(w > 0)) {
+                      continue;
+                  }
+                  let dy = (y / w - source.y0) * alpha;
+                  source.y0 += dy;
+                  source.y1 += dy;
+                  reorderNodeLinks(source);
+              }
+              // @ts-ignore
+              if (sort === undefined) {
+                  column.sort(ascendingBreadth);
+              }
+              resolveCollisions(column, beta);
+          }
+      }
+      // @ts-ignore
+      function resolveCollisions(nodes, alpha) {
+          const i = nodes.length >> 1;
+          const subject = nodes[i];
+          resolveCollisionsBottomToTop(nodes, subject.y0 - py, i - 1, alpha);
+          resolveCollisionsTopToBottom(nodes, subject.y1 + py, i + 1, alpha);
+          resolveCollisionsBottomToTop(nodes, y1, nodes.length - 1, alpha);
+          resolveCollisionsTopToBottom(nodes, y0, 0, alpha);
+      }
+      // @ts-ignore
+      function resolveCollisionsTopToBottom(nodes, y, i, alpha) {
+          for (; i < nodes.length; ++i) {
+              const node = nodes[i];
+              const dy = (y - node.y0) * alpha;
+              if (dy > 1e-6) {
+                  node.y0 += dy, node.y1 += dy;
+              }
+              y = node.y1 + py;
+          }
+      }
+      // @ts-ignore
+      function resolveCollisionsBottomToTop(nodes, y, i, alpha) {
+          for (; i >= 0; --i) {
+              const node = nodes[i];
+              const dy = (node.y1 - y) * alpha;
+              if (dy > 1e-6) {
+                  node.y0 -= dy, node.y1 -= dy;
+              }
+              y = node.y0 - py;
+          }
+      }
+      // @ts-ignore
+      function reorderNodeLinks({ sourceLinks, targetLinks }) {
+          // @ts-ignore
+          if (linkSort === undefined) {
+              for (const { source: { sourceLinks } } of targetLinks) {
+                  sourceLinks.sort(ascendingTargetBreadth);
+              }
+              for (const { target: { targetLinks } } of sourceLinks) {
+                  targetLinks.sort(ascendingSourceBreadth);
+              }
+          }
+      }
+      // @ts-ignore
+      function reorderLinks(nodes) {
+          // @ts-ignore
+          if (linkSort === undefined) {
+              for (const { sourceLinks, targetLinks } of nodes) {
+                  sourceLinks.sort(ascendingTargetBreadth);
+                  targetLinks.sort(ascendingSourceBreadth);
+              }
+          }
+      }
+      // @ts-ignore
+      function targetTop(source, target) {
+          let y = source.y0 - (source.sourceLinks.length - 1) * py / 2;
+          for (const { target: node, width } of source.sourceLinks) {
+              if (node === target) {
+                  break;
+              }
+              y += width + py;
+          }
+          for (const { source: node, width } of target.targetLinks) {
+              if (node === source) {
+                  break;
+              }
+              y -= width;
+          }
+          return y;
+      }
+      // @ts-ignore
+      function sourceTop(source, target) {
+          let y = target.y0 - (target.targetLinks.length - 1) * py / 2;
+          for (const { source: node, width } of target.targetLinks) {
+              if (node === source) {
+                  break;
+              }
+              y += width + py;
+          }
+          for (const { target: node, width } of source.sourceLinks) {
+              if (node === target) {
+                  break;
+              }
+              y -= width;
+          }
+          return y;
+      }
       return sankey;
+  }
+  // @ts-ignore
+  function horizontalSource(d) {
+      return [d.source.x1, d.y0];
+  }
+  // @ts-ignore
+  function horizontalTarget(d) {
+      return [d.target.x0, d.y1];
+  }
+  function sankeyLinkHorizontal() {
+      return linkHorizontal()
+          // @ts-ignore
+          .source(horizontalSource)
+          .target(horizontalTarget);
   }
 
   /**
@@ -6604,16 +6672,44 @@ var App = (function (exports) {
    */
   function initSankeyChart(config) {
       const chart = document.getElementById("chart");
+      const w = chart.clientWidth;
+      const h = chart.clientHeight;
+      const m = { bottom: 20, left: 20, right: 20, top: 30 };
+      let selected;
+      function clear() {
+          if (selected) {
+              selected.classed("selected", false);
+              selected = undefined;
+          }
+      }
+      config.sankey = Sankey()
+          .nodePadding(config.filters.density)
+          // @ts-ignore
+          .margin(m)
+          .nodeWidth(30)
+          .extent([[1, 1], [w - m.left - m.right, h - m.top - m.bottom]]);
       select(chart).call(svg()
           .height(chart.clientHeight)
           .width(chart.clientWidth)
-          .margin(sankeyModel().margin()));
+          .margin(m));
       window.addEventListener("sankey-chart", () => loadSankeyChart(config));
-      window.addEventListener("clear-chart", () => {
-          if (config.sankey.select()) {
-              config.sankey.select().transition().style("opacity", config.filters.opacity.low);
+      window.addEventListener("clear-chart", () => { clear(); });
+      window.addEventListener("select-chart", (e) => {
+          clear();
+          selected = e.detail;
+          if (selected.classed("node")) {
+              const dt = selected.datum();
+              selectAll("g.link")
+                  .each((d, i, n) => {
+                  if (d.source === dt || d.target === dt) {
+                      select(n[i]).select("path").classed("selected", true);
+                  }
+              });
+              selected = selectAll(".selected");
           }
-          config.sankey.clear();
+          else {
+              selected.classed("selected", true);
+          }
       });
   }
   function loadSankeyChart(config) {
@@ -6621,81 +6717,78 @@ var App = (function (exports) {
       const chart = document.getElementById("chart");
       const w = chart.clientWidth;
       const h = chart.clientHeight;
-      const m = sankeyModel().margin();
       const canvas = sg.select("g.canvas");
       canvas.selectAll("g").remove();
-      config.sankey = sankeyModel()
-          //.alignVertical()
-          .alignHorizontal()
-          .nodeWidth(30)
-          .nodePadding(config.filters.density)
-          .size([w - m.left - m.right, h - m.top - m.bottom]);
-      config.sankey
-          .nodes(config.db.sankey.nodes)
-          .links(config.db.sankey.links)
-          .layout(32);
+      let graph = config.sankey(config.db.sankey);
       const linkCollection = canvas.append("g")
-          .selectAll(".link")
-          .data(config.db.sankey.links)
+          .selectAll("g")
+          .data(graph.links)
           .enter()
           .append("g")
           .attr("class", "link");
-      const path = config.sankey.reversibleLink();
-      let p, f, e;
-      if (path) {
-          p = linkCollection.append("path")
-              .attr("d", path(0));
-          f = linkCollection.append("path")
-              .attr("d", path(1));
-          e = linkCollection.append("path")
-              .attr("d", path(2));
-      }
       linkCollection
-          .attr("fill", (i) => i.fill ? i.fill : i.source.fill)
-          .style("opacity", config.filters.opacity.low)
-          .on("click", function (d) {
+          .append("path")
+          .classed("link", true)
+          .attr("d", sankeyLinkHorizontal())
+          .attr("stroke", (d) => d.fill ? d.fill : d.source.fill)
+          .attr("stroke-opacity", config.filters.opacity.low)
+          .attr("stroke-width", (d) => Math.max(1, d.width))
+          .attr("fill", "none")
+          .on("click", linkclick)
+          .append("title")
+          .text((d) => `${d.source.name} -> ${d.target.name}`);
+      const dragger = drag()
+          .clickDistance(1)
+          .on("start", dragstart)
+          .on("drag", dragmove)
+          .on("end", dragend);
+      const nodeCollection = canvas.append("g")
+          .selectAll(".node")
+          .data(graph.nodes)
+          .enter()
+          .append("g")
+          .attr("class", "node")
+          .attr('transform', (d) => `translate(${d.x0},${d.y0})`)
+          .call(dragger);
+      nodeCollection.on("click", nodeclick);
+      nodeCollection.append("rect")
+          .classed("node", true)
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("height", (d) => d.y1 - d.y0)
+          .attr("width", (d) => d.x1 - d.x0)
+          .style("fill", (d) => d.fill)
+          .style("stroke", (d) => rgb(d.fill).darker(2))
+          .append("title")
+          .text((d) => `${d.name} (${formatNumber(d.value)})`);
+      nodeCollection.append("text")
+          .attr("class", (d) => `node-label-outer-${d.x0 > w / 2 ? "right" : "left"}`)
+          .attr("x", (d) => d.x0 < (w / 2) ? (d.x1 - d.x0) + 6 : -6)
+          .attr("y", (d) => (d.y1 - d.y0) / 2)
+          .attr("dy", ".35em")
+          .text((d) => d.name);
+      nodeCollection.append("text")
+          .attr("class", "node-label")
+          .attr("x", (d) => -(d.y1 - d.y0) / 2)
+          .attr("y", (d) => (d.x1 - d.x0) / 2)
+          .attr("dy", ".35em")
+          .text((d) => (d.y1 - d.y0) > 50 ? formatNumber(d.value) : "");
+      window.dispatchEvent(new CustomEvent("show-legend"));
+      function linkclick(d) {
           event.stopPropagation();
-          if (config.sankey.select()) {
-              config.sankey.select().transition().style("opacity", config.filters.opacity.low);
-          }
-          config.sankey.select(this);
-          config.sankey.select().transition().style("opacity", config.filters.opacity.high);
+          window.dispatchEvent(new CustomEvent("clear-chart"));
+          window.dispatchEvent(new CustomEvent("select-chart", { detail: select(this) }));
           let text = `<p>${d.source.name} → ${d.target.name} calls</p>`;
           text += `<p>Outgoing: ${formatNumber(d.value)} calls</p>`;
           config.breakdown.message = text;
           config.breakdown.chart1 = d.supply;
           config.breakdown.chart2 = [];
           window.dispatchEvent(new CustomEvent("show-breakdown"));
-      });
-      const nodeCollection = canvas.append("g")
-          .selectAll(".node")
-          .data(config.db.sankey.nodes)
-          .enter()
-          .append("g")
-          .attr("class", "node")
-          .attr("transform", (i) => `translate(${i.x},${i.y})`)
-          .call(drag()
-          .clickDistance(1)
-          // @ts-ignore
-          .on("drag", function (d) {
-          d.y = config.filters.move.y ? Math.max(0, Math.min(h - d.dy, event.y)) : d.y;
-          d.x = config.filters.move.x ? Math.max(0, Math.min(w - d.dx, event.x)) : d.x;
-          select(this).attr("transform", `translate(${d.x},${d.y})`);
-          config.sankey.relayout();
-          const path = config.sankey.reversibleLink();
-          if (path) {
-              f.attr("d", path(1));
-              p.attr("d", path(0));
-              e.attr("d", path(2));
-          }
-      }));
-      nodeCollection.on("click", function (d) {
+      }
+      function nodeclick(d) {
           event.stopPropagation();
-          if (config.sankey.select()) {
-              config.sankey.select().transition().style("opacity", config.filters.opacity.low);
-          }
-          config.sankey.select(this);
-          config.sankey.select().transition().style("opacity", config.filters.opacity.high);
+          window.dispatchEvent(new CustomEvent("clear-chart"));
+          window.dispatchEvent(new CustomEvent("select-chart", { detail: select(this) }));
           const nodesource = [], nodetarget = [];
           let text;
           if (d.grouping) {
@@ -6739,26 +6832,70 @@ var App = (function (exports) {
           config.breakdown.chart1 = nodesource;
           config.breakdown.chart2 = nodetarget;
           window.dispatchEvent(new CustomEvent("show-breakdown"));
-      });
-      nodeCollection.append("rect")
-          .attr("height", (d) => d.dy)
-          .attr("width", config.sankey.nodeWidth())
-          .style("fill", (d) => d.fill)
-          .style("stroke", (d) => rgb(d.fill).darker(2))
-          .append("title")
-          .text((d) => `${d.name} (${formatNumber(d.value)})`);
-      nodeCollection.append("text")
-          .attr("class", (d) => `node-label-outer-${d.x > w / 2 ? "right" : "left"}`)
-          .attr("x", (d) => d.x > w / 2 ? -6 : 6 + config.sankey.nodeWidth())
-          .attr("y", (d) => d.dy / 2)
-          .attr("dy", ".35em")
-          .text((d) => d.name);
-      nodeCollection.append("text")
-          .classed("node-label", true)
-          .attr("x", (d) => -d.dy / 2)
-          .attr("y", (d) => d.dx / 2 + 6)
-          .text((d) => d.dy > 50 ? formatNumber(d.value) : "");
-      window.dispatchEvent(new CustomEvent("show-legend"));
+      }
+      function dragstart(d) {
+          if (!d.__x) {
+              d.__x = event.x;
+          }
+          if (!d.__y) {
+              d.__y = event.y;
+          }
+          if (!d.__x0) {
+              d.__x0 = d.x0;
+          }
+          if (!d.__y0) {
+              d.__y0 = d.y0;
+          }
+          if (!d.__x1) {
+              d.__x1 = d.x1;
+          }
+          if (!d.__y1) {
+              d.__y1 = d.y1;
+          }
+      }
+      function dragmove(d) {
+          select(this)
+              .attr("transform", function (d) {
+              const dx = event.x - d.__x;
+              const dy = event.y - d.__y;
+              if (config.filters.move.x) {
+                  d.x0 = d.__x0 + dx;
+                  d.x1 = d.__x1 + dx;
+                  if (d.x0 < 0) {
+                      d.x0 = 0;
+                      d.x1 = config.sankey.nodeWidth();
+                  }
+                  if (d.x1 > w) {
+                      d.x0 = w - config.sankey.nodeWidth();
+                      d.x1 = w;
+                  }
+              }
+              if (config.filters.move.y) {
+                  d.y0 = d.__y0 + dy;
+                  d.y1 = d.__y1 + dy;
+                  if (d.y0 < 0) {
+                      d.y0 = 0;
+                      d.y1 = d.__y1 - d.__y0;
+                  }
+                  if (d.y1 > h) {
+                      d.y0 = h - (d.__y1 - d.__y0);
+                      d.y1 = h;
+                  }
+              }
+              return `translate(${d.x0}, ${d.y0})`;
+          });
+          config.sankey.update(graph);
+          selectAll("path.link")
+              .attr("d", sankeyLinkHorizontal());
+      }
+      function dragend(d) {
+          delete d.__x;
+          delete d.__y;
+          delete d.__x0;
+          delete d.__x1;
+          delete d.__y0;
+          delete d.__y1;
+      }
   }
 
   /**
