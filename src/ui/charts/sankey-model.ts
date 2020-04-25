@@ -1,73 +1,13 @@
 import { max, min, sum } from "d3-array";
-import { linkHorizontal } from "d3-shape";
+import { linkHorizontal, linkVertical } from "d3-shape";
+import { TLink, TNode } from "../../typings/ED";
 
-function targetDepth(d: any) {
-  return d.target.depth;
-}
-
-function left(node: any) {
-  return node.depth;
-}
-
-function right(node: any, n: any) {
-  return n - 1 - node.height;
-}
-
-function justify(node: any, n: any) {
-  return node.sourceLinks.length ? node.depth : n - 1;
-}
-
-function center(node: any) {
-  return node.targetLinks.length ? node.depth
-  // @ts-ignore
-      : node.sourceLinks.length ? min(node.sourceLinks, targetDepth) - 1
-      : 0;
-}
-
-function constant(x: any) {
-  return function() {
-    return x;
-  };
-}
-
-function ascendingSourceBreadth(a: any, b: any) {
-  return ascendingBreadth(a.source, b.source) || a.index - b.index;
-}
-
-function ascendingTargetBreadth(a: any, b: any) {
-  return ascendingBreadth(a.target, b.target) || a.index - b.index;
-}
-
-function ascendingBreadth(a: any, b: any) {
-  return a.y0 - b.y0;
-}
-
-function value(d: any) {
-  return d.value;
-}
-
-function defaultId(d: any) {
-  return d.index;
-}
-
-function defaultNodes(graph: any) {
-  return graph.nodes;
-}
-
-function defaultLinks(graph: any) {
-  return graph.links;
-}
-
-function find(nodeById: any, id: any) {
-  const node = nodeById.get(id);
-  if (!node) {
-    throw new Error("missing: " + id);
-  }
-  return node;
-}
-
+const ascendingBreadth = (a: TNode, b: TNode) => a.y0 - b.y0;
+const ascendingSourceBreadth = (a: TLink, b: TLink) => ascendingBreadth(a.source, b.source) || a.index - b.index;
+const ascendingTargetBreadth = (a: TLink, b: TLink) => ascendingBreadth(a.target, b.target) || a.index - b.index;
 // @ts-ignore
-function computeLinkBreadths(nodes) {
+const center = (node: TNode) => node.targetLinks.length ? node.depth : node.sourceLinks.length ? min(node.sourceLinks, targetDepth) - 1 : 0;
+function computeLinkBreadths(nodes: TNode[]): void {
   for (const node of nodes) {
     let y0 = node.y0;
     let y1 = y0;
@@ -81,6 +21,32 @@ function computeLinkBreadths(nodes) {
     }
   }
 }
+const constant = (x: any) => () => x;
+const defaultId = (d: TNode) => d.index;
+const defaultLinks = (graph: any) => graph.links;
+const defaultNodes = (graph: any) => graph.nodes;
+function find(nodeById: Map<any, any>, id: any): TNode {
+  const node = nodeById.get(id);
+  if (!node) {
+    throw new Error("missing: " + id);
+  }
+  return node;
+}
+const horizontalSource = (d: TLink) => [d.source.x1, d.y0];
+const horizontalTarget = (d: TLink) => [d.target.x0, d.y1];
+const justify = (node: TNode, n: number) => node.sourceLinks.length ? node.depth : n - 1;
+const left = (node: TNode) => node.depth;
+const right = (node: TNode, n: number) => n - 1 - node.height;
+// @ts-ignore
+const sankeyLinkHorizontal = () => linkHorizontal().source(horizontalSource).target(horizontalTarget);
+// @ts-ignore
+const sankeyLinkVertical = () => linkVertical().source(verticalSource).target(verticalTarget);
+const targetDepth = (d: TLink) => d.target.depth;
+const value = (d: TNode) => d.value;
+const sankeyHorizontal = (x: number, y: number) => [x, y];
+const sankeyVertical = (x: number, y: number) => [y, x];
+const verticalSource = (d: TLink) => [d.y0, d.source.y1];
+const verticalTarget = (d: TLink) => [d.y1, d.target.y0];
 
 function Sankey() {
   let x0 = 0, y0 = 0, x1 = 1, y1 = 1; // extent
@@ -91,8 +57,10 @@ function Sankey() {
   let py: number; // nodePadding
   let id = defaultId;
   let align = justify;
+  let orientation = sankeyHorizontal;
   // @ts-ignore
-  let sort, linkSort;
+  let sort: Function | undefined;
+  let linkSort: Function | undefined;
   let nodes = defaultNodes;
   let links = defaultLinks;
   let iterations = 6;
@@ -100,12 +68,14 @@ function Sankey() {
   function sankey() {
     // @ts-ignore
     const graph = {nodes: nodes.apply(null, arguments), links: links.apply(null, arguments)};
+    orientExtents();
     computeNodeLinks(graph);
     computeNodeValues(graph);
     computeNodeDepths(graph);
     computeNodeHeights(graph);
     computeNodeBreadths(graph);
     computeLinkBreadths(graph.nodes);
+    orientNodes(graph, orientation);
     return graph;
   }
 
@@ -135,6 +105,10 @@ function Sankey() {
     return arguments.length ? (dx = +_, sankey) : dx;
   };
 
+  sankey.nodeOrientation = function(_: string) {
+    return arguments.length ? (orientation = _ === "horizontal" ? sankeyHorizontal : sankeyVertical, sankey) : orientation;
+  };
+
   sankey.nodePadding = function(_: any) {
     return arguments.length ? (dy = py = +_, sankey) : dy;
   };
@@ -145,6 +119,10 @@ function Sankey() {
 
   sankey.links = function(_: any) {
     return arguments.length ? (links = typeof _ === "function" ? _ : constant(_), sankey) : links;
+  };
+
+  sankey.linkShape = function(): Function {
+    return orientation === sankeyVertical ? sankeyLinkVertical() : sankeyLinkHorizontal();
   };
 
   sankey.linkSort = function(_: any) {
@@ -185,7 +163,6 @@ function Sankey() {
       source.sourceLinks.push(link);
       target.targetLinks.push(link);
     }
-    // @ts-ignore
     if (linkSort !== null) {
       for (const {sourceLinks, targetLinks} of nodes) {
         // @ts-ignore
@@ -197,7 +174,7 @@ function Sankey() {
   }
 
   // @ts-ignore
-  function computeNodeValues({nodes}) {
+  function computeNodeValues({nodes}): void {
     for (const node of nodes) {
       node.value = node.fixedValue === undefined
           ? Math.max(sum(node.sourceLinks, value), sum(node.targetLinks, value))
@@ -206,7 +183,7 @@ function Sankey() {
   }
 
   // @ts-ignore
-  function computeNodeDepths({nodes}) {
+  function computeNodeDepths({nodes}): void {
     const n = nodes.length;
     let current = new Set(nodes);
     let next = new Set;
@@ -229,7 +206,7 @@ function Sankey() {
   }
 
   // @ts-ignore
-  function computeNodeHeights({nodes}) {
+  function computeNodeHeights({nodes}): void {
     const n = nodes.length;
     let current = new Set(nodes);
     let next = new Set;
@@ -268,10 +245,8 @@ function Sankey() {
         columns[i] = [node];
       }
     }
-    // @ts-ignore
     if (sort) {
       for (const column of columns) {
-        // @ts-ignore
         column.sort(sort);
       }
     }
@@ -279,7 +254,7 @@ function Sankey() {
   }
 
   // @ts-ignore
-  function initializeNodeBreadths(columns) {
+  function initializeNodeBreadths(columns): void {
     // @ts-ignore
     const ky: number = min(columns, c => (y1 - y0 - (c.length - 1) * py) / sum(c, value));
     for (const nodes of columns) {
@@ -305,7 +280,7 @@ function Sankey() {
   }
 
   // @ts-ignore
-  function computeNodeBreadths(graph) {
+  function computeNodeBreadths(graph): void {
     const columns = computeNodeLayers(graph);
     py = Math.min(dy, (y1 - y0) / (max(columns, c => c.length) - 1));
     initializeNodeBreadths(columns);
@@ -317,8 +292,21 @@ function Sankey() {
     }
   }
 
+  function orientExtents(): void {
+    [x0, y0] = orientation(x0, y0);
+    [x1, y1] = orientation(x1, y1);
+  }
+
+  // @ts-ignore
+  function orientNodes({nodes}, orientation: Function): void {
+    for (const node of nodes) {
+      [node.x0, node.y0] = orientation(node.x0, node.y0);
+      [node.x1, node.y1] = orientation(node.x1, node.y1);
+    }
+  }
+
   // Reposition each node based on its incoming (target) links.
-  function relaxLeftToRight(columns: any, alpha: number, beta: number) {
+  function relaxLeftToRight(columns: any[], alpha: number, beta: number): void {
     for (let i = 1, n = columns.length; i < n; ++i) {
       const column = columns[i];
       for (const target of column) {
@@ -346,7 +334,7 @@ function Sankey() {
   }
 
   // Reposition each node based on its outgoing (source) links.
-  function relaxRightToLeft(columns: any, alpha: number, beta: number) {
+  function relaxRightToLeft(columns: any[], alpha: number, beta: number): void {
     for (let n = columns.length, i = n - 2; i >= 0; --i) {
       const column = columns[i];
       for (const source of column) {
@@ -373,8 +361,7 @@ function Sankey() {
     }
   }
 
-  // @ts-ignore
-  function resolveCollisions(nodes, alpha: number) {
+  function resolveCollisions(nodes: TNode[], alpha: number): void {
     const i = nodes.length >> 1;
     const subject = nodes[i];
     resolveCollisionsBottomToTop(nodes, subject.y0 - py, i - 1, alpha);
@@ -383,8 +370,7 @@ function Sankey() {
     resolveCollisionsTopToBottom(nodes, y0, 0, alpha);
   }
 
-  // @ts-ignore
-  function resolveCollisionsTopToBottom(nodes, y, i, alpha: number) {
+  function resolveCollisionsTopToBottom(nodes: TNode[], y: number, i: number, alpha: number): void {
     for (; i < nodes.length; ++i) {
       const node = nodes[i];
       const dy = (y - node.y0) * alpha;
@@ -395,8 +381,7 @@ function Sankey() {
     }
   }
 
-  // @ts-ignore
-  function resolveCollisionsBottomToTop(nodes, y, i, alpha: number) {
+  function resolveCollisionsBottomToTop(nodes: TNode[], y: number, i: number, alpha: number): void {
     for (; i >= 0; --i) {
       const node = nodes[i];
       const dy = (node.y1 - y) * alpha;
@@ -408,8 +393,7 @@ function Sankey() {
   }
 
   // @ts-ignore
-  function reorderNodeLinks({sourceLinks, targetLinks}) {
-    // @ts-ignore
+  function reorderNodeLinks({sourceLinks, targetLinks}): void {
     if (linkSort === undefined) {
       for (const {source: {sourceLinks}} of targetLinks) {
         sourceLinks.sort(ascendingTargetBreadth);
@@ -420,9 +404,7 @@ function Sankey() {
     }
   }
 
-  // @ts-ignore
-  function reorderLinks(nodes) {
-    // @ts-ignore
+  function reorderLinks(nodes: TNode[]): void {
     if (linkSort === undefined) {
       for (const {sourceLinks, targetLinks} of nodes) {
         sourceLinks.sort(ascendingTargetBreadth);
@@ -431,8 +413,7 @@ function Sankey() {
     }
   }
 
-  // @ts-ignore
-  function targetTop(source, target) {
+  function targetTop(source: TNode, target: TNode): number {
     let y = source.y0 - (source.sourceLinks.length - 1) * py / 2;
     for (const {target: node, width} of source.sourceLinks) {
       if (node === target) {
@@ -449,8 +430,7 @@ function Sankey() {
     return y;
   }
 
-  // @ts-ignore
-  function sourceTop(source, target) {
+  function sourceTop(source: TNode, target: TNode): number {
     let y = target.y0 - (target.targetLinks.length - 1) * py / 2;
     for (const {source: node, width} of target.targetLinks) {
       if (node === source) {
@@ -470,28 +450,12 @@ function Sankey() {
   return sankey;
 }
 
-// @ts-ignore
-function horizontalSource(d) {
-  return [d.source.x1, d.y0];
-}
-
-// @ts-ignore
-function horizontalTarget(d) {
-  return [d.target.x0, d.y1];
-}
-
-function sankeyLinkHorizontal() {
-  return linkHorizontal()
-  // @ts-ignore
-      .source(horizontalSource)
-      .target(horizontalTarget);
-}
-
 export {
   Sankey as sankey,
   center as sankeyCenter,
   justify as sankeyJustify,
   left as sankeyLeft,
   sankeyLinkHorizontal as sankeyLinkHorizontal,
+  sankeyLinkVertical as sankeyLinkVertical,
   right as sankeyRight
 };

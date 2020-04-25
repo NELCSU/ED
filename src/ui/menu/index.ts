@@ -4,6 +4,7 @@ import { initDensitySlider } from "./filter-density";
 import { initOpacitySlider } from "./filter-opacity";
 import { initSankeyLegend } from "./filter-legend";
 import { initSankeyNodeMovement } from "./filter-move-nodes";
+import { initSankeyNodeOrientation } from "./filter-orientation";
 import { openDataFile } from "../data";
 import { initDayList } from "./filter-day";
 import { setQueryHash } from "../urlhash";
@@ -31,6 +32,7 @@ export function initMenu(config: TConfig) {
   initOpacitySlider(config);
   initSankeyLegend(config);
   initSankeyNodeMovement(config);
+  initSankeyNodeOrientation(config);
   initUIThemes(config);
 
   window.addEventListener("hide-menu", () => menu.classList.add("ready"));

@@ -66,6 +66,10 @@
       "high": 0.9,
       "low": 0.3
     },
+    "orientation": {
+      "ltr": true,
+      "ttb": false
+    },
     "organisations": ["INWL", "LAS", "LCW", "London", "NCL", "NEL", "ONWL", "SEL", "SWL"]
   },
   "legend": {

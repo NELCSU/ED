@@ -247,7 +247,6 @@ text.chart-legend {
   fill: #000;
   font-weight: bold;
   text-anchor: middle;
-  transform: rotate(270deg);
 }
 
 .node-label-outer-right {

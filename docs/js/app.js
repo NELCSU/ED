@@ -4388,6 +4388,23 @@ var App = (function (exports) {
       y.addEventListener("input", () => config.filters.move.y = y.checked);
   }
 
+  /**
+   * @param config
+   */
+  function initSankeyNodeOrientation(config) {
+      const ltr = document.getElementById("OrientLTR");
+      const ttb = document.getElementById("OrientTTB");
+      config.filters.orientation.ltr = ltr.checked;
+      config.filters.orientation.ttb = ttb.checked;
+      ltr.addEventListener("click", handleClick);
+      ttb.addEventListener("click", handleClick);
+      function handleClick() {
+          config.filters.orientation.ltr = ltr.checked;
+          config.filters.orientation.ttb = ttb.checked;
+          window.dispatchEvent(new CustomEvent("sankey-chart-rebuild"));
+      }
+  }
+
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation. All rights reserved.
   Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -4853,6 +4870,7 @@ var App = (function (exports) {
       initOpacitySlider(config);
       initSankeyLegend(config);
       initSankeyNodeMovement(config);
+      initSankeyNodeOrientation(config);
       initUIThemes(config);
       window.addEventListener("hide-menu", () => menu.classList.add("ready"));
       window.addEventListener("filter-action", () => {
@@ -6240,47 +6258,22 @@ var App = (function (exports) {
     context.bezierCurveTo(x0 = (x0 + x1) / 2, y0, x0, y1, x1, y1);
   }
 
+  function curveVertical(context, x0, y0, x1, y1) {
+    context.moveTo(x0, y0);
+    context.bezierCurveTo(x0, y0 = (y0 + y1) / 2, x1, y0, x1, y1);
+  }
+
   function linkHorizontal() {
     return link(curveHorizontal);
   }
 
-  function justify(node, n) {
-      return node.sourceLinks.length ? node.depth : n - 1;
+  function linkVertical() {
+    return link(curveVertical);
   }
-  function constant$5(x) {
-      return function () {
-          return x;
-      };
-  }
-  function ascendingSourceBreadth(a, b) {
-      return ascendingBreadth(a.source, b.source) || a.index - b.index;
-  }
-  function ascendingTargetBreadth(a, b) {
-      return ascendingBreadth(a.target, b.target) || a.index - b.index;
-  }
-  function ascendingBreadth(a, b) {
-      return a.y0 - b.y0;
-  }
-  function value(d) {
-      return d.value;
-  }
-  function defaultId(d) {
-      return d.index;
-  }
-  function defaultNodes(graph) {
-      return graph.nodes;
-  }
-  function defaultLinks(graph) {
-      return graph.links;
-  }
-  function find(nodeById, id) {
-      const node = nodeById.get(id);
-      if (!node) {
-          throw new Error("missing: " + id);
-      }
-      return node;
-  }
-  // @ts-ignore
+
+  const ascendingBreadth = (a, b) => a.y0 - b.y0;
+  const ascendingSourceBreadth = (a, b) => ascendingBreadth(a.source, b.source) || a.index - b.index;
+  const ascendingTargetBreadth = (a, b) => ascendingBreadth(a.target, b.target) || a.index - b.index;
   function computeLinkBreadths(nodes) {
       for (const node of nodes) {
           let y0 = node.y0;
@@ -6295,6 +6288,29 @@ var App = (function (exports) {
           }
       }
   }
+  const constant$5 = (x) => () => x;
+  const defaultId = (d) => d.index;
+  const defaultLinks = (graph) => graph.links;
+  const defaultNodes = (graph) => graph.nodes;
+  function find(nodeById, id) {
+      const node = nodeById.get(id);
+      if (!node) {
+          throw new Error("missing: " + id);
+      }
+      return node;
+  }
+  const horizontalSource = (d) => [d.source.x1, d.y0];
+  const horizontalTarget = (d) => [d.target.x0, d.y1];
+  const justify = (node, n) => node.sourceLinks.length ? node.depth : n - 1;
+  // @ts-ignore
+  const sankeyLinkHorizontal = () => linkHorizontal().source(horizontalSource).target(horizontalTarget);
+  // @ts-ignore
+  const sankeyLinkVertical = () => linkVertical().source(verticalSource).target(verticalTarget);
+  const value = (d) => d.value;
+  const sankeyHorizontal = (x, y) => [x, y];
+  const sankeyVertical = (x, y) => [y, x];
+  const verticalSource = (d) => [d.y0, d.source.y1];
+  const verticalTarget = (d) => [d.y1, d.target.y0];
   function Sankey() {
       let x0 = 0, y0 = 0, x1 = 1, y1 = 1; // extent
       let dx = 24; // nodeWidth
@@ -6304,20 +6320,24 @@ var App = (function (exports) {
       let py; // nodePadding
       let id = defaultId;
       let align = justify;
+      let orientation = sankeyHorizontal;
       // @ts-ignore
-      let sort, linkSort;
+      let sort;
+      let linkSort;
       let nodes = defaultNodes;
       let links = defaultLinks;
       let iterations = 6;
       function sankey() {
           // @ts-ignore
           const graph = { nodes: nodes.apply(null, arguments), links: links.apply(null, arguments) };
+          orientExtents();
           computeNodeLinks(graph);
           computeNodeValues(graph);
           computeNodeDepths(graph);
           computeNodeHeights(graph);
           computeNodeBreadths(graph);
           computeLinkBreadths(graph.nodes);
+          orientNodes(graph, orientation);
           return graph;
       }
       sankey.update = function (graph) {
@@ -6340,6 +6360,9 @@ var App = (function (exports) {
       sankey.nodeWidth = function (_) {
           return arguments.length ? (dx = +_, sankey) : dx;
       };
+      sankey.nodeOrientation = function (_) {
+          return arguments.length ? (orientation = _ === "horizontal" ? sankeyHorizontal : sankeyVertical, sankey) : orientation;
+      };
       sankey.nodePadding = function (_) {
           return arguments.length ? (dy = py = +_, sankey) : dy;
       };
@@ -6348,6 +6371,9 @@ var App = (function (exports) {
       };
       sankey.links = function (_) {
           return arguments.length ? (links = typeof _ === "function" ? _ : constant$5(_), sankey) : links;
+      };
+      sankey.linkShape = function () {
+          return orientation === sankeyVertical ? sankeyLinkVertical() : sankeyLinkHorizontal();
       };
       sankey.linkSort = function (_) {
           // @ts-ignore
@@ -6383,7 +6409,6 @@ var App = (function (exports) {
               source.sourceLinks.push(link);
               target.targetLinks.push(link);
           }
-          // @ts-ignore
           if (linkSort !== null) {
               for (const { sourceLinks, targetLinks } of nodes) {
                   // @ts-ignore
@@ -6463,10 +6488,8 @@ var App = (function (exports) {
                   columns[i] = [node];
               }
           }
-          // @ts-ignore
           if (sort) {
               for (const column of columns) {
-                  // @ts-ignore
                   column.sort(sort);
               }
           }
@@ -6507,6 +6530,17 @@ var App = (function (exports) {
               const beta = Math.max(1 - alpha, (i + 1) / iterations);
               relaxRightToLeft(columns, alpha, beta);
               relaxLeftToRight(columns, alpha, beta);
+          }
+      }
+      function orientExtents() {
+          [x0, y0] = orientation(x0, y0);
+          [x1, y1] = orientation(x1, y1);
+      }
+      // @ts-ignore
+      function orientNodes({ nodes }, orientation) {
+          for (const node of nodes) {
+              [node.x0, node.y0] = orientation(node.x0, node.y0);
+              [node.x1, node.y1] = orientation(node.x1, node.y1);
           }
       }
       // Reposition each node based on its incoming (target) links.
@@ -6563,7 +6597,6 @@ var App = (function (exports) {
               resolveCollisions(column, beta);
           }
       }
-      // @ts-ignore
       function resolveCollisions(nodes, alpha) {
           const i = nodes.length >> 1;
           const subject = nodes[i];
@@ -6572,7 +6605,6 @@ var App = (function (exports) {
           resolveCollisionsBottomToTop(nodes, y1, nodes.length - 1, alpha);
           resolveCollisionsTopToBottom(nodes, y0, 0, alpha);
       }
-      // @ts-ignore
       function resolveCollisionsTopToBottom(nodes, y, i, alpha) {
           for (; i < nodes.length; ++i) {
               const node = nodes[i];
@@ -6583,7 +6615,6 @@ var App = (function (exports) {
               y = node.y1 + py;
           }
       }
-      // @ts-ignore
       function resolveCollisionsBottomToTop(nodes, y, i, alpha) {
           for (; i >= 0; --i) {
               const node = nodes[i];
@@ -6596,7 +6627,6 @@ var App = (function (exports) {
       }
       // @ts-ignore
       function reorderNodeLinks({ sourceLinks, targetLinks }) {
-          // @ts-ignore
           if (linkSort === undefined) {
               for (const { source: { sourceLinks } } of targetLinks) {
                   sourceLinks.sort(ascendingTargetBreadth);
@@ -6606,9 +6636,7 @@ var App = (function (exports) {
               }
           }
       }
-      // @ts-ignore
       function reorderLinks(nodes) {
-          // @ts-ignore
           if (linkSort === undefined) {
               for (const { sourceLinks, targetLinks } of nodes) {
                   sourceLinks.sort(ascendingTargetBreadth);
@@ -6616,7 +6644,6 @@ var App = (function (exports) {
               }
           }
       }
-      // @ts-ignore
       function targetTop(source, target) {
           let y = source.y0 - (source.sourceLinks.length - 1) * py / 2;
           for (const { target: node, width } of source.sourceLinks) {
@@ -6633,7 +6660,6 @@ var App = (function (exports) {
           }
           return y;
       }
-      // @ts-ignore
       function sourceTop(source, target) {
           let y = target.y0 - (target.targetLinks.length - 1) * py / 2;
           for (const { source: node, width } of target.targetLinks) {
@@ -6651,20 +6677,6 @@ var App = (function (exports) {
           return y;
       }
       return sankey;
-  }
-  // @ts-ignore
-  function horizontalSource(d) {
-      return [d.source.x1, d.y0];
-  }
-  // @ts-ignore
-  function horizontalTarget(d) {
-      return [d.target.x0, d.y1];
-  }
-  function sankeyLinkHorizontal() {
-      return linkHorizontal()
-          // @ts-ignore
-          .source(horizontalSource)
-          .target(horizontalTarget);
   }
 
   /**
@@ -6686,12 +6698,23 @@ var App = (function (exports) {
           .nodePadding(config.filters.density)
           // @ts-ignore
           .margin(m)
+          .nodeOrientation(config.filters.orientation.ltr ? "horizontal" : "vertical")
           .nodeWidth(30)
           .extent([[1, 1], [w - m.left - m.right, h - m.top - m.bottom]]);
       select(chart).call(svg()
           .height(chart.clientHeight)
           .width(chart.clientWidth)
           .margin(m));
+      window.addEventListener("sankey-chart-rebuild", () => {
+          config.sankey = Sankey()
+              .nodePadding(config.filters.density)
+              // @ts-ignore
+              .margin(m)
+              .nodeOrientation(config.filters.orientation.ltr ? "horizontal" : "vertical")
+              .nodeWidth(30)
+              .extent([[1, 1], [w - m.left - m.right, h - m.top - m.bottom]]);
+          window.dispatchEvent(new CustomEvent("filter-action"));
+      });
       window.addEventListener("sankey-chart", () => loadSankeyChart(config));
       window.addEventListener("clear-chart", () => { clear(); });
       window.addEventListener("select-chart", (e) => {
@@ -6729,7 +6752,7 @@ var App = (function (exports) {
       linkCollection
           .append("path")
           .classed("link", true)
-          .attr("d", sankeyLinkHorizontal())
+          .attr("d", config.sankey.linkShape())
           .attr("stroke", (d) => d.fill ? d.fill : d.source.fill)
           .attr("stroke-opacity", config.filters.opacity.low)
           .attr("stroke-width", (d) => Math.max(1, d.width))
@@ -6761,18 +6784,39 @@ var App = (function (exports) {
           .style("stroke", (d) => rgb(d.fill).darker(2))
           .append("title")
           .text((d) => `${d.name} (${formatNumber(d.value)})`);
-      nodeCollection.append("text")
-          .attr("class", (d) => `node-label-outer-${d.x0 > w / 2 ? "right" : "left"}`)
-          .attr("x", (d) => d.x0 < (w / 2) ? (d.x1 - d.x0) + 6 : -6)
-          .attr("y", (d) => (d.y1 - d.y0) / 2)
-          .attr("dy", ".35em")
-          .text((d) => d.name);
-      nodeCollection.append("text")
+      const outerLabel = nodeCollection.append("text")
+          .attr("class", "node-label-outer")
+          .attr("dy", "0.35em");
+      if (config.filters.orientation.ltr) {
+          outerLabel
+              .attr("x", (d) => d.x0 < (w / 2) ? (d.x1 - d.x0) + 6 : -6)
+              .attr("y", (d) => (d.y1 - d.y0) / 2)
+              .attr("text-anchor", (d) => d.x0 > w / 2 ? "end" : "start")
+              .text((d) => d.name);
+      }
+      else {
+          outerLabel
+              .attr("x", (d) => (d.x1 - d.x0) / 2)
+              .attr("y", (d) => (d.y1 - d.y0) + 10)
+              .attr("text-anchor", "middle")
+              .text((d) => (d.x1 - d.x0) > 70 ? d.name : "");
+      }
+      const innerLabel = nodeCollection.append("text")
           .attr("class", "node-label")
-          .attr("x", (d) => -(d.y1 - d.y0) / 2)
-          .attr("y", (d) => (d.x1 - d.x0) / 2)
-          .attr("dy", ".35em")
-          .text((d) => (d.y1 - d.y0) > 50 ? formatNumber(d.value) : "");
+          .attr("dy", "0.35em");
+      if (config.filters.orientation.ltr) {
+          innerLabel
+              .attr("x", (d) => -(d.y1 - d.y0) / 2)
+              .attr("y", (d) => (d.x1 - d.x0) / 2)
+              .attr("transform", "rotate(270)")
+              .text((d) => (d.y1 - d.y0) > 50 ? formatNumber(d.value) : "");
+      }
+      else {
+          innerLabel
+              .attr("x", (d) => (d.x1 - d.x0) / 2)
+              .attr("y", (d) => (d.y1 - d.y0) / 2)
+              .text((d) => (d.x1 - d.x0) > 50 ? formatNumber(d.value) : "");
+      }
       window.dispatchEvent(new CustomEvent("show-legend"));
       function linkclick(d) {
           event.stopPropagation();
@@ -6886,7 +6930,8 @@ var App = (function (exports) {
           });
           config.sankey.update(graph);
           selectAll("path.link")
-              .attr("d", sankeyLinkHorizontal());
+              .attr("d", config.sankey.linkShape())
+              .attr("stroke-width", (d) => Math.max(1, d.width));
       }
       function dragend(d) {
           delete d.__x;

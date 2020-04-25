@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npm-run-all --parallel compile-js compile-scss compile-css",
+    "build": "npm run compile-js",
+    "build-full": "npm-run-all --parallel compile-js compile-scss compile-css",
     "compile-js": "rollup -cw",
     "compile-scss": "sass src/css:docs/css --no-source-map --watch",
     "compile-css": "postcss docs/css/index.css --no-map -o docs/css/index.css -c postcss.config.js --watch",
