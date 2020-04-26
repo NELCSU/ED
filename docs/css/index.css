@@ -225,6 +225,11 @@ text.chart-legend {
   opacity: 1;
 }
 
+.legend-resize {
+  cursor: pointer;
+  font-weight: bold;
+}
+
 .link {
   transition: stroke-opacity 500ms;
 }

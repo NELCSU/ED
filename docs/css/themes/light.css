@@ -55,6 +55,10 @@ text.chart-legend {
   color: #1f4a80;
 }
 
+.legend-resize {
+  color: #1f4a80;
+}
+
 select {
   background: #b6d4f8;
   border-color: #3c94ff;

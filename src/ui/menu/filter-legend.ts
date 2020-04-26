@@ -37,7 +37,7 @@ export function initSankeyLegend(config: TConfig) {
 		const h = box.height;
 		const w = box.width;
 		const canvas = select(svg).select("g.canvas");
-		const rh: number = config.legend.labels.length * 32;
+		const rh: number = config.legend.map(leg => leg.labels.length * 29).reduce((ac, le) => ac + le, 0);
 		const rw: number = 150;
 		const m = config.sankey.margin();
 		const nw = config.sankey.nodeWidth() / 2;
@@ -88,29 +88,70 @@ export function initSankeyLegend(config: TConfig) {
 		// @ts-ignore
 		legend.call(drag().on("drag", dragged));
 
-		legend.append("rect")
+		const rect = legend.append("rect")
 			.attr("width", rw + "px")
 			.attr("height", rh + "px")
 			.attr("x", 0)
 			.attr("y", 0)
 			.classed("chart-legend", true);
 
-		config.legend.colors.forEach((item: string, n: number) => {
-			const g = legend.append("g")
-				.style("transform", `translate(10px, ${20 + (25 * n)}px)`);
+		legend.append("text")
+			.attr("x", rw / 2)
+			.attr("y", 15)
+			.attr("text-anchor", "middle")
+			.text("legend");
 
-			g.append("circle")
-				.style("fill", item)
-				.attr("r", 10)
-				.attr("cx", 10)
-				.attr("cy", 10 + (1 * n));
+		const resize = legend.append("text")
+			.attr("class", "legend-resize")
+			.attr("x", rw - 15)
+			.attr("y", 15)
+			.text("⤢")
+			.on("click", resizeHandler);
 
-			g.append("text")
-				.classed("chart-legend", true)
-				.attr("x", 25)
-				.attr("y", 15 + (1 * n))
-				.text(config.legend.labels[n]);
+		resize.append("title")
+			.text("Sho/hide legend");
+
+		let accum = 0;
+		config.legend.forEach((leg: any) => {
+			leg.colors.forEach((item: string, m: number) => {
+				const g = legend.append("g")
+					.style("transform", `translate(10px, ${28 + (25 * accum)}px)`);
+	
+				g.append("circle")
+					.style("fill", item)
+					.attr("r", 7)
+					.attr("cx", 7)
+					.attr("cy", 2 + (1 * accum));
+	
+				g.append("text")
+					.classed("chart-legend", true)
+					.attr("x", 22)
+					.attr("y", 8 + (1 * accum))
+					.text(leg.labels[m]);
+
+				++accum;
+			});
 		});
+
+		function resizeHandler() {
+			if (legend.classed("ready")) {
+				legend.classed("ready", false);
+				legend.selectAll("g")
+					.transition().duration(200).delay(400)
+					.style("opacity", null);
+				rect
+					.transition().duration(500)
+					.attr("height", rh + "px");
+			} else {
+				legend.classed("ready", true);
+				legend.selectAll("g")
+					.transition().duration(300)
+					.style("opacity", 0);
+				rect
+					.transition().duration(500)
+					.attr("height", "20px");
+			}
+		}
 
 		legend.attr("transform", (d: TPoint) => `translate(${[x, y]})`);
 	}
