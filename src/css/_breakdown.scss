@@ -65,8 +65,7 @@ img.ready:hover {
 }
 
 .breakdown-message,
-.breakdown-chart1,
-.breakdown-chart2 {
+.breakdown-chart {
   @include globals.fx($dir: column);
   @include globals.fx-center;
 
@@ -83,8 +82,11 @@ img.ready:hover {
   max-width: 40%;
 }
 
-.breakdown-chart1,
-.breakdown-chart2 {
+.breakdown-chart {
   flex-grow: 1;
   height: 100%;
+}
+
+.switch-chart {
+  cursor: pointer;
 }

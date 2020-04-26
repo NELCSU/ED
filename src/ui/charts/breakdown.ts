@@ -6,79 +6,62 @@ import type { TConfig, TBreakdown } from "../../typings/ED";
  */
 export function initBreakdown(config: TConfig) {
 	const container = document.querySelector(".breakdown");
-	container?.addEventListener("click", e => e.stopImmediatePropagation());
 	const action = container?.querySelector(".breakdown-action") as HTMLDivElement;
 	const message = container?.querySelector(".breakdown-message") as HTMLDivElement;
-	const chart1 = container?.querySelector(".breakdown-chart1") as HTMLDivElement;
-	const chart2 = container?.querySelector(".breakdown-chart2") as HTMLDivElement;
+	const chart = container?.querySelector(".breakdown-chart") as HTMLDivElement;
+	const close = document.querySelector(".breakdown-close") as HTMLDivElement;
 
-  const close = document.querySelector(".breakdown-close") as HTMLDivElement;
-  close.addEventListener("click", (e) => {
-    e.stopImmediatePropagation();
-    hide(config);
-  });
-
-	function clear() {
+	let current = 0;
+	
+	function clear(): void {
 		if (message) {
 			message.innerHTML = "";
 		}
-		if (chart1) {
-			chart1.innerHTML = "";
-			chart1.style.display = "";
-		}
-		if (chart2) {
-			chart2.innerHTML = "";
-			chart1.style.display = "";
+		if (chart) {
+			chart.innerHTML = "";
+			chart.style.display = "";
 		}
 	}
   
-  /**
-   * @param config 
-   */
-	function hide (config: TConfig) {
+	function hide (): void {
 		container?.classList.add("ready");
 		setTimeout(() => clear(), 500);
 	}
 
-	/**
-	 * @param config
-	 */
-	function displayBreakdown(config: TConfig) {
+	function switchChartHandler(): void {
+		current = (++current === config.breakdown.chart.length) ? 0 : current;
+		displayBreakdown(config);
+	}
+
+	function displayBreakdown(config: TConfig): void {
+		if (current >= config.breakdown.chart.length) {
+			current = 0;
+		}
+
 		message.innerHTML = config.breakdown.message;
-		
-		chart2.innerHTML = "";
-		if (config.breakdown.chart2.length === 0) {
-			chart2.style.display = "none";
+		if (config.breakdown.chart.length > 1) {
+			message.innerHTML += `<br>Displaying chart ${current + 1} of ${config.breakdown.chart.length}<br>`;
+			message.innerHTML += `<div class="switch-chart">Switch to the next</div>`;
+			const action = document.querySelector(".switch-chart") as HTMLDivElement;
+			action.addEventListener("click", switchChartHandler);
+		}
+
+		chart.innerHTML = "";
+		if (config.breakdown.chart.length === 0) {
+			chart.style.display = "none";
 		} else {
-			chart2.style.display = "";
+			chart.style.display = "";
 		}
 
-		chart1.innerHTML = "";
-		if (config.breakdown.chart1.length === 0) {
-			chart1.style.display = "none";
-		} else {
-			chart1.style.display = "";
-		}
+		action.style.display = (config.breakdown.chart.length === 0) ? "none" : "";
 
-		action.style.display = (config.breakdown.chart1.length === 0 && config.breakdown.chart2.length === 0) ? "none" : "";
-
-		if (chart2 && config.breakdown.chart2.length > 0) {
-			if (config.breakdown.chart2.length === 1) {
-				const d: TBreakdown = config.breakdown.chart2[0];
-				chart2.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
+		if (chart && config.breakdown.chart.length > 0) {
+			if (config.breakdown.chart[0].length === 1) {
+				const d: TBreakdown = config.breakdown.chart[current][0];
+				chart.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
 			} else {
-				chart2.innerHTML = " ";
-				drawColumnChart(chart2, config.breakdown.chart2);
-			}
-		}
-
-		if (chart1 && config.breakdown.chart1.length > 0) {
-			if (config.breakdown.chart1.length === 1) {
-				const d: TBreakdown = config.breakdown.chart1[0];
-				chart1.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
-			} else {
-				chart1.innerHTML = " ";
-				drawColumnChart(chart1, config.breakdown.chart1);
+				chart.innerHTML = " ";
+				drawColumnChart(chart, config.breakdown.chart[current]);
 			}
 		}
 
@@ -86,10 +69,7 @@ export function initBreakdown(config: TConfig) {
 		window.dispatchEvent(new CustomEvent("hide-menu"));
 	}
 
-	/**
-	 * @param config
-	 */
-	function displayStatus(config: TConfig) {
+	function displayStatus(config: TConfig): void {
 		clear();
 		
 		if (message) {
@@ -97,14 +77,15 @@ export function initBreakdown(config: TConfig) {
 		}
 
 		action.style.display = "none";
-		chart2.style.display = "none";
-		chart1.style.display = "none";
+		chart.style.display = "none";
 
 		container?.classList.remove("ready");
 		window.dispatchEvent(new CustomEvent("hide-menu"));
 	}
 
-	window.addEventListener("hide-breakdown", () => hide(config));
+	close.addEventListener("click", (e) => { e.stopImmediatePropagation(); hide(); });
+	container?.addEventListener("click", e => e.stopImmediatePropagation());
+	window.addEventListener("hide-breakdown", () => hide());
 	window.addEventListener("show-status", () => displayStatus(config));
   window.addEventListener("show-breakdown", () => displayBreakdown(config));
 }

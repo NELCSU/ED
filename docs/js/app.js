@@ -5904,93 +5904,72 @@ var App = (function (exports) {
    */
   function initBreakdown(config) {
       const container = document.querySelector(".breakdown");
-      container === null || container === void 0 ? void 0 : container.addEventListener("click", e => e.stopImmediatePropagation());
       const action = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-action");
       const message = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-message");
-      const chart1 = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-chart1");
-      const chart2 = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-chart2");
+      const chart = container === null || container === void 0 ? void 0 : container.querySelector(".breakdown-chart");
       const close = document.querySelector(".breakdown-close");
-      close.addEventListener("click", (e) => {
-          e.stopImmediatePropagation();
-          hide();
-      });
+      let current = 0;
       function clear() {
           if (message) {
               message.innerHTML = "";
           }
-          if (chart1) {
-              chart1.innerHTML = "";
-              chart1.style.display = "";
-          }
-          if (chart2) {
-              chart2.innerHTML = "";
-              chart1.style.display = "";
+          if (chart) {
+              chart.innerHTML = "";
+              chart.style.display = "";
           }
       }
-      /**
-       * @param config
-       */
-      function hide(config) {
+      function hide() {
           container === null || container === void 0 ? void 0 : container.classList.add("ready");
           setTimeout(() => clear(), 500);
       }
-      /**
-       * @param config
-       */
+      function switchChartHandler() {
+          current = (++current === config.breakdown.chart.length) ? 0 : current;
+          displayBreakdown(config);
+      }
       function displayBreakdown(config) {
+          if (current >= config.breakdown.chart.length) {
+              current = 0;
+          }
           message.innerHTML = config.breakdown.message;
-          chart2.innerHTML = "";
-          if (config.breakdown.chart2.length === 0) {
-              chart2.style.display = "none";
+          if (config.breakdown.chart.length > 1) {
+              message.innerHTML += `<br>Displaying chart ${current + 1} of ${config.breakdown.chart.length}<br>`;
+              message.innerHTML += `<div class="switch-chart">Switch to the next</div>`;
+              const action = document.querySelector(".switch-chart");
+              action.addEventListener("click", switchChartHandler);
+          }
+          chart.innerHTML = "";
+          if (config.breakdown.chart.length === 0) {
+              chart.style.display = "none";
           }
           else {
-              chart2.style.display = "";
+              chart.style.display = "";
           }
-          chart1.innerHTML = "";
-          if (config.breakdown.chart1.length === 0) {
-              chart1.style.display = "none";
-          }
-          else {
-              chart1.style.display = "";
-          }
-          action.style.display = (config.breakdown.chart1.length === 0 && config.breakdown.chart2.length === 0) ? "none" : "";
-          if (chart2 && config.breakdown.chart2.length > 0) {
-              if (config.breakdown.chart2.length === 1) {
-                  const d = config.breakdown.chart2[0];
-                  chart2.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
+          action.style.display = (config.breakdown.chart.length === 0) ? "none" : "";
+          if (chart && config.breakdown.chart.length > 0) {
+              if (config.breakdown.chart[0].length === 1) {
+                  const d = config.breakdown.chart[current][0];
+                  chart.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
               }
               else {
-                  chart2.innerHTML = " ";
-                  drawColumnChart(chart2, config.breakdown.chart2);
-              }
-          }
-          if (chart1 && config.breakdown.chart1.length > 0) {
-              if (config.breakdown.chart1.length === 1) {
-                  const d = config.breakdown.chart1[0];
-                  chart1.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
-              }
-              else {
-                  chart1.innerHTML = " ";
-                  drawColumnChart(chart1, config.breakdown.chart1);
+                  chart.innerHTML = " ";
+                  drawColumnChart(chart, config.breakdown.chart[current]);
               }
           }
           container === null || container === void 0 ? void 0 : container.classList.remove("ready");
           window.dispatchEvent(new CustomEvent("hide-menu"));
       }
-      /**
-       * @param config
-       */
       function displayStatus(config) {
           clear();
           if (message) {
               message.innerHTML = config.status.message;
           }
           action.style.display = "none";
-          chart2.style.display = "none";
-          chart1.style.display = "none";
+          chart.style.display = "none";
           container === null || container === void 0 ? void 0 : container.classList.remove("ready");
           window.dispatchEvent(new CustomEvent("hide-menu"));
       }
+      close.addEventListener("click", (e) => { e.stopImmediatePropagation(); hide(); });
+      container === null || container === void 0 ? void 0 : container.addEventListener("click", e => e.stopImmediatePropagation());
       window.addEventListener("hide-breakdown", () => hide());
       window.addEventListener("show-status", () => displayStatus(config));
       window.addEventListener("show-breakdown", () => displayBreakdown(config));
@@ -6826,8 +6805,19 @@ var App = (function (exports) {
           let text = `<p>${d.source.name} → ${d.target.name} calls</p>`;
           text += `<p>Outgoing: ${formatNumber(d.value)} calls</p>`;
           config.breakdown.message = text;
-          config.breakdown.chart1 = d.supply;
-          config.breakdown.chart2 = [];
+          config.breakdown.chart = [];
+          if (d.supply && d.supply.length > 0) {
+              config.breakdown.chart.push(d.supply);
+          }
+          if (d.supplyDx && d.supplyDx.length > 0) {
+              config.breakdown.chart.push(d.supplyDx);
+          }
+          if (d.supplyService && d.supplyService.length > 0) {
+              config.breakdown.chart.push(d.supplyService);
+          }
+          if (d.supplyBook && d.supplyBook.length > 0) {
+              config.breakdown.chart.push(d.supplyBook);
+          }
           window.dispatchEvent(new CustomEvent("show-breakdown"));
       }
       function nodeclick(d) {
@@ -6876,8 +6866,7 @@ var App = (function (exports) {
               text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
           }
           config.breakdown.message = text;
-          config.breakdown.chart1 = nodesource;
-          config.breakdown.chart2 = nodetarget;
+          config.breakdown.chart = [nodesource, nodetarget];
           window.dispatchEvent(new CustomEvent("show-breakdown"));
       }
       function dragstart(d) {

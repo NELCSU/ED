@@ -51,6 +51,10 @@ text.chart-legend {
   color: #fff;
 }
 
+.switch-chart {
+  color: #1f4a80;
+}
+
 select {
   background: #b6d4f8;
   border-color: #3c94ff;

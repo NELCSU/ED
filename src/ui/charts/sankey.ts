@@ -174,8 +174,19 @@ export function loadSankeyChart(config: TConfig) {
     text += `<p>Outgoing: ${formatNumber(d.value)} calls</p>`;
 
     config.breakdown.message = text;
-    config.breakdown.chart1 = d.supply;
-    config.breakdown.chart2 = [];
+    config.breakdown.chart = [];
+    if (d.supply && d.supply.length > 0) {
+      config.breakdown.chart.push(d.supply);
+    }
+    if (d.supplyDx && d.supplyDx.length > 0) {
+      config.breakdown.chart.push(d.supplyDx);
+    }
+    if (d.supplyService && d.supplyService.length > 0) {
+      config.breakdown.chart.push(d.supplyService);
+    }
+    if (d.supplyBook && d.supplyBook.length > 0) {
+      config.breakdown.chart.push(d.supplyBook);
+    }
 
     window.dispatchEvent(new CustomEvent("show-breakdown"));
   }
@@ -230,8 +241,7 @@ export function loadSankeyChart(config: TConfig) {
     }
 
     config.breakdown.message = text;
-    config.breakdown.chart1 = nodesource;
-    config.breakdown.chart2 = nodetarget;
+    config.breakdown.chart = [nodesource, nodetarget];
 
     window.dispatchEvent(new CustomEvent("show-breakdown"));
   }
