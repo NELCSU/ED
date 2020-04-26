@@ -79,7 +79,7 @@ img.ready:hover {
 
   height: 100%;
   margin-left: 10px;
-  max-width: 40%;
+  max-width: 30%;
 }
 
 .breakdown-chart {
@@ -89,4 +89,5 @@ img.ready:hover {
 
 .switch-chart {
   cursor: pointer;
+  user-select: none;
 }

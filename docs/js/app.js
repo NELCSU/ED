@@ -5932,7 +5932,7 @@ var App = (function (exports) {
           }
           message.innerHTML = config.breakdown.message;
           if (config.breakdown.chart.length > 1) {
-              message.innerHTML += `<br>Displaying chart ${current + 1} of ${config.breakdown.chart.length}<br>`;
+              message.innerHTML += `<div>Displaying chart ${current + 1} of ${config.breakdown.chart.length}</div>`;
               message.innerHTML += `<div class="switch-chart">Switch to the next</div>`;
               const action = document.querySelector(".switch-chart");
               action.addEventListener("click", switchChartHandler);
@@ -5948,7 +5948,7 @@ var App = (function (exports) {
           if (chart && config.breakdown.chart.length > 0) {
               if (config.breakdown.chart[0].length === 1) {
                   const d = config.breakdown.chart[current][0];
-                  chart.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} calls 100%</h2></div>`;
+                  chart.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} call(s) 100%</h2></div>`;
               }
               else {
                   chart.innerHTML = " ";
@@ -6866,7 +6866,13 @@ var App = (function (exports) {
               text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
           }
           config.breakdown.message = text;
-          config.breakdown.chart = [nodesource, nodetarget];
+          config.breakdown.chart = [];
+          if (nodesource.length > 0) {
+              config.breakdown.chart.push(nodesource);
+          }
+          if (nodetarget.length > 0) {
+              config.breakdown.chart.push(nodetarget);
+          }
           window.dispatchEvent(new CustomEvent("show-breakdown"));
       }
       function dragstart(d) {

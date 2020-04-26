@@ -241,7 +241,13 @@ export function loadSankeyChart(config: TConfig) {
     }
 
     config.breakdown.message = text;
-    config.breakdown.chart = [nodesource, nodetarget];
+    config.breakdown.chart = [];
+    if (nodesource.length > 0) {
+      config.breakdown.chart.push(nodesource);
+    }
+    if (nodetarget.length > 0) {
+      config.breakdown.chart.push(nodetarget);
+    }
 
     window.dispatchEvent(new CustomEvent("show-breakdown"));
   }
