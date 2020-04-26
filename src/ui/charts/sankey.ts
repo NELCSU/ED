@@ -136,6 +136,7 @@ export function loadSankeyChart(config: TConfig) {
       .attr("x", (d: any) => d.x0 < (w / 2) ? (d.x1 - d.x0) + 6 : -6)
       .attr("y", (d: any) => (d.y1 - d.y0) / 2)
       .attr("text-anchor", (d: any) => d.x0 > w / 2 ? "end" : "start")
+      .style("opacity", (d: any) => (d.y1 - d.y0) > 30 ? null : 0)
       .text((d: any) => d.name);
   } else {
     outerLabel
@@ -181,8 +182,11 @@ export function loadSankeyChart(config: TConfig) {
 
   function nodeclick (this: SVGGElement, d: TNode) {
     event.stopPropagation();
+    const g = select(this);
     window.dispatchEvent(new CustomEvent("clear-chart"));
-    window.dispatchEvent(new CustomEvent("select-chart", { detail: select(this) }));
+    window.dispatchEvent(new CustomEvent("select-chart", { detail: g }));
+
+    g.select(".node-label-outer").style("opacity", null);
       
     const nodesource: TBreakdown[] = [], nodetarget: TBreakdown[] = [];
     let text;

@@ -6792,6 +6792,7 @@ var App = (function (exports) {
               .attr("x", (d) => d.x0 < (w / 2) ? (d.x1 - d.x0) + 6 : -6)
               .attr("y", (d) => (d.y1 - d.y0) / 2)
               .attr("text-anchor", (d) => d.x0 > w / 2 ? "end" : "start")
+              .style("opacity", (d) => (d.y1 - d.y0) > 30 ? null : 0)
               .text((d) => d.name);
       }
       else {
@@ -6831,8 +6832,10 @@ var App = (function (exports) {
       }
       function nodeclick(d) {
           event.stopPropagation();
+          const g = select(this);
           window.dispatchEvent(new CustomEvent("clear-chart"));
-          window.dispatchEvent(new CustomEvent("select-chart", { detail: select(this) }));
+          window.dispatchEvent(new CustomEvent("select-chart", { detail: g }));
+          g.select(".node-label-outer").style("opacity", null);
           const nodesource = [], nodetarget = [];
           let text;
           if (d.grouping) {
