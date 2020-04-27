@@ -116,6 +116,7 @@ export function initSankeyLegend(config: TConfig) {
 			lasty += 30;
 			// subtitle
 			legend.append("text")
+				.attr("class", "contents")
 				.attr("x", 7)
 				.attr("y", lasty)
 				.attr("text-anchor", "start")
@@ -124,6 +125,7 @@ export function initSankeyLegend(config: TConfig) {
 			leg.colors.forEach((item: string, m: number) => {
 				lasty += 17;
 				const g = legend.append("g")
+					.attr("class", "contents")
 					.style("transform", `translate(10px, ${lasty}px)`);
 	
 				g.append("circle")
@@ -143,7 +145,7 @@ export function initSankeyLegend(config: TConfig) {
 		function resizeHandler() {
 			if (legend.classed("ready")) {
 				legend.classed("ready", false);
-				legend.selectAll("g")
+				legend.selectAll(".contents")
 					.transition().duration(200).delay(400)
 					.style("opacity", null);
 				rect
@@ -151,7 +153,7 @@ export function initSankeyLegend(config: TConfig) {
 					.attr("height", rh + "px");
 			} else {
 				legend.classed("ready", true);
-				legend.selectAll("g")
+				legend.selectAll(".contents")
 					.transition().duration(300)
 					.style("opacity", 0);
 				rect
