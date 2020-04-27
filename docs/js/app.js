@@ -4307,7 +4307,7 @@ var App = (function (exports) {
           const h = box.height;
           const w = box.width;
           const canvas = select(svg).select("g.canvas");
-          const rh = config.legend.map(leg => leg.labels.length * 29).reduce((ac, le) => ac + le, 0);
+          const rh = config.legend.map(leg => leg.labels.length * 26).reduce((ac, le) => ac + le, 0);
           const rw = 150;
           const m = config.sankey.margin();
           const nw = config.sankey.nodeWidth() / 2;
@@ -4370,23 +4370,30 @@ var App = (function (exports) {
               .text("⤢")
               .on("click", resizeHandler);
           resize.append("title")
-              .text("Sho/hide legend");
-          let accum = 0;
-          config.legend.forEach((leg) => {
+              .text("Show/hide legend");
+          let lasty = 10;
+          config.legend.forEach((leg, n) => {
+              lasty += 30;
+              // subtitle
+              legend.append("text")
+                  .attr("x", 7)
+                  .attr("y", lasty)
+                  .attr("text-anchor", "start")
+                  .text((d) => leg.title);
               leg.colors.forEach((item, m) => {
+                  lasty += 17;
                   const g = legend.append("g")
-                      .style("transform", `translate(10px, ${28 + (25 * accum)}px)`);
+                      .style("transform", `translate(10px, ${lasty}px)`);
                   g.append("circle")
                       .style("fill", item)
                       .attr("r", 7)
-                      .attr("cx", 7)
-                      .attr("cy", 2 + (1 * accum));
+                      .attr("cx", 14)
+                      .attr("cy", 0);
                   g.append("text")
                       .classed("chart-legend", true)
-                      .attr("x", 22)
-                      .attr("y", 8 + (1 * accum))
+                      .attr("x", 29)
+                      .attr("y", 5)
                       .text(leg.labels[m]);
-                  ++accum;
               });
           });
           function resizeHandler() {
