@@ -10,22 +10,48 @@ import { polygonLength, polygonCentroid } from "d3-polygon";
  * @param config 
  */
 export function initSankeyLegend(config: TConfig) {
-	const leg = document.getElementById("Legend") as HTMLInputElement;
-	leg.addEventListener("input", () => leg.checked ? show() : hide());
-
-	window.addEventListener("show-legend", () => {
-		if (!leg.checked) { return; }
-		show();
-	});
+	const legShowHide = document.getElementById("LegendShowHide") as HTMLInputElement;
+	const legResize = document.getElementById("LegendResize") as HTMLInputElement;
 
 	function hide() {
-		const svg = select("#chart > svg");
-		const canvas = svg.select(".canvas");
-		canvas.select(".chart-legend")
-			.transition()
+		const svg = document.querySelector("#chart > svg") as SVGSVGElement;
+		const canvas = select(svg).select("g.canvas");
+		const legend = canvas.select("g.chart-legend");
+
+		legend
+			.transition().duration(500)
 			.style("opacity", 0)
-			.transition()
+			.transition().delay(500)
 			.remove();
+
+		legShowHide.checked = false;
+	}
+
+	function resize() {
+		const svg = select("#chart > svg");
+		const canvas = svg.selectAll("g.canvas");
+		const legend = canvas.selectAll("g.chart-legend");
+		const rect = legend.selectAll("rect");
+
+		if (legend.classed("ready")) {
+			legend.classed("ready", false);
+			legend
+				.selectAll(".contents")
+				.transition().duration(200).delay(400)
+				.style("opacity", null);
+			rect
+				.transition().duration(500)
+				.attr("height", (d: any) => d.height + "px");
+		} else {
+			legend.classed("ready", true);
+			legend
+				.selectAll(".contents")
+				.transition().duration(300)
+				.style("opacity", 0);
+			rect
+				.transition().duration(500)
+				.attr("height", (d: any) => d.minheight + "px");
+		}
 	}
 
 	/**
@@ -33,10 +59,10 @@ export function initSankeyLegend(config: TConfig) {
 	 */
 	function show() {
 		const svg = document.querySelector("#chart > svg") as SVGSVGElement;
+		const canvas = select(svg).select("g.canvas");
 		const box: DOMRect = svg.getBoundingClientRect();
 		const h = box.height;
 		const w = box.width;
-		const canvas = select(svg).select("g.canvas");
 		const rh: number = config.legend.map(leg => leg.labels.length * 26).reduce((ac, le) => ac + le, 0);
 		const rw: number = 150;
 		const m = config.sankey.margin();
@@ -75,8 +101,7 @@ export function initSankeyLegend(config: TConfig) {
 		canvas.append("path").attr("fill", "none").attr("stroke", "#900").attr("d", voronoi.render());
 		canvas.append("path").attr("d", delaunay.renderPoints(undefined, 2));*/
 
-		const t = transition()
-			.duration(500);
+		const t = transition().duration(500);
 
 		legend.transition(t as any).style("opacity", 1);
 
@@ -88,12 +113,15 @@ export function initSankeyLegend(config: TConfig) {
 		// @ts-ignore
 		legend.call(drag().on("drag", dragged));
 
-		const rect = legend.append("rect")
-			.attr("width", rw + "px")
-			.attr("height", rh + "px")
-			.attr("x", 0)
-			.attr("y", 0)
-			.classed("chart-legend", true);
+		legend.selectAll("rect")
+			.data([{ height: rh, minheight: 20 }])
+			.enter()
+			.append("rect")
+				.attr("width", rw + "px")
+				.attr("height", (d: any) => d.height + "px")
+				.attr("x", 0)
+				.attr("y", 0)
+				.classed("chart-legend", true);
 
 		legend.append("text")
 			.attr("x", rw / 2)
@@ -101,15 +129,25 @@ export function initSankeyLegend(config: TConfig) {
 			.attr("text-anchor", "middle")
 			.text("legend");
 
-		const resize = legend.append("text")
-			.attr("class", "legend-resize")
-			.attr("x", rw - 15)
+		const resizelink = legend.append("text")
+			.attr("class", "legend-action")
+			.attr("x", rw - 30)
 			.attr("y", 15)
 			.text("⤢")
-			.on("click", resizeHandler);
+			.on("click", resize);
 
-		resize.append("title")
-			.text("Show/hide legend");
+		resizelink.append("title")
+			.text("Grow/shrink legend");
+
+		const close = legend.append("text")
+			.attr("class", "legend-action")
+			.attr("x", rw - 15)
+			.attr("y", 15)
+			.text("×")
+			.on("click", closeHandler);
+
+		close.append("title")
+			.text("Close legend");
 
 		let lasty = 10;
 		config.legend.forEach((leg: any, n: number) => {
@@ -142,26 +180,13 @@ export function initSankeyLegend(config: TConfig) {
 			});
 		});
 
-		function resizeHandler() {
-			if (legend.classed("ready")) {
-				legend.classed("ready", false);
-				legend.selectAll(".contents")
-					.transition().duration(200).delay(400)
-					.style("opacity", null);
-				rect
-					.transition().duration(500)
-					.attr("height", rh + "px");
-			} else {
-				legend.classed("ready", true);
-				legend.selectAll(".contents")
-					.transition().duration(300)
-					.style("opacity", 0);
-				rect
-					.transition().duration(500)
-					.attr("height", "20px");
-			}
+		function closeHandler() {
+			hide();
 		}
 
 		legend.attr("transform", (d: TPoint) => `translate(${[x, y]})`);
 	}
+
+	legShowHide.addEventListener("input", () => legShowHide.checked ? show() : hide());
+	window.addEventListener("show-legend", () => { if (!legShowHide.checked) { return; } show(); });
 }

@@ -42,8 +42,8 @@ text.chart-legend {
 }
 
 .breakdown {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: #3c94ff;
+  background: #fff;
+  border-top: 1px solid #1f4a80;
 }
 
 .breakdown-close {

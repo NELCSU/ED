@@ -4281,32 +4281,54 @@ var App = (function (exports) {
    * @param config
    */
   function initSankeyLegend(config) {
-      const leg = document.getElementById("Legend");
-      leg.addEventListener("input", () => leg.checked ? show() : hide());
-      window.addEventListener("show-legend", () => {
-          if (!leg.checked) {
-              return;
-          }
-          show();
-      });
+      const legShowHide = document.getElementById("LegendShowHide");
+      const legResize = document.getElementById("LegendResize");
       function hide() {
-          const svg = select("#chart > svg");
-          const canvas = svg.select(".canvas");
-          canvas.select(".chart-legend")
-              .transition()
+          const svg = document.querySelector("#chart > svg");
+          const canvas = select(svg).select("g.canvas");
+          const legend = canvas.select("g.chart-legend");
+          legend
+              .transition().duration(500)
               .style("opacity", 0)
-              .transition()
+              .transition().delay(500)
               .remove();
+          legShowHide.checked = false;
+      }
+      function resize() {
+          const svg = select("#chart > svg");
+          const canvas = svg.selectAll("g.canvas");
+          const legend = canvas.selectAll("g.chart-legend");
+          const rect = legend.selectAll("rect");
+          if (legend.classed("ready")) {
+              legend.classed("ready", false);
+              legend
+                  .selectAll(".contents")
+                  .transition().duration(200).delay(400)
+                  .style("opacity", null);
+              rect
+                  .transition().duration(500)
+                  .attr("height", (d) => d.height + "px");
+          }
+          else {
+              legend.classed("ready", true);
+              legend
+                  .selectAll(".contents")
+                  .transition().duration(300)
+                  .style("opacity", 0);
+              rect
+                  .transition().duration(500)
+                  .attr("height", (d) => d.minheight + "px");
+          }
       }
       /**
        * @link https://observablehq.com/@d3/voronoi-labels
        */
       function show() {
           const svg = document.querySelector("#chart > svg");
+          const canvas = select(svg).select("g.canvas");
           const box = svg.getBoundingClientRect();
           const h = box.height;
           const w = box.width;
-          const canvas = select(svg).select("g.canvas");
           const rh = config.legend.map(leg => leg.labels.length * 26).reduce((ac, le) => ac + le, 0);
           const rw = 150;
           const m = config.sankey.margin();
@@ -4342,8 +4364,7 @@ var App = (function (exports) {
           /*// DEBUG
           canvas.append("path").attr("fill", "none").attr("stroke", "#900").attr("d", voronoi.render());
           canvas.append("path").attr("d", delaunay.renderPoints(undefined, 2));*/
-          const t = transition()
-              .duration(500);
+          const t = transition().duration(500);
           legend.transition(t).style("opacity", 1);
           function dragged(d) {
               d.x += event.dx;
@@ -4352,9 +4373,12 @@ var App = (function (exports) {
           }
           // @ts-ignore
           legend.call(drag().on("drag", dragged));
-          const rect = legend.append("rect")
+          legend.selectAll("rect")
+              .data([{ height: rh, minheight: 20 }])
+              .enter()
+              .append("rect")
               .attr("width", rw + "px")
-              .attr("height", rh + "px")
+              .attr("height", (d) => d.height + "px")
               .attr("x", 0)
               .attr("y", 0)
               .classed("chart-legend", true);
@@ -4363,14 +4387,22 @@ var App = (function (exports) {
               .attr("y", 15)
               .attr("text-anchor", "middle")
               .text("legend");
-          const resize = legend.append("text")
-              .attr("class", "legend-resize")
-              .attr("x", rw - 15)
+          const resizelink = legend.append("text")
+              .attr("class", "legend-action")
+              .attr("x", rw - 30)
               .attr("y", 15)
               .text("⤢")
-              .on("click", resizeHandler);
-          resize.append("title")
-              .text("Show/hide legend");
+              .on("click", resize);
+          resizelink.append("title")
+              .text("Grow/shrink legend");
+          const close = legend.append("text")
+              .attr("class", "legend-action")
+              .attr("x", rw - 15)
+              .attr("y", 15)
+              .text("×")
+              .on("click", closeHandler);
+          close.append("title")
+              .text("Close legend");
           let lasty = 10;
           config.legend.forEach((leg, n) => {
               lasty += 30;
@@ -4398,28 +4430,15 @@ var App = (function (exports) {
                       .text(leg.labels[m]);
               });
           });
-          function resizeHandler() {
-              if (legend.classed("ready")) {
-                  legend.classed("ready", false);
-                  legend.selectAll(".contents")
-                      .transition().duration(200).delay(400)
-                      .style("opacity", null);
-                  rect
-                      .transition().duration(500)
-                      .attr("height", rh + "px");
-              }
-              else {
-                  legend.classed("ready", true);
-                  legend.selectAll(".contents")
-                      .transition().duration(300)
-                      .style("opacity", 0);
-                  rect
-                      .transition().duration(500)
-                      .attr("height", "20px");
-              }
+          function closeHandler() {
+              hide();
           }
           legend.attr("transform", (d) => `translate(${[x, y]})`);
       }
+      legShowHide.addEventListener("input", () => legShowHide.checked ? show() : hide());
+      window.addEventListener("show-legend", () => { if (!legShowHide.checked) {
+          return;
+      } show(); });
   }
 
   /**
