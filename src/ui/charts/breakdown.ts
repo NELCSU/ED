@@ -58,7 +58,7 @@ export function initBreakdown(config: TConfig) {
 		if (chart && config.breakdown.chart.length > 0) {
 			if (config.breakdown.chart[0].length === 1) {
 				const d: TBreakdown = config.breakdown.chart[current][0];
-				chart.innerHTML = `<div><h2 style="color:${d.color}">${d.label}</h2><h2>${d.value} call(s) 100%</h2></div>`;
+				chart.innerHTML = `<div><h2>${d.label}</h2><h2>${d.value} call(s) 100%</h2></div>`;
 			} else {
 				chart.innerHTML = " ";
 				drawColumnChart(chart, config.breakdown.chart[current]);
