@@ -24,6 +24,8 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   );
   const canvas = sg.select(".canvas");
 
+  sg.on("click", canvasClickHandler);
+
   x.domain(data.map((d: TBreakdown) => d.label));
   y.domain([0, max(data, (d: any) => d.value)]);
 
@@ -65,19 +67,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
     .data(data).enter()
     .append("g")
       .attr("transform", (d: TBreakdown) => `translate(${x(d.label)},${y(d.value)})`)
-      .on("click", (d: TBreakdown) => {
-        if (event.ctrlKey) {
-          s.toggleCumulative(d.label);
-        } else if (event.shiftKey) {
-          s.toggleRange(d.label);
-        } else {
-          s.toggle(d.label);
-        }
-        gbar.each(function(this: SVGGElement, d: TBreakdown) {
-          const filtered: boolean = s.isFiltered(d.label);
-          return select(this).classed("filtered", filtered);
-        });
-      });
+      .on("click", barClickHandler);
 
   const rbar = gbar.append("rect")
     .attr("class", "bar")
@@ -95,4 +85,28 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
     .attr("x", x.bandwidth() / 2)
     .attr("y", -2)
     .text((d: TBreakdown) => `${f(d.value)}`);
+
+  function barClickHandler(d: TBreakdown) {
+    event.stopPropagation();
+    if (event.ctrlKey) {
+      s.toggleCumulative(d.label);
+    } else if (event.shiftKey) {
+      s.toggleRange(d.label);
+    } else {
+      s.toggle(d.label);
+    }
+    highlight();
+  }
+
+  function canvasClickHandler() {
+    s.clear();
+    highlight();
+  }
+
+  function highlight() {
+    gbar.each(function(this: SVGGElement, d: TBreakdown) {
+      const filtered: boolean = s.isFiltered(d.label);
+      return select(this).classed("filtered", filtered);
+    });
+  }
 }

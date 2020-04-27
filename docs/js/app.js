@@ -5881,6 +5881,7 @@ var App = (function (exports) {
       const y = linear$1().range([rh, 0]);
       const sg = select(node).call(svg().height(height).width(width).margin(margin));
       const canvas = sg.select(".canvas");
+      sg.on("click", canvasClickHandler);
       x.domain(data.map((d) => d.label));
       y.domain([0, max(data, (d) => d.value)]);
       const xAxis = axisBottom(x)
@@ -5914,21 +5915,7 @@ var App = (function (exports) {
           .data(data).enter()
           .append("g")
           .attr("transform", (d) => `translate(${x(d.label)},${y(d.value)})`)
-          .on("click", (d) => {
-          if (event.ctrlKey) {
-              s.toggleCumulative(d.label);
-          }
-          else if (event.shiftKey) {
-              s.toggleRange(d.label);
-          }
-          else {
-              s.toggle(d.label);
-          }
-          gbar.each(function (d) {
-              const filtered = s.isFiltered(d.label);
-              return select(this).classed("filtered", filtered);
-          });
-      });
+          .on("click", barClickHandler);
       const rbar = gbar.append("rect")
           .attr("class", "bar")
           .attr("fill", (d) => d.color ? d.color : "steelblue")
@@ -5943,6 +5930,29 @@ var App = (function (exports) {
           .attr("x", x.bandwidth() / 2)
           .attr("y", -2)
           .text((d) => `${f(d.value)}`);
+      function barClickHandler(d) {
+          event.stopPropagation();
+          if (event.ctrlKey) {
+              s.toggleCumulative(d.label);
+          }
+          else if (event.shiftKey) {
+              s.toggleRange(d.label);
+          }
+          else {
+              s.toggle(d.label);
+          }
+          highlight();
+      }
+      function canvasClickHandler() {
+          s.clear();
+          highlight();
+      }
+      function highlight() {
+          gbar.each(function (d) {
+              const filtered = s.isFiltered(d.label);
+              return select(this).classed("filtered", filtered);
+          });
+      }
   }
 
   /**
@@ -6844,6 +6854,7 @@ var App = (function (exports) {
               .text((d) => (d.x1 - d.x0) > 50 ? formatNumber(d.value) : "");
       }
       window.dispatchEvent(new CustomEvent("show-legend"));
+      const desc = (a, b) => a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
       function linkclick(d) {
           event.stopPropagation();
           window.dispatchEvent(new CustomEvent("clear-chart"));
@@ -6856,9 +6867,11 @@ var App = (function (exports) {
               config.breakdown.chart.push(d.supply);
           }
           if (d.supplyDx && d.supplyDx.length > 0) {
+              d.supplyDx.sort(desc);
               config.breakdown.chart.push(d.supplyDx);
           }
           if (d.supplyService && d.supplyService.length > 0) {
+              d.supplyService.sort(desc);
               config.breakdown.chart.push(d.supplyService);
           }
           if (d.supplyBook && d.supplyBook.length > 0) {

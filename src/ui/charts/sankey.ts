@@ -165,6 +165,9 @@ export function loadSankeyChart(config: TConfig) {
 
   window.dispatchEvent(new CustomEvent("show-legend"));
 
+  const asc = (a: TBreakdown, b: TBreakdown) => a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
+  const desc = (a: TBreakdown, b: TBreakdown) => a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
+
   function linkclick (this: Element, d: TLink) {
     event.stopPropagation();
     window.dispatchEvent(new CustomEvent("clear-chart"));
@@ -179,9 +182,11 @@ export function loadSankeyChart(config: TConfig) {
       config.breakdown.chart.push(d.supply);
     }
     if (d.supplyDx && d.supplyDx.length > 0) {
+      d.supplyDx.sort(desc);
       config.breakdown.chart.push(d.supplyDx);
     }
     if (d.supplyService && d.supplyService.length > 0) {
+      d.supplyService.sort(desc);
       config.breakdown.chart.push(d.supplyService);
     }
     if (d.supplyBook && d.supplyBook.length > 0) {
