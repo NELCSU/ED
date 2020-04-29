@@ -7,6 +7,7 @@ const ascendingSourceBreadth = (a: TLink, b: TLink) => ascendingBreadth(a.source
 const ascendingTargetBreadth = (a: TLink, b: TLink) => ascendingBreadth(a.target, b.target) || a.index - b.index;
 // @ts-ignore
 const center = (node: TNode) => node.targetLinks.length ? node.depth : node.sourceLinks.length ? min(node.sourceLinks, targetDepth) - 1 : 0;
+
 function computeLinkBreadths(nodes: TNode[]): void {
   for (const node of nodes) {
     let y0 = node.y0;
@@ -21,6 +22,7 @@ function computeLinkBreadths(nodes: TNode[]): void {
     }
   }
 }
+
 const constant = (x: any) => () => x;
 const defaultId = (d: TNode) => d.index;
 const defaultLinks = (graph: any) => graph.links;

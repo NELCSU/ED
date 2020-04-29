@@ -11,7 +11,6 @@ import { polygonLength, polygonCentroid } from "d3-polygon";
  */
 export function initSankeyLegend(config: TConfig) {
 	const legShowHide = document.getElementById("LegendShowHide") as HTMLInputElement;
-	const legResize = document.getElementById("LegendResize") as HTMLInputElement;
 
 	function hide() {
 		const svg = document.querySelector("#chart > svg") as SVGSVGElement;

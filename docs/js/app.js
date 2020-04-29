@@ -4282,7 +4282,6 @@ var App = (function (exports) {
    */
   function initSankeyLegend(config) {
       const legShowHide = document.getElementById("LegendShowHide");
-      const legResize = document.getElementById("LegendResize");
       function hide() {
           const svg = document.querySelector("#chart > svg");
           const canvas = select(svg).select("g.canvas");
