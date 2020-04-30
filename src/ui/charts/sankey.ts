@@ -4,7 +4,7 @@ import { rgb } from "d3-color";
 import { event, select, selectAll } from "d3-selection";
 import { rollup, sum } from "d3-array";
 import { drag } from "d3-drag";
-import { svg } from "../../utils/d3-utils";
+import { svg } from "../../../node_modules/@buckneri/spline/dist";
 import { sankey } from "./sankey-model";
 import { scaleSequential } from "d3-scale";
 import { interpolateViridis } from "d3-scale-chromatic";
@@ -37,12 +37,12 @@ export function initSankeyChart(config: TConfig) {
     .nodeWidth(30)
     .extent([[1, 1], [w - m.left - m.right, h - m.top - m.bottom]]);
 
-  select(chart).call(
-    svg()
-      .height(chart.clientHeight)
-      .width(chart.clientWidth)
-      .margin(m)
-  );
+  svg(chart, {
+    height: chart.clientHeight,
+    margin: m,
+    width: chart.clientWidth
+  });
+
   window.addEventListener("sankey-chart-rebuild", () => {
     config.sankey = sankey()
       .nodePadding(config.filters.density)
