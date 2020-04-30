@@ -6827,8 +6827,6 @@ var App = (function (exports) {
       if (options.margin.left === undefined) {
           options.margin.left = 10;
       }
-      const rh = options.height - options.margin.top - options.margin.bottom;
-      const rw = options.width - options.margin.left - options.margin.right;
       const svg = parent.append("svg")
           .attr("x", 0)
           .attr("y", 0)
@@ -6842,8 +6840,8 @@ var App = (function (exports) {
           .attr("clipPathUnits", "userSpaceOnUse")
           .attr("id", "clipcanvas");
       clip.append("rect")
-          .attr("height", rh)
-          .attr("width", rw)
+          .attr("height", options.height)
+          .attr("width", options.width)
           .attr("x", 0)
           .attr("y", 0);
       svg.append("g")
@@ -6868,7 +6866,7 @@ var App = (function (exports) {
       const canvas = sg.select(".canvas");
       sg.on("click", canvasClickHandler);
       x.domain(data.map((d) => d.label));
-      y.domain([0, max(data, (d) => d.value)]);
+      y.domain([0, max(data, (d) => d.value) * 1.1]);
       const xAxis = axisBottom(x)
           .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3) || i === data.length - 1));
       const gAxis = canvas.append("g")
@@ -6899,8 +6897,11 @@ var App = (function (exports) {
       const gbar = canvas.selectAll(".bar")
           .data(data).enter()
           .append("g")
-          .attr("transform", (d) => `translate(${x(d.label)},${y(d.value)})`)
-          .on("click", barClickHandler);
+          .attr("transform", (d) => `translate(${x(d.label)},${y(d.value)})`);
+      // @ts-ignore
+      gbar.each((d, i, n) => n[i].addEventListener("click", (e) => {
+          barClickHandler(d, e);
+      }));
       const rbar = gbar.append("rect")
           .attr("class", "bar")
           .attr("fill", (d) => d.color ? d.color : "steelblue")
@@ -6915,8 +6916,8 @@ var App = (function (exports) {
           .attr("x", x.bandwidth() / 2)
           .attr("y", -2)
           .text((d) => `${f(d.value)}`);
-      function barClickHandler(d) {
-          event.stopPropagation();
+      function barClickHandler(d, event) {
+          event.stopImmediatePropagation();
           if (event.ctrlKey) {
               s.toggleCumulative(d.label);
           }

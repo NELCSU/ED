@@ -25,7 +25,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   sg.on("click", canvasClickHandler);
 
   x.domain(data.map((d: TBreakdown) => d.label));
-  y.domain([0, max(data, (d: any) => d.value)]);
+  y.domain([0, max(data, (d: any) => d.value) * 1.1]);
 
   const xAxis = axisBottom(x)
     .tickValues(x.domain().filter((d, i) => data.length < 10 ? true : !(i % 3) || i === data.length - 1));
@@ -64,9 +64,13 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const gbar = canvas.selectAll(".bar")
     .data(data).enter()
     .append("g")
-      .attr("transform", (d: TBreakdown) => `translate(${x(d.label)},${y(d.value)})`)
-      .on("click", barClickHandler);
-
+      .attr("transform", (d: TBreakdown) => `translate(${x(d.label)},${y(d.value)})`);
+  
+  // @ts-ignore
+  gbar.each((d, i, n) => n[i].addEventListener("click", (e: MouseEvent) => {
+    barClickHandler(d, e);
+  }));
+  
   const rbar = gbar.append("rect")
     .attr("class", "bar")
     .attr("fill", (d: TBreakdown) => d.color ? d.color : "steelblue")
@@ -84,8 +88,8 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
     .attr("y", -2)
     .text((d: TBreakdown) => `${f(d.value)}`);
 
-  function barClickHandler(d: TBreakdown) {
-    event.stopPropagation();
+  function barClickHandler(d: TBreakdown, event: MouseEvent) {
+    event.stopImmediatePropagation();
     if (event.ctrlKey) {
       s.toggleCumulative(d.label);
     } else if (event.shiftKey) {
