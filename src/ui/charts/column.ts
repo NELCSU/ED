@@ -19,7 +19,7 @@ export function drawColumnChart(node: Element, data: TBreakdown[]) {
   const x = scaleBand().range([0, rw]).padding(0.1);
   const y = scaleLinear().range([rh, 0]);
 
-  const sg = svg(node as HTMLElement, { height: height, margin: margin, width: width});
+  const sg = select(svg(node as HTMLElement, { height: height, margin: margin, width: width}) as any);
   const canvas = sg.select(".canvas");
 
   sg.on("click", canvasClickHandler);
