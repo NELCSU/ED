@@ -18,7 +18,6 @@
     "start": "pm2 start npm -- start-app -w",
     "start-app": "npm run http",
     "test": "npm run http",
-    "test-compile": "jest --config jestconfig.json",
     "update-all": "npm run update-jszip",
     "update-jszip": "ncp node_modules/jszip/dist docs/lib/jszip"
   },
@@ -54,8 +53,7 @@
     "es6-shim": "^0.35.5",
     "jquery": "^3.5.0",
     "jszip": "^3.4.0",
-    "jszip-utils": "^0.1.0",
-    "nvd3": "^1.8.6"
+    "jszip-utils": "^0.1.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.1.0",
@@ -64,7 +62,6 @@
     "@types/d3-delaunay": "^4.1.0",
     "@types/d3-request": "^1.0.5",
     "@types/d3-sankey": "^0.11.0",
-    "@types/jest": "^25.2.1",
     "@types/jszip": "^3.1.7",
     "@typescript-eslint/eslint-plugin": "^2.30.0",
     "@typescript-eslint/parser": "^2.30.0",
@@ -72,7 +69,6 @@
     "clean-css": "^4.2.3",
     "eslint": "^6.8.0",
     "eslint-plugin-jsdoc": "^24.0.0",
-    "jest": "^25.5.3",
     "jsdoc": "^3.6.4",
     "npm-run-all": "^4.1.5",
     "postcss-cli": "^7.1.1",
@@ -81,7 +77,6 @@
     "rollup-plugin-typescript2": "^0.27.0",
     "sass": "^1.26.5",
     "stylelint": "^13.3.3",
-    "ts-jest": "^25.4.0",
     "typescript": "^3.8.3"
   }
 }
