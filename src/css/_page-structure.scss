@@ -79,7 +79,9 @@ a:focus {
 #chart {
   @include globals.fx;
   @include globals.fx-center;
-  @include globals.maxsize;
+
+  height: 90%;
+  width: 100%;
 }
 
 #content {

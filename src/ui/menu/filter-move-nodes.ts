@@ -8,6 +8,12 @@ export function initSankeyNodeMovement(config: TConfig) {
 	const y = document.getElementById("MoveY") as HTMLInputElement;
 	config.filters.move.x = true;
 	config.filters.move.y = true;
-	x.addEventListener("input", () => config.filters.move.x = x.checked);
-	y.addEventListener("input", () => config.filters.move.y = y.checked);
+	x.addEventListener("input", () => {
+		config.filters.move.x = x.checked;
+		window.dispatchEvent(new CustomEvent("soft-filter-action"));
+	});
+	y.addEventListener("input", () => {
+		config.filters.move.y = y.checked;
+		window.dispatchEvent(new CustomEvent("soft-filter-action"));
+	});
 }

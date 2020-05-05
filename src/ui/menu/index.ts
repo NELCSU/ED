@@ -36,6 +36,7 @@ export function initMenu(config: TConfig) {
   initUIThemes(config);
 
   window.addEventListener("hide-menu", () => menu.classList.add("ready"));
+
   window.addEventListener("filter-action", () => {
     window.dispatchEvent(new CustomEvent("data-quality"));
     setQueryHash(config);
@@ -45,5 +46,10 @@ export function initMenu(config: TConfig) {
         config.db.sankey = JSON.parse(content);
         window.dispatchEvent(new CustomEvent("sankey-chart"));
       });
+  });
+
+  window.addEventListener("soft-filter-action", () => {
+    config.sankey.nodeMoveX = config.filters.move.x;
+    config.sankey.nodeMoveY = config.filters.move.y;
   });
 }

@@ -1,5 +1,5 @@
 
-import type { TConfig, TNode, TPoint } from "../../typings/ED";
+import type { TConfig, TPoint, TMargin } from "../../typings/ED";
 import { event, select } from "d3-selection";
 import { drag } from "d3-drag";
 import { transition } from "d3-transition";
@@ -10,6 +10,7 @@ import { polygonLength, polygonCentroid } from "d3-polygon";
  * @param config 
  */
 export function initSankeyLegend(config: TConfig) {
+	const margin: TMargin = { bottom: 10, left: 20, right: 20, top: 10 };
 	const legShowHide = document.getElementById("LegendShowHide") as HTMLInputElement;
 
 	function hide() {
@@ -34,6 +35,13 @@ export function initSankeyLegend(config: TConfig) {
 
 		if (legend.classed("ready")) {
 			legend.classed("ready", false);
+			const height = (rect.datum() as any).height - 20;
+			legend
+				.transition().duration(500)
+				.attr("transform", (d: any) => {
+					d.y -= height;
+					return `translate(${d.x}, ${d.y})`;
+				});
 			legend
 				.selectAll(".contents")
 				.transition().duration(200).delay(400)
@@ -43,6 +51,13 @@ export function initSankeyLegend(config: TConfig) {
 				.attr("height", (d: any) => d.height + "px");
 		} else {
 			legend.classed("ready", true);
+			const height = (rect.datum() as any).height - 20;
+			legend
+				.transition().duration(500)
+				.attr("transform", (d: any) => {
+					d.y += height;
+					return `translate(${d.x}, ${d.y})`;
+				});
 			legend
 				.selectAll(".contents")
 				.transition().duration(300)
@@ -64,17 +79,16 @@ export function initSankeyLegend(config: TConfig) {
 		const w = box.width;
 		const rh: number = config.legend.map(leg => leg.labels.length * 26).reduce((ac, le) => ac + le, 0);
 		const rw: number = 150;
-		const m = config.sankey.margin();
-		const nw = config.sankey.nodeWidth() / 2;
+		const nw = config.sankey.size / 2;
 
 		// determine the least node dense area of chart
 		let xy: number[][] = [];
 		const nodes = canvas.selectAll("g.node").data();
 		nodes.forEach((d: any) => {
-			xy.push([d.x1 - nw, d.y1 - (d.y0 / 2)] as any);
+			xy.push([d.x, d.y] as any);
 		});
 		const delaunay = Delaunay.from(xy);
-		const voronoi = delaunay.voronoi([-1, -1, w - m.left - m.right + 1, h - m.top - m.bottom + 1]);
+		const voronoi = delaunay.voronoi([-1, -1, w - margin.left - margin.right + 1, h - margin.top - margin.bottom + 1]);
 		const cells: any[] = xy.map((d, i) => [d, voronoi.cellPolygon(i)]);
 		let bx: any, area = 0;
 		cells.forEach((cell: any) => {
@@ -87,8 +101,8 @@ export function initSankeyLegend(config: TConfig) {
 			} catch {}
 		});
 		let [x, y] = polygonCentroid(bx);
-		x = x > w / 2 ? w - rw - m.right : 0 + m.left;
-		y = y > h / 2 ? h - rh - m.bottom : 0 + m.top;
+		x = x > w / 2 ? w - rw - margin.right : 0 + margin.left;
+		y = y > h / 2 ? h - rh - margin.bottom : 0 + margin.top;
 		//
 
 		const legend = canvas.append("g")
