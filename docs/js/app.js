@@ -229,17 +229,6 @@ var App = (function (exports) {
       });
   }
 
-  /**
-   * @param config
-   */
-  function initOpacitySlider(config) {
-      const opacity = document.getElementById("Opacity");
-      opacity.addEventListener("change", (e) => {
-          config.filters.opacity.low = +e.target.value;
-          window.dispatchEvent(new CustomEvent("filter-action"));
-      });
-  }
-
   var xhtml = "http://www.w3.org/1999/xhtml";
 
   var namespaces = {
@@ -4951,7 +4940,6 @@ var App = (function (exports) {
       initDayList(config);
       initCallList(config);
       initDensitySlider(config);
-      initOpacitySlider(config);
       initSankeyLegend(config);
       initSankeyNodeMovement(config);
       initSankeyNodeOrientation(config);
