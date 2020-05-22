@@ -79,7 +79,6 @@ export function initSankeyLegend(config: TConfig) {
 		const w = box.width;
 		const rh: number = config.legend.map(leg => leg.labels.length * 26).reduce((ac, le) => ac + le, 0);
 		const rw: number = 150;
-		const nw = config.sankey.size / 2;
 
 		// determine the least node dense area of chart
 		let xy: number[][] = [];

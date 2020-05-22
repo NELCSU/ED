@@ -1,5 +1,5 @@
 import type { TBreakdown, TConfig } from "../../typings/ED";
-import { Sankey, TLink, TNode, TSankeyOptions } from "../../../node_modules/@buckneri/sankey";
+import { Sankey } from "../../../node_modules/@buckneri/sankey";
 import { rollup, sum } from "d3-array";
 import { scaleSequential } from "d3-scale";
 import { select } from "d3-selection";
@@ -8,7 +8,6 @@ import { formatNumber } from "../../utils/format";
 
 const color = scaleSequential(interpolateViridis).domain([0, 1]);
 const chart = document.getElementById("chart") as HTMLDivElement;
-const asc = (a: TBreakdown, b: TBreakdown) => a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
 const desc = (a: TBreakdown, b: TBreakdown) => a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
 
 /**
@@ -26,6 +25,7 @@ export function initSankeyChart(config: TConfig) {
 
     let sumSource: TBreakdown[] = [], sumTarget: TBreakdown[] = [];
     let text;
+
     if (d.grouping) {
       text = `<div>Breakdown for ${d.name}</div>`;
   
@@ -95,6 +95,7 @@ export function initSankeyChart(config: TConfig) {
 
     config.breakdown.message = text;
     config.breakdown.chart = [];
+    
     if (sumSource.length > 0) {
       config.breakdown.chart.push(sumSource.sort(desc));
     }

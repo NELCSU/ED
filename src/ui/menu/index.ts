@@ -38,7 +38,9 @@ export function initMenu(config: TConfig) {
   window.addEventListener("filter-action", () => {
     window.dispatchEvent(new CustomEvent("data-quality"));
     setQueryHash(config);
+    
     config.db.file = config.querystring.organisation + config.querystring.day + config.querystring.call + ".json";
+
     openDataFile(config)
       .then((content) => {
         config.db.sankey = JSON.parse(content);

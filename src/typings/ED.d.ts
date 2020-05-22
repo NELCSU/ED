@@ -141,9 +141,3 @@ export type TConfig = {
   themes: string[]
 };
 
-export type TNodeComponent = {
-  index: number,
-  root: TNode,
-  scc: TNode[],
-  x: number
-};
