@@ -4330,7 +4330,6 @@ var App = (function (exports) {
           const w = box.width;
           const rh = config.legend.map(leg => leg.labels.length * 26).reduce((ac, le) => ac + le, 0);
           const rw = 150;
-          const nw = config.sankey.size / 2;
           // determine the least node dense area of chart
           let xy = [];
           const nodes = canvas.selectAll("g.node").data();
