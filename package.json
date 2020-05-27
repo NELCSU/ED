@@ -5,7 +5,7 @@
   },
   "dependencies": {
     "@buckneri/js-lib-slicer": "^0.3.3",
-    "@buckneri/sankey": "^0.1.11",
+    "@buckneri/sankey": "^0.1.12",
     "@buckneri/spline": "^0.3.0",
     "@buckneri/string": "^0.3.10",
     "d3-array": "^2.4.0",
@@ -72,5 +72,5 @@
     "update-all": "npm run update-jszip",
     "update-jszip": "ncp node_modules/jszip/dist docs/lib/jszip"
   },
-  "version": "0.2.2"
+  "version": "0.2.3"
 }

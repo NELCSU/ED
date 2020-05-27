@@ -173,7 +173,8 @@ export function loadSankeyChart(config: TConfig) {
     nodes: config.db.sankey.nodes,
     nodeSize: 30,
     orient: config.filters.orientation.ltr ? "horizontal" : "vertical",
-    padding: config.filters.density
+    padding: config.filters.density,
+    playback: false
   });
 
   config.sankey.draw();
