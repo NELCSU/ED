@@ -167,7 +167,7 @@ export function loadSankeyChart(config: TConfig) {
   config.sankey = new Sankey({
     container: chart,
     links: config.db.sankey.links,
-    margin: { bottom: 0, left: 20, right: 20, top: 10 },
+    margin: { bottom: 20, left: 20, right: 20, top: 10 },
     nodeMoveX: config.filters.move.x,
     nodeMoveY: config.filters.move.y,
     nodes: config.db.sankey.nodes,
