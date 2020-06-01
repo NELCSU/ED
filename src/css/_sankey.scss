@@ -31,3 +31,13 @@ rect {
 text {
   user-select: none;
 }
+
+g.link.shadow > path {
+  stroke: #999 !important;
+  stroke-opacity: 0.1 !important;
+}
+
+rect.node.shadow {
+  fill: #999 !important;
+  fill-opacity: 1 !important;
+}

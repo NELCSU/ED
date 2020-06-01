@@ -2,6 +2,7 @@ import { initUIThemes } from "./filter-theme";
 import { initCallList } from "./filter-call";
 import { initDensitySlider } from "./filter-density";
 import { initSankeyLegend } from "./filter-legend";
+import { initPlayback } from "./filter-playback";
 import { initSankeyNodeMovement } from "./filter-move-nodes";
 import { initSankeyNodeOrientation } from "./filter-orientation";
 import { openDataFile } from "../data";
@@ -28,6 +29,7 @@ export function initMenu(config: TConfig) {
   initDayList(config);
   initCallList(config);
   initDensitySlider(config);
+  initPlayback(config);
   initSankeyLegend(config);
   initSankeyNodeMovement(config);
   initSankeyNodeOrientation(config);

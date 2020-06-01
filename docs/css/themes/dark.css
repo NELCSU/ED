@@ -67,3 +67,11 @@ select {
   border-color: #222;
   color: #aa8;
 }
+
+.playback-prompt {
+  fill: #aa8;
+}
+
+.tip {
+  background-color: #111;
+}

@@ -1,5 +1,5 @@
 import type { TBreakdown, TConfig } from "../../typings/ED";
-import { Sankey } from "../../../node_modules/@buckneri/sankey";
+import { Sankey, TSankeyOptions } from "../../../node_modules/@buckneri/sankey";
 import { rollup, sum } from "d3-array";
 import { scaleSequential } from "d3-scale";
 import { select } from "d3-selection";
@@ -164,7 +164,7 @@ export function loadSankeyChart(config: TConfig) {
     }
   });
 
-  config.sankey = new Sankey({
+  const options: TSankeyOptions = {
     container: chart,
     links: config.db.sankey.links,
     margin: { bottom: 20, left: 20, right: 20, top: 10 },
@@ -174,8 +174,10 @@ export function loadSankeyChart(config: TConfig) {
     nodeSize: 30,
     orient: config.filters.orientation.ltr ? "horizontal" : "vertical",
     padding: config.filters.density,
-    playback: false
-  });
+    playback: config.filters.playback
+  };
+
+  config.sankey = new Sankey(options);
 
   config.sankey.draw();
 

@@ -3765,7 +3765,7 @@ var App = (function (exports) {
     renderCell(i, context) {
       const buffer = context == null ? context = new Path : undefined;
       const points = this._clip(i);
-      if (points === null) return;
+      if (points === null || !points.length) return;
       context.moveTo(points[0], points[1]);
       let n = points.length;
       while (points[0] === points[n-2] && points[1] === points[n-1] && n > 1) n -= 2;
@@ -3780,7 +3780,7 @@ var App = (function (exports) {
       const {delaunay: {points}} = this;
       for (let i = 0, n = points.length / 2; i < n; ++i) {
         const cell = this.cellPolygon(i);
-        if (cell) yield cell;
+        if (cell) cell.index = i, yield cell;
       }
     }
     cellPolygon(i) {
@@ -3977,7 +3977,7 @@ var App = (function (exports) {
     }
   }
 
-  const tau = 2 * Math.PI;
+  const tau = 2 * Math.PI, pow = Math.pow;
 
   function pointX(p) {
     return p[0];
@@ -4032,7 +4032,7 @@ var App = (function (exports) {
           .sort((i, j) => points[2 * i] - points[2 * j] || points[2 * i + 1] - points[2 * j + 1]); // for exact neighbors
         const e = this.collinear[0], f = this.collinear[this.collinear.length - 1],
           bounds = [ points[2 * e], points[2 * e + 1], points[2 * f], points[2 * f + 1] ],
-          r = 1e-8 * Math.sqrt((bounds[3] - bounds[1])**2 + (bounds[2] - bounds[0])**2);
+          r = 1e-8 * Math.hypot(bounds[3] - bounds[1], bounds[2] - bounds[0]);
         for (let i = 0, n = points.length / 2; i < n; ++i) {
           const p = jitter(points[2 * i], points[2 * i + 1], r);
           points[2 * i] = p[0];
@@ -4111,12 +4111,12 @@ var App = (function (exports) {
       const {inedges, hull, _hullIndex, halfedges, triangles, points} = this;
       if (inedges[i] === -1 || !points.length) return (i + 1) % (points.length >> 1);
       let c = i;
-      let dc = (x - points[i * 2]) ** 2 + (y - points[i * 2 + 1]) ** 2;
+      let dc = pow(x - points[i * 2], 2) + pow(y - points[i * 2 + 1], 2);
       const e0 = inedges[i];
       let e = e0;
       do {
         let t = triangles[e];
-        const dt = (x - points[t * 2]) ** 2 + (y - points[t * 2 + 1]) ** 2;
+        const dt = pow(x - points[t * 2], 2) + pow(y - points[t * 2 + 1], 2);
         if (dt < dc) dc = dt, c = t;
         e = e % 3 === 2 ? e - 2 : e + 1;
         if (triangles[e] !== i) break; // bad triangulation
@@ -4124,7 +4124,7 @@ var App = (function (exports) {
         if (e === -1) {
           e = hull[(_hullIndex[i] + 1) % hull.length];
           if (e !== t) {
-            if ((x - points[e * 2]) ** 2 + (y - points[e * 2 + 1]) ** 2 < dc) return e;
+            if (pow(x - points[e * 2], 2) + pow(y - points[e * 2 + 1], 2) < dc) return e;
           }
           break;
         }
@@ -4436,6 +4436,17 @@ var App = (function (exports) {
       window.addEventListener("show-legend", () => { if (!legShowHide.checked) {
           return;
       } show(); });
+  }
+
+  /**
+   * @param config
+   */
+  function initPlayback(config) {
+      const playShowHide = document.getElementById("PlaybackShowHide");
+      playShowHide.addEventListener("input", (e) => {
+          config.filters.playback = +e.target.checked ? true : false;
+          window.dispatchEvent(new CustomEvent("filter-action"));
+      });
   }
 
   /**
@@ -4939,6 +4950,7 @@ var App = (function (exports) {
       initDayList(config);
       initCallList(config);
       initDensitySlider(config);
+      initPlayback(config);
       initSankeyLegend(config);
       initSankeyNodeMovement(config);
       initSankeyNodeOrientation(config);
@@ -5929,6 +5941,316 @@ var App = (function (exports) {
       }
   }
 
+  // Computes the decimal coefficient and exponent of the specified number x with
+  // significant digits p, where x is positive and p is in [1, 21] or undefined.
+  // For example, formatDecimal(1.23) returns ["123", 0].
+  function formatDecimal$1(x, p) {
+    if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
+    var i, coefficient = x.slice(0, i);
+
+    // The string returned by toExponential either has the form \d\.\d+e[-+]\d+
+    // (e.g., 1.2e+3) or the form \de[-+]\d+ (e.g., 1e+3).
+    return [
+      coefficient.length > 1 ? coefficient[0] + coefficient.slice(2) : coefficient,
+      +x.slice(i + 1)
+    ];
+  }
+
+  function exponent$1(x) {
+    return x = formatDecimal$1(Math.abs(x)), x ? x[1] : NaN;
+  }
+
+  function formatGroup$1(grouping, thousands) {
+    return function(value, width) {
+      var i = value.length,
+          t = [],
+          j = 0,
+          g = grouping[0],
+          length = 0;
+
+      while (i > 0 && g > 0) {
+        if (length + g + 1 > width) g = Math.max(1, width - length);
+        t.push(value.substring(i -= g, i + g));
+        if ((length += g + 1) > width) break;
+        g = grouping[j = (j + 1) % grouping.length];
+      }
+
+      return t.reverse().join(thousands);
+    };
+  }
+
+  function formatNumerals$1(numerals) {
+    return function(value) {
+      return value.replace(/[0-9]/g, function(i) {
+        return numerals[+i];
+      });
+    };
+  }
+
+  // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
+  var re$1 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
+
+  function formatSpecifier$1(specifier) {
+    if (!(match = re$1.exec(specifier))) throw new Error("invalid format: " + specifier);
+    var match;
+    return new FormatSpecifier$1({
+      fill: match[1],
+      align: match[2],
+      sign: match[3],
+      symbol: match[4],
+      zero: match[5],
+      width: match[6],
+      comma: match[7],
+      precision: match[8] && match[8].slice(1),
+      trim: match[9],
+      type: match[10]
+    });
+  }
+
+  formatSpecifier$1.prototype = FormatSpecifier$1.prototype; // instanceof
+
+  function FormatSpecifier$1(specifier) {
+    this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
+    this.align = specifier.align === undefined ? ">" : specifier.align + "";
+    this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
+    this.symbol = specifier.symbol === undefined ? "" : specifier.symbol + "";
+    this.zero = !!specifier.zero;
+    this.width = specifier.width === undefined ? undefined : +specifier.width;
+    this.comma = !!specifier.comma;
+    this.precision = specifier.precision === undefined ? undefined : +specifier.precision;
+    this.trim = !!specifier.trim;
+    this.type = specifier.type === undefined ? "" : specifier.type + "";
+  }
+
+  FormatSpecifier$1.prototype.toString = function() {
+    return this.fill
+        + this.align
+        + this.sign
+        + this.symbol
+        + (this.zero ? "0" : "")
+        + (this.width === undefined ? "" : Math.max(1, this.width | 0))
+        + (this.comma ? "," : "")
+        + (this.precision === undefined ? "" : "." + Math.max(0, this.precision | 0))
+        + (this.trim ? "~" : "")
+        + this.type;
+  };
+
+  // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
+  function formatTrim$1(s) {
+    out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
+      switch (s[i]) {
+        case ".": i0 = i1 = i; break;
+        case "0": if (i0 === 0) i0 = i; i1 = i; break;
+        default: if (!+s[i]) break out; if (i0 > 0) i0 = 0; break;
+      }
+    }
+    return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
+  }
+
+  var prefixExponent$1;
+
+  function formatPrefixAuto$1(x, p) {
+    var d = formatDecimal$1(x, p);
+    if (!d) return x + "";
+    var coefficient = d[0],
+        exponent = d[1],
+        i = exponent - (prefixExponent$1 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
+        n = coefficient.length;
+    return i === n ? coefficient
+        : i > n ? coefficient + new Array(i - n + 1).join("0")
+        : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
+        : "0." + new Array(1 - i).join("0") + formatDecimal$1(x, Math.max(0, p + i - 1))[0]; // less than 1y!
+  }
+
+  function formatRounded$1(x, p) {
+    var d = formatDecimal$1(x, p);
+    if (!d) return x + "";
+    var coefficient = d[0],
+        exponent = d[1];
+    return exponent < 0 ? "0." + new Array(-exponent).join("0") + coefficient
+        : coefficient.length > exponent + 1 ? coefficient.slice(0, exponent + 1) + "." + coefficient.slice(exponent + 1)
+        : coefficient + new Array(exponent - coefficient.length + 2).join("0");
+  }
+
+  var formatTypes$1 = {
+    "%": function(x, p) { return (x * 100).toFixed(p); },
+    "b": function(x) { return Math.round(x).toString(2); },
+    "c": function(x) { return x + ""; },
+    "d": function(x) { return Math.round(x).toString(10); },
+    "e": function(x, p) { return x.toExponential(p); },
+    "f": function(x, p) { return x.toFixed(p); },
+    "g": function(x, p) { return x.toPrecision(p); },
+    "o": function(x) { return Math.round(x).toString(8); },
+    "p": function(x, p) { return formatRounded$1(x * 100, p); },
+    "r": formatRounded$1,
+    "s": formatPrefixAuto$1,
+    "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
+    "x": function(x) { return Math.round(x).toString(16); }
+  };
+
+  function identity$5(x) {
+    return x;
+  }
+
+  var map$1 = Array.prototype.map,
+      prefixes$1 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
+
+  function formatLocale$1(locale) {
+    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$5 : formatGroup$1(map$1.call(locale.grouping, Number), locale.thousands + ""),
+        currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
+        currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
+        decimal = locale.decimal === undefined ? "." : locale.decimal + "",
+        numerals = locale.numerals === undefined ? identity$5 : formatNumerals$1(map$1.call(locale.numerals, String)),
+        percent = locale.percent === undefined ? "%" : locale.percent + "",
+        minus = locale.minus === undefined ? "-" : locale.minus + "",
+        nan = locale.nan === undefined ? "NaN" : locale.nan + "";
+
+    function newFormat(specifier) {
+      specifier = formatSpecifier$1(specifier);
+
+      var fill = specifier.fill,
+          align = specifier.align,
+          sign = specifier.sign,
+          symbol = specifier.symbol,
+          zero = specifier.zero,
+          width = specifier.width,
+          comma = specifier.comma,
+          precision = specifier.precision,
+          trim = specifier.trim,
+          type = specifier.type;
+
+      // The "n" type is an alias for ",g".
+      if (type === "n") comma = true, type = "g";
+
+      // The "" type, and any invalid type, is an alias for ".12~g".
+      else if (!formatTypes$1[type]) precision === undefined && (precision = 12), trim = true, type = "g";
+
+      // If zero fill is specified, padding goes after sign and before digits.
+      if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
+
+      // Compute the prefix and suffix.
+      // For SI-prefix, the suffix is lazily computed.
+      var prefix = symbol === "$" ? currencyPrefix : symbol === "#" && /[boxX]/.test(type) ? "0" + type.toLowerCase() : "",
+          suffix = symbol === "$" ? currencySuffix : /[%p]/.test(type) ? percent : "";
+
+      // What format function should we use?
+      // Is this an integer type?
+      // Can this type generate exponential notation?
+      var formatType = formatTypes$1[type],
+          maybeSuffix = /[defgprs%]/.test(type);
+
+      // Set the default precision if not specified,
+      // or clamp the specified precision to the supported range.
+      // For significant precision, it must be in [1, 21].
+      // For fixed precision, it must be in [0, 20].
+      precision = precision === undefined ? 6
+          : /[gprs]/.test(type) ? Math.max(1, Math.min(21, precision))
+          : Math.max(0, Math.min(20, precision));
+
+      function format(value) {
+        var valuePrefix = prefix,
+            valueSuffix = suffix,
+            i, n, c;
+
+        if (type === "c") {
+          valueSuffix = formatType(value) + valueSuffix;
+          value = "";
+        } else {
+          value = +value;
+
+          // Determine the sign. -0 is not less than 0, but 1 / -0 is!
+          var valueNegative = value < 0 || 1 / value < 0;
+
+          // Perform the initial formatting.
+          value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
+
+          // Trim insignificant zeros.
+          if (trim) value = formatTrim$1(value);
+
+          // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
+          if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
+
+          // Compute the prefix and suffix.
+          valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
+          valueSuffix = (type === "s" ? prefixes$1[8 + prefixExponent$1 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
+
+          // Break the formatted value into the integer “value” part that can be
+          // grouped, and fractional or exponential “suffix” part that is not.
+          if (maybeSuffix) {
+            i = -1, n = value.length;
+            while (++i < n) {
+              if (c = value.charCodeAt(i), 48 > c || c > 57) {
+                valueSuffix = (c === 46 ? decimal + value.slice(i + 1) : value.slice(i)) + valueSuffix;
+                value = value.slice(0, i);
+                break;
+              }
+            }
+          }
+        }
+
+        // If the fill character is not "0", grouping is applied before padding.
+        if (comma && !zero) value = group(value, Infinity);
+
+        // Compute the padding.
+        var length = valuePrefix.length + value.length + valueSuffix.length,
+            padding = length < width ? new Array(width - length + 1).join(fill) : "";
+
+        // If the fill character is "0", grouping is applied after padding.
+        if (comma && zero) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
+
+        // Reconstruct the final output based on the desired alignment.
+        switch (align) {
+          case "<": value = valuePrefix + value + valueSuffix + padding; break;
+          case "=": value = valuePrefix + padding + value + valueSuffix; break;
+          case "^": value = padding.slice(0, length = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length); break;
+          default: value = padding + valuePrefix + value + valueSuffix; break;
+        }
+
+        return numerals(value);
+      }
+
+      format.toString = function() {
+        return specifier + "";
+      };
+
+      return format;
+    }
+
+    function formatPrefix(specifier, value) {
+      var f = newFormat((specifier = formatSpecifier$1(specifier), specifier.type = "f", specifier)),
+          e = Math.max(-8, Math.min(8, Math.floor(exponent$1(value) / 3))) * 3,
+          k = Math.pow(10, -e),
+          prefix = prefixes$1[8 + e / 3];
+      return function(value) {
+        return f(k * value) + prefix;
+      };
+    }
+
+    return {
+      format: newFormat,
+      formatPrefix: formatPrefix
+    };
+  }
+
+  var locale$1;
+  var format$1;
+  var formatPrefix$1;
+
+  defaultLocale$1({
+    decimal: ".",
+    thousands: ",",
+    grouping: [3],
+    currency: ["$", ""],
+    minus: "-"
+  });
+
+  function defaultLocale$1(definition) {
+    locale$1 = formatLocale$1(definition);
+    format$1 = locale$1.format;
+    formatPrefix$1 = locale$1.formatPrefix;
+    return locale$1;
+  }
+
   var resizeObservers = [];
 
   var hasActiveObservations = function () {
@@ -6487,6 +6809,7 @@ var App = (function (exports) {
       svg.appendChild(canvas);
       return svg;
   }
+  const format2$1 = format$1(",.2f"), format1$1 = format$1(",.1f"), format0$1 = format$1(",.0f");
 
   function drawColumnChart(node, data) {
       const s = new Slicer(data.map(d => d.label));
@@ -8321,7 +8644,7 @@ var App = (function (exports) {
 
   var degrees$1 = 180 / Math.PI;
 
-  var identity$5 = {
+  var identity$6 = {
     translateX: 0,
     translateY: 0,
     rotate: 0,
@@ -8352,7 +8675,7 @@ var App = (function (exports) {
       svgNode$1;
 
   function parseCss$1(value) {
-    if (value === "none") return identity$5;
+    if (value === "none") return identity$6;
     if (!cssNode$1) cssNode$1 = document.createElement("DIV"), cssRoot$1 = document.documentElement, cssView$1 = document.defaultView;
     cssNode$1.style.transform = value;
     value = cssView$1.getComputedStyle(cssRoot$1.appendChild(cssNode$1), null).getPropertyValue("transform");
@@ -8362,10 +8685,10 @@ var App = (function (exports) {
   }
 
   function parseSvg$1(value) {
-    if (value == null) return identity$5;
+    if (value == null) return identity$6;
     if (!svgNode$1) svgNode$1 = document.createElementNS("http://www.w3.org/2000/svg", "g");
     svgNode$1.setAttribute("transform", value);
-    if (!(value = svgNode$1.transform.baseVal.consolidate())) return identity$5;
+    if (!(value = svgNode$1.transform.baseVal.consolidate())) return identity$6;
     value = value.matrix;
     return decompose$1(value.a, value.b, value.c, value.d, value.e, value.f);
   }
@@ -8565,7 +8888,7 @@ var App = (function (exports) {
   // Computes the decimal coefficient and exponent of the specified number x with
   // significant digits p, where x is positive and p is in [1, 21] or undefined.
   // For example, formatDecimal(1.23) returns ["123", 0].
-  function formatDecimal$1(x, p) {
+  function formatDecimal$2(x, p) {
     if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
     var i, coefficient = x.slice(0, i);
 
@@ -8577,11 +8900,11 @@ var App = (function (exports) {
     ];
   }
 
-  function exponent$1(x) {
-    return x = formatDecimal$1(Math.abs(x)), x ? x[1] : NaN;
+  function exponent$2(x) {
+    return x = formatDecimal$2(Math.abs(x)), x ? x[1] : NaN;
   }
 
-  function formatGroup$1(grouping, thousands) {
+  function formatGroup$2(grouping, thousands) {
     return function(value, width) {
       var i = value.length,
           t = [],
@@ -8600,7 +8923,7 @@ var App = (function (exports) {
     };
   }
 
-  function formatNumerals$1(numerals) {
+  function formatNumerals$2(numerals) {
     return function(value) {
       return value.replace(/[0-9]/g, function(i) {
         return numerals[+i];
@@ -8609,12 +8932,12 @@ var App = (function (exports) {
   }
 
   // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
-  var re$1 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
+  var re$2 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
 
-  function formatSpecifier$1(specifier) {
-    if (!(match = re$1.exec(specifier))) throw new Error("invalid format: " + specifier);
+  function formatSpecifier$2(specifier) {
+    if (!(match = re$2.exec(specifier))) throw new Error("invalid format: " + specifier);
     var match;
-    return new FormatSpecifier$1({
+    return new FormatSpecifier$2({
       fill: match[1],
       align: match[2],
       sign: match[3],
@@ -8628,9 +8951,9 @@ var App = (function (exports) {
     });
   }
 
-  formatSpecifier$1.prototype = FormatSpecifier$1.prototype; // instanceof
+  formatSpecifier$2.prototype = FormatSpecifier$2.prototype; // instanceof
 
-  function FormatSpecifier$1(specifier) {
+  function FormatSpecifier$2(specifier) {
     this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
     this.align = specifier.align === undefined ? ">" : specifier.align + "";
     this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
@@ -8643,7 +8966,7 @@ var App = (function (exports) {
     this.type = specifier.type === undefined ? "" : specifier.type + "";
   }
 
-  FormatSpecifier$1.prototype.toString = function() {
+  FormatSpecifier$2.prototype.toString = function() {
     return this.fill
         + this.align
         + this.sign
@@ -8657,7 +8980,7 @@ var App = (function (exports) {
   };
 
   // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
-  function formatTrim$1(s) {
+  function formatTrim$2(s) {
     out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
       switch (s[i]) {
         case ".": i0 = i1 = i; break;
@@ -8668,23 +8991,23 @@ var App = (function (exports) {
     return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
   }
 
-  var prefixExponent$1;
+  var prefixExponent$2;
 
-  function formatPrefixAuto$1(x, p) {
-    var d = formatDecimal$1(x, p);
+  function formatPrefixAuto$2(x, p) {
+    var d = formatDecimal$2(x, p);
     if (!d) return x + "";
     var coefficient = d[0],
         exponent = d[1],
-        i = exponent - (prefixExponent$1 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
+        i = exponent - (prefixExponent$2 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
         n = coefficient.length;
     return i === n ? coefficient
         : i > n ? coefficient + new Array(i - n + 1).join("0")
         : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
-        : "0." + new Array(1 - i).join("0") + formatDecimal$1(x, Math.max(0, p + i - 1))[0]; // less than 1y!
+        : "0." + new Array(1 - i).join("0") + formatDecimal$2(x, Math.max(0, p + i - 1))[0]; // less than 1y!
   }
 
-  function formatRounded$1(x, p) {
-    var d = formatDecimal$1(x, p);
+  function formatRounded$2(x, p) {
+    var d = formatDecimal$2(x, p);
     if (!d) return x + "";
     var coefficient = d[0],
         exponent = d[1];
@@ -8693,7 +9016,7 @@ var App = (function (exports) {
         : coefficient + new Array(exponent - coefficient.length + 2).join("0");
   }
 
-  var formatTypes$1 = {
+  var formatTypes$2 = {
     "%": function(x, p) { return (x * 100).toFixed(p); },
     "b": function(x) { return Math.round(x).toString(2); },
     "c": function(x) { return x + ""; },
@@ -8702,9 +9025,9 @@ var App = (function (exports) {
     "f": function(x, p) { return x.toFixed(p); },
     "g": function(x, p) { return x.toPrecision(p); },
     "o": function(x) { return Math.round(x).toString(8); },
-    "p": function(x, p) { return formatRounded$1(x * 100, p); },
-    "r": formatRounded$1,
-    "s": formatPrefixAuto$1,
+    "p": function(x, p) { return formatRounded$2(x * 100, p); },
+    "r": formatRounded$2,
+    "s": formatPrefixAuto$2,
     "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
     "x": function(x) { return Math.round(x).toString(16); }
   };
@@ -8713,21 +9036,21 @@ var App = (function (exports) {
     return x;
   }
 
-  var map$1 = Array.prototype.map,
-      prefixes$1 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
+  var map$2 = Array.prototype.map,
+      prefixes$2 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
 
-  function formatLocale$1(locale) {
-    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$2$1 : formatGroup$1(map$1.call(locale.grouping, Number), locale.thousands + ""),
+  function formatLocale$2(locale) {
+    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$2$1 : formatGroup$2(map$2.call(locale.grouping, Number), locale.thousands + ""),
         currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
         currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
         decimal = locale.decimal === undefined ? "." : locale.decimal + "",
-        numerals = locale.numerals === undefined ? identity$2$1 : formatNumerals$1(map$1.call(locale.numerals, String)),
+        numerals = locale.numerals === undefined ? identity$2$1 : formatNumerals$2(map$2.call(locale.numerals, String)),
         percent = locale.percent === undefined ? "%" : locale.percent + "",
         minus = locale.minus === undefined ? "-" : locale.minus + "",
         nan = locale.nan === undefined ? "NaN" : locale.nan + "";
 
     function newFormat(specifier) {
-      specifier = formatSpecifier$1(specifier);
+      specifier = formatSpecifier$2(specifier);
 
       var fill = specifier.fill,
           align = specifier.align,
@@ -8744,7 +9067,7 @@ var App = (function (exports) {
       if (type === "n") comma = true, type = "g";
 
       // The "" type, and any invalid type, is an alias for ".12~g".
-      else if (!formatTypes$1[type]) precision === undefined && (precision = 12), trim = true, type = "g";
+      else if (!formatTypes$2[type]) precision === undefined && (precision = 12), trim = true, type = "g";
 
       // If zero fill is specified, padding goes after sign and before digits.
       if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
@@ -8757,7 +9080,7 @@ var App = (function (exports) {
       // What format function should we use?
       // Is this an integer type?
       // Can this type generate exponential notation?
-      var formatType = formatTypes$1[type],
+      var formatType = formatTypes$2[type],
           maybeSuffix = /[defgprs%]/.test(type);
 
       // Set the default precision if not specified,
@@ -8786,14 +9109,14 @@ var App = (function (exports) {
           value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
 
           // Trim insignificant zeros.
-          if (trim) value = formatTrim$1(value);
+          if (trim) value = formatTrim$2(value);
 
           // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
           if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
 
           // Compute the prefix and suffix.
           valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
-          valueSuffix = (type === "s" ? prefixes$1[8 + prefixExponent$1 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
+          valueSuffix = (type === "s" ? prefixes$2[8 + prefixExponent$2 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
 
           // Break the formatted value into the integer “value” part that can be
           // grouped, and fractional or exponential “suffix” part that is not.
@@ -8838,10 +9161,10 @@ var App = (function (exports) {
     }
 
     function formatPrefix(specifier, value) {
-      var f = newFormat((specifier = formatSpecifier$1(specifier), specifier.type = "f", specifier)),
-          e = Math.max(-8, Math.min(8, Math.floor(exponent$1(value) / 3))) * 3,
+      var f = newFormat((specifier = formatSpecifier$2(specifier), specifier.type = "f", specifier)),
+          e = Math.max(-8, Math.min(8, Math.floor(exponent$2(value) / 3))) * 3,
           k = Math.pow(10, -e),
-          prefix = prefixes$1[8 + e / 3];
+          prefix = prefixes$2[8 + e / 3];
       return function(value) {
         return f(k * value) + prefix;
       };
@@ -8853,11 +9176,11 @@ var App = (function (exports) {
     };
   }
 
-  var locale$1;
-  var format$1;
-  var formatPrefix$1;
+  var locale$2;
+  var format$2;
+  var formatPrefix$2;
 
-  defaultLocale$1({
+  defaultLocale$2({
     decimal: ".",
     thousands: ",",
     grouping: [3],
@@ -8865,35 +9188,35 @@ var App = (function (exports) {
     minus: "-"
   });
 
-  function defaultLocale$1(definition) {
-    locale$1 = formatLocale$1(definition);
-    format$1 = locale$1.format;
-    formatPrefix$1 = locale$1.formatPrefix;
-    return locale$1;
+  function defaultLocale$2(definition) {
+    locale$2 = formatLocale$2(definition);
+    format$2 = locale$2.format;
+    formatPrefix$2 = locale$2.formatPrefix;
+    return locale$2;
   }
 
   function precisionFixed$1(step) {
-    return Math.max(0, -exponent$1(Math.abs(step)));
+    return Math.max(0, -exponent$2(Math.abs(step)));
   }
 
   function precisionPrefix$1(step, value) {
-    return Math.max(0, Math.max(-8, Math.min(8, Math.floor(exponent$1(value) / 3))) * 3 - exponent$1(Math.abs(step)));
+    return Math.max(0, Math.max(-8, Math.min(8, Math.floor(exponent$2(value) / 3))) * 3 - exponent$2(Math.abs(step)));
   }
 
   function precisionRound$1(step, max) {
     step = Math.abs(step), max = Math.abs(max) - step;
-    return Math.max(0, exponent$1(max) - exponent$1(step)) + 1;
+    return Math.max(0, exponent$2(max) - exponent$2(step)) + 1;
   }
 
   function tickFormat$1(start, stop, count, specifier) {
     var step = tickStep$1(start, stop, count),
         precision;
-    specifier = formatSpecifier$1(specifier == null ? ",f" : specifier);
+    specifier = formatSpecifier$2(specifier == null ? ",f" : specifier);
     switch (specifier.type) {
       case "s": {
         var value = Math.max(Math.abs(start), Math.abs(stop));
         if (specifier.precision == null && !isNaN(precision = precisionPrefix$1(step, value))) specifier.precision = precision;
-        return formatPrefix$1(specifier, value);
+        return formatPrefix$2(specifier, value);
       }
       case "":
       case "e":
@@ -8909,7 +9232,7 @@ var App = (function (exports) {
         break;
       }
     }
-    return format$1(specifier);
+    return format$2(specifier);
   }
 
   function linearish$1(scale) {
@@ -10463,6 +10786,316 @@ var App = (function (exports) {
     return drag;
   }
 
+  // Computes the decimal coefficient and exponent of the specified number x with
+  // significant digits p, where x is positive and p is in [1, 21] or undefined.
+  // For example, formatDecimal(1.23) returns ["123", 0].
+  function formatDecimal$1$1(x, p) {
+    if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
+    var i, coefficient = x.slice(0, i);
+
+    // The string returned by toExponential either has the form \d\.\d+e[-+]\d+
+    // (e.g., 1.2e+3) or the form \de[-+]\d+ (e.g., 1e+3).
+    return [
+      coefficient.length > 1 ? coefficient[0] + coefficient.slice(2) : coefficient,
+      +x.slice(i + 1)
+    ];
+  }
+
+  function exponent$1$1(x) {
+    return x = formatDecimal$1$1(Math.abs(x)), x ? x[1] : NaN;
+  }
+
+  function formatGroup$1$1(grouping, thousands) {
+    return function(value, width) {
+      var i = value.length,
+          t = [],
+          j = 0,
+          g = grouping[0],
+          length = 0;
+
+      while (i > 0 && g > 0) {
+        if (length + g + 1 > width) g = Math.max(1, width - length);
+        t.push(value.substring(i -= g, i + g));
+        if ((length += g + 1) > width) break;
+        g = grouping[j = (j + 1) % grouping.length];
+      }
+
+      return t.reverse().join(thousands);
+    };
+  }
+
+  function formatNumerals$1$1(numerals) {
+    return function(value) {
+      return value.replace(/[0-9]/g, function(i) {
+        return numerals[+i];
+      });
+    };
+  }
+
+  // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
+  var re$1$1 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
+
+  function formatSpecifier$1$1(specifier) {
+    if (!(match = re$1$1.exec(specifier))) throw new Error("invalid format: " + specifier);
+    var match;
+    return new FormatSpecifier$1$1({
+      fill: match[1],
+      align: match[2],
+      sign: match[3],
+      symbol: match[4],
+      zero: match[5],
+      width: match[6],
+      comma: match[7],
+      precision: match[8] && match[8].slice(1),
+      trim: match[9],
+      type: match[10]
+    });
+  }
+
+  formatSpecifier$1$1.prototype = FormatSpecifier$1$1.prototype; // instanceof
+
+  function FormatSpecifier$1$1(specifier) {
+    this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
+    this.align = specifier.align === undefined ? ">" : specifier.align + "";
+    this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
+    this.symbol = specifier.symbol === undefined ? "" : specifier.symbol + "";
+    this.zero = !!specifier.zero;
+    this.width = specifier.width === undefined ? undefined : +specifier.width;
+    this.comma = !!specifier.comma;
+    this.precision = specifier.precision === undefined ? undefined : +specifier.precision;
+    this.trim = !!specifier.trim;
+    this.type = specifier.type === undefined ? "" : specifier.type + "";
+  }
+
+  FormatSpecifier$1$1.prototype.toString = function() {
+    return this.fill
+        + this.align
+        + this.sign
+        + this.symbol
+        + (this.zero ? "0" : "")
+        + (this.width === undefined ? "" : Math.max(1, this.width | 0))
+        + (this.comma ? "," : "")
+        + (this.precision === undefined ? "" : "." + Math.max(0, this.precision | 0))
+        + (this.trim ? "~" : "")
+        + this.type;
+  };
+
+  // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
+  function formatTrim$1$1(s) {
+    out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
+      switch (s[i]) {
+        case ".": i0 = i1 = i; break;
+        case "0": if (i0 === 0) i0 = i; i1 = i; break;
+        default: if (!+s[i]) break out; if (i0 > 0) i0 = 0; break;
+      }
+    }
+    return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
+  }
+
+  var prefixExponent$1$1;
+
+  function formatPrefixAuto$1$1(x, p) {
+    var d = formatDecimal$1$1(x, p);
+    if (!d) return x + "";
+    var coefficient = d[0],
+        exponent = d[1],
+        i = exponent - (prefixExponent$1$1 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
+        n = coefficient.length;
+    return i === n ? coefficient
+        : i > n ? coefficient + new Array(i - n + 1).join("0")
+        : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
+        : "0." + new Array(1 - i).join("0") + formatDecimal$1$1(x, Math.max(0, p + i - 1))[0]; // less than 1y!
+  }
+
+  function formatRounded$1$1(x, p) {
+    var d = formatDecimal$1$1(x, p);
+    if (!d) return x + "";
+    var coefficient = d[0],
+        exponent = d[1];
+    return exponent < 0 ? "0." + new Array(-exponent).join("0") + coefficient
+        : coefficient.length > exponent + 1 ? coefficient.slice(0, exponent + 1) + "." + coefficient.slice(exponent + 1)
+        : coefficient + new Array(exponent - coefficient.length + 2).join("0");
+  }
+
+  var formatTypes$1$1 = {
+    "%": function(x, p) { return (x * 100).toFixed(p); },
+    "b": function(x) { return Math.round(x).toString(2); },
+    "c": function(x) { return x + ""; },
+    "d": function(x) { return Math.round(x).toString(10); },
+    "e": function(x, p) { return x.toExponential(p); },
+    "f": function(x, p) { return x.toFixed(p); },
+    "g": function(x, p) { return x.toPrecision(p); },
+    "o": function(x) { return Math.round(x).toString(8); },
+    "p": function(x, p) { return formatRounded$1$1(x * 100, p); },
+    "r": formatRounded$1$1,
+    "s": formatPrefixAuto$1$1,
+    "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
+    "x": function(x) { return Math.round(x).toString(16); }
+  };
+
+  function identity$3$1(x) {
+    return x;
+  }
+
+  var map$1$1 = Array.prototype.map,
+      prefixes$1$1 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
+
+  function formatLocale$1$1(locale) {
+    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$3$1 : formatGroup$1$1(map$1$1.call(locale.grouping, Number), locale.thousands + ""),
+        currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
+        currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
+        decimal = locale.decimal === undefined ? "." : locale.decimal + "",
+        numerals = locale.numerals === undefined ? identity$3$1 : formatNumerals$1$1(map$1$1.call(locale.numerals, String)),
+        percent = locale.percent === undefined ? "%" : locale.percent + "",
+        minus = locale.minus === undefined ? "-" : locale.minus + "",
+        nan = locale.nan === undefined ? "NaN" : locale.nan + "";
+
+    function newFormat(specifier) {
+      specifier = formatSpecifier$1$1(specifier);
+
+      var fill = specifier.fill,
+          align = specifier.align,
+          sign = specifier.sign,
+          symbol = specifier.symbol,
+          zero = specifier.zero,
+          width = specifier.width,
+          comma = specifier.comma,
+          precision = specifier.precision,
+          trim = specifier.trim,
+          type = specifier.type;
+
+      // The "n" type is an alias for ",g".
+      if (type === "n") comma = true, type = "g";
+
+      // The "" type, and any invalid type, is an alias for ".12~g".
+      else if (!formatTypes$1$1[type]) precision === undefined && (precision = 12), trim = true, type = "g";
+
+      // If zero fill is specified, padding goes after sign and before digits.
+      if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
+
+      // Compute the prefix and suffix.
+      // For SI-prefix, the suffix is lazily computed.
+      var prefix = symbol === "$" ? currencyPrefix : symbol === "#" && /[boxX]/.test(type) ? "0" + type.toLowerCase() : "",
+          suffix = symbol === "$" ? currencySuffix : /[%p]/.test(type) ? percent : "";
+
+      // What format function should we use?
+      // Is this an integer type?
+      // Can this type generate exponential notation?
+      var formatType = formatTypes$1$1[type],
+          maybeSuffix = /[defgprs%]/.test(type);
+
+      // Set the default precision if not specified,
+      // or clamp the specified precision to the supported range.
+      // For significant precision, it must be in [1, 21].
+      // For fixed precision, it must be in [0, 20].
+      precision = precision === undefined ? 6
+          : /[gprs]/.test(type) ? Math.max(1, Math.min(21, precision))
+          : Math.max(0, Math.min(20, precision));
+
+      function format(value) {
+        var valuePrefix = prefix,
+            valueSuffix = suffix,
+            i, n, c;
+
+        if (type === "c") {
+          valueSuffix = formatType(value) + valueSuffix;
+          value = "";
+        } else {
+          value = +value;
+
+          // Determine the sign. -0 is not less than 0, but 1 / -0 is!
+          var valueNegative = value < 0 || 1 / value < 0;
+
+          // Perform the initial formatting.
+          value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
+
+          // Trim insignificant zeros.
+          if (trim) value = formatTrim$1$1(value);
+
+          // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
+          if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
+
+          // Compute the prefix and suffix.
+          valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
+          valueSuffix = (type === "s" ? prefixes$1$1[8 + prefixExponent$1$1 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
+
+          // Break the formatted value into the integer “value” part that can be
+          // grouped, and fractional or exponential “suffix” part that is not.
+          if (maybeSuffix) {
+            i = -1, n = value.length;
+            while (++i < n) {
+              if (c = value.charCodeAt(i), 48 > c || c > 57) {
+                valueSuffix = (c === 46 ? decimal + value.slice(i + 1) : value.slice(i)) + valueSuffix;
+                value = value.slice(0, i);
+                break;
+              }
+            }
+          }
+        }
+
+        // If the fill character is not "0", grouping is applied before padding.
+        if (comma && !zero) value = group(value, Infinity);
+
+        // Compute the padding.
+        var length = valuePrefix.length + value.length + valueSuffix.length,
+            padding = length < width ? new Array(width - length + 1).join(fill) : "";
+
+        // If the fill character is "0", grouping is applied after padding.
+        if (comma && zero) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
+
+        // Reconstruct the final output based on the desired alignment.
+        switch (align) {
+          case "<": value = valuePrefix + value + valueSuffix + padding; break;
+          case "=": value = valuePrefix + padding + value + valueSuffix; break;
+          case "^": value = padding.slice(0, length = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length); break;
+          default: value = padding + valuePrefix + value + valueSuffix; break;
+        }
+
+        return numerals(value);
+      }
+
+      format.toString = function() {
+        return specifier + "";
+      };
+
+      return format;
+    }
+
+    function formatPrefix(specifier, value) {
+      var f = newFormat((specifier = formatSpecifier$1$1(specifier), specifier.type = "f", specifier)),
+          e = Math.max(-8, Math.min(8, Math.floor(exponent$1$1(value) / 3))) * 3,
+          k = Math.pow(10, -e),
+          prefix = prefixes$1$1[8 + e / 3];
+      return function(value) {
+        return f(k * value) + prefix;
+      };
+    }
+
+    return {
+      format: newFormat,
+      formatPrefix: formatPrefix
+    };
+  }
+
+  var locale$1$1;
+  var format$1$1;
+  var formatPrefix$1$1;
+
+  defaultLocale$1$1({
+    decimal: ".",
+    thousands: ",",
+    grouping: [3],
+    currency: ["$", ""],
+    minus: "-"
+  });
+
+  function defaultLocale$1$1(definition) {
+    locale$1$1 = formatLocale$1$1(definition);
+    format$1$1 = locale$1$1.format;
+    formatPrefix$1$1 = locale$1$1.formatPrefix;
+    return locale$1$1;
+  }
+
   var resizeObservers$1 = [];
 
   var hasActiveObservations$1 = function () {
@@ -11021,11 +11654,11 @@ var App = (function (exports) {
       svg.appendChild(canvas);
       return svg;
   }
-
-  const format2$1 = format$1(",.2f"), format1$1 = format$1(",.1f"), format0$1 = format$1(",.0f");
+  const format2$2 = format$1$1(",.2f"), format1$2 = format$1$1(",.1f"), format0$2 = format$1$1(",.0f");
   function formatNumber$1(v) {
-      return v < 1 ? format2$1(v) : v < 10 ? format1$1(v) : format0$1(v);
+      return v < 1 ? format2$2(v) : v < 10 ? format1$2(v) : format0$2(v);
   }
+
   class Sankey {
       constructor(options) {
           this.container = document.querySelector("body");
@@ -11047,7 +11680,12 @@ var App = (function (exports) {
           this._layerGap = 0;
           this._totalLayers = 0;
           if (options.margin !== undefined) {
-              this.margin = options.margin;
+              let m = options.margin;
+              m.left = isNaN(m.left) ? 0 : m.left;
+              m.right = isNaN(m.right) ? 0 : m.right;
+              m.top = isNaN(m.top) ? 0 : m.top;
+              m.bottom = isNaN(m.bottom) ? 0 : m.bottom;
+              this.margin = m;
           }
           if (options.container !== undefined) {
               this.container = options.container;
@@ -11105,22 +11743,24 @@ var App = (function (exports) {
        * draws the Sankey
        */
       draw() {
-          this._drawCanvas();
-          this._drawLinks();
-          this._drawNodes();
-          this._drawLabels();
+          this._drawCanvas()
+              ._drawNodes()
+              ._drawLinks()
+              ._drawLabels()
+              ._drawPlayback();
           return this;
       }
       /**
        * Recalculate internal values
        */
       initialise() {
-          this._nodeValueLayer();
-          this._setScale();
-          this._setNodeSize();
-          this._positionNodeByLayer();
-          this._positionNodeInLayer();
-          this._positionLinks();
+          this._nodeValueLayer()
+              ._scalingExtent()
+              ._scaling()
+              ._nodeSize()
+              ._positionNodeByLayer()
+              ._positionNodeInLayer()
+              ._positionLinks();
           return this;
       }
       /**
@@ -11132,160 +11772,6 @@ var App = (function (exports) {
           return `nodes:\n${nodes}\n\nlinks:\n${links}`;
       }
       // ***** PRIVATE METHODS
-      /**
-       * Positions links relative to sourcec and destination nodes
-       */
-      _positionLinks() {
-          // sort: by size then by a-z name
-          this.links.sort((a, b) => b.value - a.value || (b.nodeIn.name > a.nodeIn.name ? -1 : 1));
-          const source = new Map();
-          const target = new Map();
-          this.links.forEach((link) => {
-              let src = 0, tgt = 0;
-              link.w = Math.max(1, this._scale(link.value));
-              if (!source.has(link.nodeIn.id)) {
-                  source.set(link.nodeIn.id, (this.orient === "horizontal") ? link.nodeIn.y : link.nodeIn.x);
-              }
-              if (!target.has(link.nodeOut.id)) {
-                  target.set(link.nodeOut.id, (this.orient === "horizontal") ? link.nodeOut.y : link.nodeOut.x);
-              }
-              src = source.get(link.nodeIn.id);
-              link.y0 = src + (link.w / 2);
-              tgt = target.get(link.nodeOut.id);
-              link.y1 = tgt + (link.w / 2);
-              source.set(link.nodeIn.id, link.y0 + (link.w / 2));
-              target.set(link.nodeOut.id, link.y1 + (link.w / 2));
-          });
-      }
-      /**
-       * spreads the nodes across the chart space by layer
-       */
-      _positionNodeByLayer() {
-          if (this.orient === "horizontal") {
-              this.nodes.forEach((node) => {
-                  node.x = node.layer * this._layerGap;
-                  if (node.x >= this.rw) {
-                      node.x -= this.nodeSize;
-                  }
-                  else if (node.x < 0) {
-                      node.x = 0;
-                  }
-              });
-          }
-          else {
-              this.nodes.forEach((node) => {
-                  node.y = node.layer * this._layerGap;
-                  if (node.y >= this.rh) {
-                      node.y -= this.nodeSize;
-                  }
-                  else if (node.y < 0) {
-                      node.y = 0;
-                  }
-              });
-          }
-      }
-      /**
-       * spreads the nodes within layer
-       */
-      _positionNodeInLayer() {
-          let layer = -1, n = 0;
-          let layerTracker = [];
-          if (this.orient === "horizontal") {
-              this.nodes.forEach((node) => {
-                  if (layer === node.layer) {
-                      node.y = n;
-                      n += node.h + this.padding;
-                      layerTracker[layer].sum = n;
-                      layerTracker[layer].nodes.push(node);
-                  }
-                  else {
-                      layer = node.layer;
-                      node.y = 0;
-                      n = node.h + this.padding;
-                      layerTracker.push({ nodes: [node], sum: n, total: this.rh });
-                  }
-              });
-          }
-          else {
-              this.nodes.forEach((node) => {
-                  if (layer === node.layer) {
-                      node.x = n;
-                      n += node.w + this.padding;
-                      layerTracker[layer].sum = n;
-                      layerTracker[layer].nodes.push(node);
-                  }
-                  else {
-                      layer = node.layer;
-                      node.x = 0;
-                      n = node.w + this.padding;
-                      layerTracker.push({ nodes: [node], sum: n, total: this.rw });
-                  }
-              });
-          }
-          // 2nd pass to widen out layers too tightly clustered together
-          layerTracker.forEach(layer => {
-              if (layer.sum * 1.2 < layer.total && layer.nodes.length > 1) {
-                  const customPad = ((layer.total - layer.sum) * 0.75) / layer.nodes.length;
-                  layer.nodes.forEach((node, i) => {
-                      if (this.orient === "horizontal") {
-                          node.y += (i + 1) * customPad;
-                      }
-                      else {
-                          node.x += (i + 1) * customPad;
-                      }
-                  });
-              }
-          });
-      }
-      /**
-       * Sets height and width of node
-       */
-      _setNodeSize() {
-          this.nodes.forEach((node) => {
-              if (this.orient === "horizontal") {
-                  node.h = this._scale(node.value);
-                  node.w = this.nodeSize;
-              }
-              else {
-                  node.h = this.nodeSize;
-                  node.w = this._scale(node.value);
-              }
-          });
-      }
-      /**
-       * Determines the scale and layer gap of nodes
-       */
-      _setScale() {
-          this._calcScalingExtent();
-          this._calcScaling();
-      }
-      /**
-       * Calculates the chart scale
-       */
-      _calcScaling() {
-          const rng = [0, this.orient === "horizontal" ? this.rh : this.rw];
-          this._scale = linear$1$1()
-              .domain([0, this._extent[1]])
-              .range(rng);
-      }
-      /**
-       * Determines the minimum and maximum extent values to scale nodes by
-       */
-      _calcScalingExtent() {
-          this._extent[0] = this.nodes.reduce((ac, n) => (ac === undefined || n.value < ac) ? n.value : ac, 0);
-          let max = this._extent[0], layer = 0, runningTotal = 0;
-          this.nodes.forEach((node) => {
-              if (node.layer === layer) {
-                  runningTotal += node.value;
-              }
-              else {
-                  layer = node.layer;
-                  max = runningTotal > max ? runningTotal : max;
-                  runningTotal = node.value;
-              }
-          });
-          this._extent[1] = (runningTotal > max ? runningTotal : max) + (this.padding * (this.nodes.length * 2.5));
-      }
       _drawCanvas() {
           const sg = svg$1(this.container, {
               height: this.h,
@@ -11294,48 +11780,53 @@ var App = (function (exports) {
           });
           sg.classList.add("sankey");
           sg.id = "sankey" + Array.from(document.querySelectorAll(".sankey")).length;
-          select$1(sg).on("click", () => this.clearSelection());
+          const s = select$1(sg);
+          s.on("click", () => this.clearSelection());
+          const defs = s.select("defs");
+          const gb = defs.append("filter").attr("id", "blur");
+          gb.append("feGaussianBlur").attr("in", "SourceGraphic").attr("stdDeviation", 5);
+          return this;
       }
       _drawLabels() {
           const canvas = select$1(this.container).select(".canvas");
           const nodes = canvas.selectAll("g.node");
+          const fade = this.playback ? " shadow" : "";
           const outerLabel = nodes.append("text")
-              .attr("class", "node-label")
+              .attr("class", (d) => "node-label outer" + (d.layer > 0 ? fade : ""))
               .attr("dy", "0.35em")
               .attr("opacity", 0);
           if (this.orient === "horizontal") {
               outerLabel
                   .attr("x", (d) => d.x < (this.rw / 2) ? this.nodeSize + 6 : -6)
-                  .attr("y", (d) => this._scale(d.value) / 2)
+                  .attr("y", (d) => d.h / 2)
                   .attr("text-anchor", (d) => d.x + this.nodeSize > this.rw / 2 ? "end" : "start")
-                  .style("opacity", (d) => this._scale(d.value) > 20 ? null : 0)
+                  .style("opacity", (d) => d.h > 20 ? null : 0)
                   .text((d) => d.name);
           }
           else {
               outerLabel
-                  .attr("x", (d) => this._scale(d.value) / 2)
+                  .attr("x", (d) => d.w / 2)
                   .attr("y", (d) => d.y < (this.rh / 2) ? this.nodeSize + 10 : -10)
                   .attr("text-anchor", "middle")
-                  .text((d) => this._scale(d.value) > d.name.length * 7 ? d.name : "");
+                  .text((d) => d.w > d.name.length * 7 ? d.name : "");
           }
           const innerLabel = nodes.append("text")
-              .attr("class", "node-label")
+              .attr("class", (d) => "node-label inner" + (d.layer > 0 ? fade : ""))
               .attr("dy", "0.35em")
+              .attr("text-anchor", "middle")
               .attr("opacity", 0);
           if (this.orient === "horizontal") {
               innerLabel
-                  .attr("x", (d) => -this._scale(d.value) / 2)
-                  .attr("y", (d) => this.nodeSize / 2)
-                  .attr("text-anchor", "middle")
+                  .attr("x", (d) => -d.h / 2)
+                  .attr("y", () => this.nodeSize / 2)
                   .attr("transform", "rotate(270)")
-                  .text((d) => this._scale(d.value) > 50 ? formatNumber$1(d.value) : "");
+                  .text((d) => d.h > 50 ? formatNumber$1(d.value) : "");
           }
           else {
               innerLabel
-                  .attr("x", (d) => this._scale(d.value) / 2)
-                  .attr("y", (d) => this.nodeSize / 2)
-                  .attr("text-anchor", "middle")
-                  .text((d) => this._scale(d.value) > 50 ? formatNumber$1(d.value) : "");
+                  .attr("x", (d) => d.w / 2)
+                  .attr("y", () => this.nodeSize / 2)
+                  .text((d) => d.w > 50 ? formatNumber$1(d.value) : "");
           }
           const t1 = transition$1().duration(600);
           if (this.orient === "horizontal") {
@@ -11346,11 +11837,13 @@ var App = (function (exports) {
               outerLabel.transition(t1).delay(1000).style("opacity", (d) => d.w > 50 ? 1 : 0);
               innerLabel.transition(t1).delay(1000).style("opacity", (d) => d.w > 50 ? 1 : 0);
           }
+          return this;
       }
       _drawLinks() {
           const svg = select$1(this.container).select("svg");
           const id = svg.node().id;
           const canvas = svg.select(".canvas");
+          const fade = this.playback ? " shadow" : "";
           if (this.orient === "horizontal") {
               this._linkGenerator = linkHorizontal()
                   .source((d) => [d.nodeIn.x + this.nodeSize, d.y0])
@@ -11365,39 +11858,46 @@ var App = (function (exports) {
                   .x((d) => d[0])
                   .y((d) => d[1]);
           }
-          const linkCollection = canvas.append("g")
+          const links = canvas.append("g")
+              .attr("class", "links")
               .selectAll("g")
-              .data(this.links)
-              .enter()
+              .data(this.links).enter()
               .append("g")
               .attr("id", d => `${id}_${d.id}`)
-              .attr("class", "link")
+              .attr("class", "link" + fade)
               .on("click", (d) => this._linkClickHandler(event$1.target));
-          const path = linkCollection
+          this.links.forEach((lk) => {
+              lk.dom = document.getElementById(`${id}_${lk.id}`);
+          });
+          selectAll("g.links").lower();
+          const path = links
               .append("path")
               .attr("class", "link")
               .attr("stroke", (d) => d.fill ? d.fill : d.nodeIn.fill)
               .attr("stroke-width", (d) => d.w)
               .attr("fill", "none");
-          linkCollection.append("title")
+          links.append("title")
               .text((d) => `${d.nodeIn.name} -> ${d.nodeOut.name} - ${formatNumber$1(d.value)}`);
           const t = transition$1().duration(600);
           path.transition(t).delay(1000)
               // @ts-ignore
               .attr("d", d => this._linkGenerator(d));
+          return this;
       }
       _drawNodes() {
           const self = this;
           const svg = select$1(this.container).select("svg");
           const id = svg.node().id;
           const canvas = svg.select(".canvas");
+          const fade = this.playback ? " shadow" : "";
           const nodes = canvas.append("g")
+              .attr("class", "nodes")
               .selectAll("g.node")
               .data(this.nodes).enter()
               .append("g")
-              .attr("id", d => `${id}_${d.id}`)
-              .attr("class", "node")
-              .attr("transform", d => {
+              .attr("id", (d) => `${id}_${d.id}`)
+              .attr("class", (d) => "node" + (d.layer > 0 ? fade : ""))
+              .attr("transform", (d) => {
               return this.orient === "horizontal"
                   ? `translate(${d.x},${-d.h})`
                   : `translate(${-d.w},${d.y})`;
@@ -11409,6 +11909,10 @@ var App = (function (exports) {
               .on("drag", dragmove)
               .on("end", dragend))
               .on("click", () => this._nodeClickHandler(event$1.currentTarget));
+          this.nodes.forEach((node) => {
+              node.dom = document.getElementById(`${id}_${node.id}`);
+          });
+          select$1("g.nodes").raise();
           const rect = nodes.append("rect")
               .attr("class", "node")
               .attr("height", (d) => d.h + "px")
@@ -11417,6 +11921,12 @@ var App = (function (exports) {
               .attr("x", 0)
               .attr("y", 0)
               .style("opacity", 0);
+          nodes.append("rect")
+              .attr("class", "shadow node")
+              .attr("height", (d) => (this.playback ? d.h : 0) + "px")
+              .attr("width", (d) => (this.playback ? d.w : 0) + "px")
+              .attr("x", 0)
+              .attr("y", 0);
           const t1 = transition$1().duration(600);
           rect.transition(t1).delay((d) => d.layer * 100)
               .style("opacity", 1);
@@ -11471,6 +11981,25 @@ var App = (function (exports) {
               delete d.__y0;
               delete d.__y1;
           }
+          return this;
+      }
+      _drawPlayback() {
+          if (this.playback) {
+              this.nodes.forEach((node) => {
+                  if (node.story && node.linksOut.length > 0) {
+                      const c = select$1(node.dom).append("circle")
+                          .attr("class", "playback-prompt")
+                          .attr("cx", node.w / 2)
+                          .attr("cy", node.h / 2)
+                          .attr("filter", "url(#blur)")
+                          .attr("r", 0)
+                          .on("click", () => this._playbackClickHandler(event$1.currentTarget));
+                      c.append("title").text("View notes about this flow stage");
+                      c.transition().duration(3000).attr("r", 15);
+                  }
+              });
+          }
+          return this;
       }
       /**
        * Creates the initial data structures
@@ -11479,7 +12008,7 @@ var App = (function (exports) {
           nodes.forEach((node, i) => {
               const n = node;
               n.h = 0; // height
-              n.id = i;
+              n.id = i + 1;
               n.layer = -1; // denotes membership to a visual grouping
               n.linksIn = []; // replaces source in other sankey models
               n.linksOut = []; // ditto target
@@ -11492,7 +12021,7 @@ var App = (function (exports) {
               const l = link;
               l.nodeIn = this.nodes[link.source]; // replaces source in other sankey models
               l.nodeOut = this.nodes[link.target]; // ditto target
-              l.id = `${l.nodeIn.id}->${l.nodeOut.id}`;
+              l.id = "L" + (i + 1);
               l.w = 0; // width
               l.y0 = 0; // value at source node (horizontal: top right y, vertical: bottom left x)
               l.y1 = 0; // value at target node (horizontal: bottom left y, vertical; top right x)
@@ -11510,14 +12039,87 @@ var App = (function (exports) {
       _nodeClickHandler(el) {
           event$1.stopPropagation();
           this.clearSelection();
-          const dt = select$1(el).datum();
+          const activeNode = select$1(el);
+          const dt = activeNode.datum();
           window.dispatchEvent(new CustomEvent("node-selected", { detail: el }));
-          selectAll("g.link")
-              .each((d, i, n) => {
-              if (d.nodeIn === dt || d.nodeOut === dt) {
-                  select$1(n[i]).select("path").classed("selected", true);
+          dt.linksIn.forEach((link) => {
+              select$1(link.dom).select("path").classed("selected", true);
+          });
+          dt.linksOut.forEach((link) => {
+              select$1(link.dom).select("path").classed("selected", true);
+          });
+      }
+      _playbackClickHandler(el) {
+          event$1.stopPropagation();
+          this.clearSelection();
+          const button = select$1(el);
+          button.transition().duration(1000)
+              .attr("r", 0)
+              .transition().duration(0)
+              .remove();
+          const activeNode = select$1(el.parentNode);
+          const dt = activeNode.datum();
+          const narrate = [];
+          if (dt.story) {
+              narrate.push(dt);
+          }
+          if (dt.linksOut.length > 0) {
+              dt.linksOut.forEach((link) => {
+                  select$1(link.dom).classed("shadow", false);
+                  if (link.story) {
+                      narrate.push(link);
+                  }
+              });
+              this.nodes.forEach((node) => {
+                  let sum = 0, breakdown = false;
+                  if (node.linksIn.length > 0 || node === dt) {
+                      node.linksIn.forEach((link) => {
+                          if (select$1(link.dom).classed("shadow")) {
+                              sum += link.value;
+                          }
+                          else {
+                              breakdown = true;
+                          }
+                      });
+                      if (breakdown || (node === dt && node.linksIn.length === 0)) {
+                          sum = this._scale(sum);
+                          sum = sum >= 0 ? sum : 0;
+                          const shadow = select$1(node.dom).select(".shadow");
+                          if (this.orient === "horizontal") {
+                              shadow.transition().duration(500)
+                                  .attr("height", `${sum}px`);
+                          }
+                          else {
+                              let x = parseFloat(select$1(node.dom).attr("x"));
+                              shadow.transition().duration(500)
+                                  .attr("width", `${sum}px`)
+                                  .attr("x", x + sum);
+                          }
+                          if (sum === 0) {
+                              shadow.transition().delay(600)
+                                  .remove();
+                          }
+                      }
+                  }
+              });
+          }
+          window.dispatchEvent(new CustomEvent("node-playback", { detail: narrate }));
+      }
+      /**
+       * Sets height and width of node
+       */
+      _nodeSize() {
+          this.nodes.forEach((node) => {
+              if (this.orient === "horizontal") {
+                  node.h = Math.max(1, this._scale(node.value));
+                  node.w = this.nodeSize;
+              }
+              else {
+                  node.h = this.nodeSize;
+                  node.w = Math.max(1, this._scale(node.value));
               }
           });
+          return this;
       }
       /**
        * Determines each node dimension and layer attribution and finally determines node order within layer
@@ -11528,7 +12130,7 @@ var App = (function (exports) {
           this.nodes.forEach((node) => {
               // calculate value if not already provided
               if (node.value === undefined) {
-                  node.value = Math.max(node.linksIn.map(link => link.value).reduce((ac, s) => ac + s, 0), node.linksOut.map(link => link.value).reduce((ac, s) => ac + s, 0));
+                  node.value = Math.max(1, node.linksIn.map(link => link.value).reduce((ac, s) => ac + s, 0), node.linksOut.map(link => link.value).reduce((ac, s) => ac + s, 0));
               }
               // calculate layer value
               if (node.linksIn.length === 0) {
@@ -11556,6 +12158,142 @@ var App = (function (exports) {
           this._layerGap = (this.orient === "horizontal" ? this.rw : this.rh) / this._totalLayers;
           // sort: by layer asc then by size then by a-z name
           this.nodes.sort((a, b) => a.layer - b.layer || b.value - a.value || (b.name > a.name ? -1 : 1));
+          return this;
+      }
+      /**
+       * Positions links relative to sourcec and destination nodes
+       */
+      _positionLinks() {
+          // sort: by size then by a-z name
+          this.links.sort((a, b) => b.value - a.value || (b.nodeIn.name > a.nodeIn.name ? -1 : 1));
+          const source = new Map();
+          const target = new Map();
+          this.links.forEach((link) => {
+              let src = 0, tgt = 0;
+              link.w = Math.max(1, this._scale(link.value));
+              if (!source.has(link.nodeIn.id)) {
+                  source.set(link.nodeIn.id, (this.orient === "horizontal") ? link.nodeIn.y : link.nodeIn.x);
+              }
+              if (!target.has(link.nodeOut.id)) {
+                  target.set(link.nodeOut.id, (this.orient === "horizontal") ? link.nodeOut.y : link.nodeOut.x);
+              }
+              src = source.get(link.nodeIn.id);
+              link.y0 = src + (link.w / 2);
+              tgt = target.get(link.nodeOut.id);
+              link.y1 = tgt + (link.w / 2);
+              source.set(link.nodeIn.id, link.y0 + (link.w / 2));
+              target.set(link.nodeOut.id, link.y1 + (link.w / 2));
+          });
+          return this;
+      }
+      /**
+       * spreads the nodes across the chart space by layer
+       */
+      _positionNodeByLayer() {
+          if (this.orient === "horizontal") {
+              this.nodes.forEach((node) => {
+                  node.x = node.layer * this._layerGap;
+                  if (node.x >= this.rw) {
+                      node.x -= this.nodeSize;
+                  }
+                  else if (node.x < 0) {
+                      node.x = 0;
+                  }
+              });
+          }
+          else {
+              this.nodes.forEach((node) => {
+                  node.y = node.layer * this._layerGap;
+                  if (node.y >= this.rh) {
+                      node.y -= this.nodeSize;
+                  }
+                  else if (node.y < 0) {
+                      node.y = 0;
+                  }
+              });
+          }
+          return this;
+      }
+      /**
+       * spreads the nodes within layer
+       */
+      _positionNodeInLayer() {
+          let layer = -1, n = 0;
+          let layerTracker = [];
+          if (this.orient === "horizontal") {
+              this.nodes.forEach((node) => {
+                  if (layer === node.layer) {
+                      node.y = n;
+                      n += node.h + this.padding;
+                      layerTracker[layer].sum = n;
+                      layerTracker[layer].nodes.push(node);
+                  }
+                  else {
+                      layer = node.layer;
+                      node.y = 0;
+                      n = node.h + this.padding;
+                      layerTracker.push({ nodes: [node], sum: n, total: this.rh });
+                  }
+              });
+          }
+          else {
+              this.nodes.forEach((node) => {
+                  if (layer === node.layer) {
+                      node.x = n;
+                      n += node.w + this.padding;
+                      layerTracker[layer].sum = n;
+                      layerTracker[layer].nodes.push(node);
+                  }
+                  else {
+                      layer = node.layer;
+                      node.x = 0;
+                      n = node.w + this.padding;
+                      layerTracker.push({ nodes: [node], sum: n, total: this.rw });
+                  }
+              });
+          }
+          // 2nd pass to widen out layers too tightly clustered together
+          layerTracker.forEach(layer => {
+              if (layer.sum * 1.2 < layer.total && layer.nodes.length > 1) {
+                  const customPad = ((layer.total - layer.sum) * 0.75) / layer.nodes.length;
+                  layer.nodes.forEach((node, i) => {
+                      if (this.orient === "horizontal") {
+                          node.y += (i + 1) * customPad;
+                      }
+                      else {
+                          node.x += (i + 1) * customPad;
+                      }
+                  });
+              }
+          });
+          return this;
+      }
+      /**
+       * Calculates the chart scale
+       */
+      _scaling() {
+          const rng = [0, this.orient === "horizontal" ? this.rh : this.rw];
+          this._scale = linear$1$1().domain(this._extent).range(rng);
+          return this;
+      }
+      /**
+       * Determines the minimum and maximum extent values to scale nodes by
+       */
+      _scalingExtent() {
+          this._extent[0] = this.nodes.reduce((ac, n) => (ac === undefined || n.value < ac) ? n.value : ac, 0);
+          let max = this._extent[0], layer = 0, runningTotal = 0;
+          this.nodes.forEach((node) => {
+              if (node.layer === layer) {
+                  runningTotal += node.value;
+              }
+              else {
+                  layer = node.layer;
+                  max = runningTotal > max ? runningTotal : max;
+                  runningTotal = node.value;
+              }
+          });
+          this._extent[1] = (runningTotal > max ? runningTotal : max) + (this.padding * (this.nodes.length * 2.5));
+          return this;
       }
   }
 
@@ -11710,7 +12448,7 @@ var App = (function (exports) {
               link.supplyBook.forEach((l) => l.color = color$2(l.value / max));
           }
       });
-      config.sankey = new Sankey({
+      const options = {
           container: chart,
           links: config.db.sankey.links,
           margin: { bottom: 20, left: 20, right: 20, top: 10 },
@@ -11720,10 +12458,68 @@ var App = (function (exports) {
           nodeSize: 30,
           orient: config.filters.orientation.ltr ? "horizontal" : "vertical",
           padding: config.filters.density,
-          playback: false
-      });
+          playback: config.filters.playback
+      };
+      config.sankey = new Sankey(options);
       config.sankey.draw();
       setTimeout(() => window.dispatchEvent(new CustomEvent("show-legend")), 1500);
+  }
+
+  function initPlayback$1(config) {
+      const tip = document.createElement("div");
+      tip.classList.add("tip");
+      document.body.appendChild(tip);
+      tip.innerHTML = `<div class="message"></div><div class="playback-pause">pause</div><progress class="playback" min="0" max="8" value="0"></progress>`;
+      const m = tip.querySelector(".message");
+      const ps = tip.querySelector(".playback-pause");
+      const bar = tip.querySelector("progress");
+      let timer, barTimer;
+      let restart;
+      function run(nodes) {
+          if (nodes.length === 0) {
+              tip.style.opacity = "0";
+              return;
+          }
+          const node = nodes.shift();
+          restart = nodes;
+          const box = node.dom.getBoundingClientRect();
+          tip.style.left = (box.left + box.width / 2) + "px";
+          tip.style.top = (box.top + box.height / 2) + "px";
+          m.innerHTML = node.story;
+          ps.textContent = "pause";
+          bar.value = 0;
+          clearInterval(barTimer);
+          tip.style.opacity = "1";
+          timer = setTimeout(() => {
+              tip.style.opacity = "0";
+              run(restart);
+          }, 8000);
+          barTimer = setInterval(progressBar, 50);
+      }
+      function pause() {
+          if (timer === null) {
+              run(restart);
+          }
+          else {
+              clearTimeout(timer);
+              clearInterval(barTimer);
+              ps.textContent = "resume";
+              timer = null;
+          }
+      }
+      function progressBar() {
+          if (timer && bar.value < bar.max) {
+              bar.value += 0.05;
+          }
+          else {
+              clearInterval(barTimer);
+              barTimer = null;
+          }
+      }
+      ps.addEventListener("click", pause);
+      window.addEventListener("node-playback", (e) => {
+          run(e.detail);
+      });
   }
 
   /**
@@ -11733,6 +12529,7 @@ var App = (function (exports) {
       initBreakdown(config);
       initDataQualityChart(config);
       initSankeyChart(config);
+      initPlayback$1();
   }
 
   /**
@@ -11801,7 +12598,7 @@ var App = (function (exports) {
 
   function Map$1() {}
 
-  Map$1.prototype = map$2.prototype = {
+  Map$1.prototype = map$3.prototype = {
     constructor: Map$1,
     has: function(key) {
       return (prefix + key) in this;
@@ -11849,7 +12646,7 @@ var App = (function (exports) {
     }
   };
 
-  function map$2(object, f) {
+  function map$3(object, f) {
     var map = new Map$1;
 
     // Copy constructor.
@@ -11873,7 +12670,7 @@ var App = (function (exports) {
 
   function Set() {}
 
-  var proto = map$2.prototype;
+  var proto = map$3.prototype;
 
   Set.prototype = set$3.prototype = {
     constructor: Set,
@@ -11911,7 +12708,7 @@ var App = (function (exports) {
     var request,
         event = dispatch("beforesend", "progress", "load", "error"),
         mimeType,
-        headers = map$2(),
+        headers = map$3(),
         xhr = new XMLHttpRequest,
         user = null,
         password = null,

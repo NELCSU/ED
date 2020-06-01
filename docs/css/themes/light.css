@@ -64,3 +64,11 @@ select {
   border-color: #3c94ff;
   color: #1f4a80;
 }
+
+.playback-prompt {
+  fill: #fff;
+}
+
+.tip {
+  background-color: #fff;
+}

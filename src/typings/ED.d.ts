@@ -29,22 +29,6 @@ export type TBreakdown = {
   value: number
 };
 
-export type TSankey = {
-  alignHorizontal: Function,
-  alignVertical: Function,
-  clear: Function,
-  layout: Function,
-  links: Function,
-  margin: Function,
-  nodePadding: Function,
-  nodes: Function,
-  nodeWidth: Function,
-  relayout: Function,
-  reversibleLink: Function,
-  select: Function,
-  size: Function
-};
-
 export type TJSZip = {
   file: Function,
   files: object[],
@@ -119,7 +103,8 @@ export type TConfig = {
       ltr: boolean,
       ttb: boolean
     }
-    organisations: string[]
+    organisations: string[],
+    playback: boolean
   },
   legend: {
     colors: string[],

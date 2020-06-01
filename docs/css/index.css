@@ -271,6 +271,16 @@ text {
           user-select: none;
 }
 
+g.link.shadow > path {
+  stroke: #999 !important;
+  stroke-opacity: 0.1 !important;
+}
+
+rect.node.shadow {
+  fill: #999 !important;
+  fill-opacity: 1 !important;
+}
+
 .data-quality {
   font-size: 15px;
   text-align: left;
@@ -417,4 +427,38 @@ img.ready:hover {
      -moz-user-select: none;
       -ms-user-select: none;
           user-select: none;
+}
+
+.tip {
+  left: -100;
+  opacity: 0;
+  padding: 10px 10px 0 10px;
+  position: absolute;
+  top: -100;
+  transition: opacity 500ms ease-in;
+}
+
+.playback-pause {
+  cursor: pointer;
+  font-size: 0.8em;
+  margin: 20px 0 20px 0;
+  text-align: right;
+  width: 100%;
+}
+
+progress.playback {
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  width: 100%;
+}
+
+progress.playback::-webkit-progress-bar {
+  border-radius: 1px;
+}
+
+progress.playback::-webkit-progress-value {
+  border-radius: 1px;
 }
