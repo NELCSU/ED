@@ -1,0 +1,46 @@
+:host {
+  max-height: inherit;
+  max-width: inherit;
+}
+
+:host([disabled]),
+:host([disabled]) > .slicer {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+.slicer {
+  align-items: stretch;
+  border-color: var(--border-color, #000);
+  border-style: var(--border-style, solid);
+  border-width: var(--border-width, 1px);
+  box-sizing: border-box;
+  display: flex;
+  flex-flow: column nowrap;
+  flex-grow: 1;
+  justify-content: flex-start;
+  max-height: inherit;
+  min-width: inherit;
+  min-height: 1rem;
+  min-width: 4rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--padding, 10px);
+  width: var(--width, 100%);
+}
+
+.slicer:focus {
+  outline: none;
+}
+
+::slotted(.slicer-item) {
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+}

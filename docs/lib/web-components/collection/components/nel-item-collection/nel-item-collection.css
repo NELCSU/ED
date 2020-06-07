@@ -1,0 +1,57 @@
+:host {
+  max-height: inherit;
+  max-width: inherit;
+}
+
+:host([disabled]),
+:host([disabled]) > .item-collection {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+.item-collection:focus {
+  outline: none;
+}
+
+.item-collection {
+  box-sizing: border-box;
+  display: flex;
+  height: 100%;
+  max-height: inherit;
+  min-width: inherit;
+  min-height: 1rem;
+  min-width: 4rem;
+  width: 100%;
+}
+
+.horizontal {
+  align-items: flex-start;
+  flex-flow: row nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.resize-horizontal:focus {
+  border: dashed 1px #ccc;
+  resize: horizontal;
+}
+
+.resize-vertical:focus {
+  border: dashed 1px #ccc;
+  resize: vertical;
+}
+
+.vertical {
+  align-items: flex-start;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+}

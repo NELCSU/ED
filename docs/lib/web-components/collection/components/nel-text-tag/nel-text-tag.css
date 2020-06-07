@@ -1,0 +1,36 @@
+:host([disabled]),
+:host([disabled]) > mark {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+.selectable {
+  cursor: pointer;
+}
+
+.text-tag:focus {
+  box-shadow: 0 0 0 4px #ffcd60;
+  outline: none;
+}
+
+mark {
+  -webkit-box-decoration-break: clone;
+  border-radius: 0.35em;
+  box-decoration-break: clone;
+  line-height: 1.3rem;
+  margin: auto 0.25rem;
+  padding: 0.2em;
+  user-select: none;
+}
+
+mark > span {
+  font-size: 0.7em;
+  font-weight: bold;
+  text-transform: uppercase;
+}

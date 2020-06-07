@@ -13,6 +13,8 @@
 
 	<script src="lib/jszip/jszip.min.js"></script>
 	<script src="lib/jszip-utils.min.js"></script>
+	<script type="module" src="lib/web-components/esm/web-components.mjs"></script>
+  <script nomodule src="lib/web-components/web-components.js"></script>
 </head>
 
 <body>
@@ -38,6 +40,7 @@
 		</div>
 
 		<div id="chart"></div>
+		<nel-tip id="tip" expires="8000"></nel-tip>
 	</div>
 
 	<aside class="breakdown ready">
@@ -101,7 +104,7 @@
 		<div class="panel-row th-fg-color" title="Show/hide the legend">
 			<label>Legend:</label>
 			<div>
-				<input id="LegendShowHide" type="checkbox" checked>
+				<input id="LegendShowHide" type="checkbox">
 				<label id="lblLegendShowHide" for="LegendShowHide">Show</label>
 			</div>		
 		</div>

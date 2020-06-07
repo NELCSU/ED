@@ -1,0 +1,31 @@
+:host([disabled]) {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+input {
+  border: 2px solid #aaa;
+  box-sizing: border-box;
+  padding: 4px;
+  outline: transparent;
+  transition: border-color 0.25s ease, color 0.25s ease;
+  z-index: 9;
+}
+
+input:focus {
+  border: 2px solid #000;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+
+input::-webkit-search-cancel-button {
+  cursor: pointer;
+}

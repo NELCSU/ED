@@ -69,6 +69,10 @@ var App = (function (exports) {
   }
 
   /**
+   * Returns true if character is an aposthrophe
+   * @param text - single character to inspect
+   */
+  /**
    * Select n characters from the left side of string s
    * @param s - string to select from
    * @param n - number of characters to select
@@ -6340,7 +6344,7 @@ var App = (function (exports) {
 
   var global = typeof window !== 'undefined' ? window : {};
 
-  var cache = new Map();
+  var cache = new WeakMap();
   var scrollRegexp = /auto|scroll/;
   var verticalRegexp = /^tb|vertical/;
   var IE = (/msie|trident/i).test(global.navigator && global.navigator.userAgent);
@@ -6360,8 +6364,9 @@ var App = (function (exports) {
       contentBoxSize: size(),
       contentRect: new DOMRectReadOnly(0, 0, 0, 0)
   });
-  var calculateBoxSizes = function (target) {
-      if (cache.has(target)) {
+  var calculateBoxSizes = function (target, forceRecalculation) {
+      if (forceRecalculation === void 0) { forceRecalculation = false; }
+      if (cache.has(target) && !forceRecalculation) {
           return cache.get(target);
       }
       if (isHidden(target)) {
@@ -6403,8 +6408,8 @@ var App = (function (exports) {
       cache.set(target, boxes);
       return boxes;
   };
-  var calculateBoxSize = function (target, observedBox) {
-      var _a = calculateBoxSizes(target), borderBoxSize = _a.borderBoxSize, contentBoxSize = _a.contentBoxSize, devicePixelContentBoxSize = _a.devicePixelContentBoxSize;
+  var calculateBoxSize = function (target, observedBox, forceRecalculation) {
+      var _a = calculateBoxSizes(target, forceRecalculation), borderBoxSize = _a.borderBoxSize, contentBoxSize = _a.contentBoxSize, devicePixelContentBoxSize = _a.devicePixelContentBoxSize;
       switch (observedBox) {
           case ResizeObserverBoxOptions.DEVICE_PIXEL_CONTENT_BOX:
               return devicePixelContentBoxSize;
@@ -6470,7 +6475,6 @@ var App = (function (exports) {
   };
 
   var gatherActiveObservationsAtDepth = function (depth) {
-      cache.clear();
       resizeObservers.forEach(function processObserver(ro) {
           ro.activeTargets.splice(0, ro.activeTargets.length);
           ro.skippedTargets.splice(0, ro.skippedTargets.length);
@@ -6523,7 +6527,7 @@ var App = (function (exports) {
 
   var watching = 0;
   var isWatching = function () { return !!watching; };
-  var CATCH_FRAMES = 60 / 5;
+  var CATCH_PERIOD = 250;
   var observerConfig = { attributes: true, characterData: true, childList: true, subtree: true };
   var events = [
       'resize',
@@ -6541,6 +6545,10 @@ var App = (function (exports) {
       'blur',
       'focus'
   ];
+  var time = function (timeout) {
+      if (timeout === void 0) { timeout = 0; }
+      return Date.now() + timeout;
+  };
   var scheduled = false;
   var Scheduler = (function () {
       function Scheduler() {
@@ -6548,12 +6556,14 @@ var App = (function (exports) {
           this.stopped = true;
           this.listener = function () { return _this.schedule(); };
       }
-      Scheduler.prototype.run = function (frames) {
+      Scheduler.prototype.run = function (timeout) {
           var _this = this;
+          if (timeout === void 0) { timeout = CATCH_PERIOD; }
           if (scheduled) {
               return;
           }
           scheduled = true;
+          var until = time(timeout);
           queueResizeObserver(function () {
               var elementsHaveResized = false;
               try {
@@ -6561,14 +6571,15 @@ var App = (function (exports) {
               }
               finally {
                   scheduled = false;
+                  timeout = until - time();
                   if (!isWatching()) {
                       return;
                   }
                   if (elementsHaveResized) {
-                      _this.run(60);
+                      _this.run(1000);
                   }
-                  else if (frames) {
-                      _this.run(frames - 1);
+                  else if (timeout > 0) {
+                      _this.run(timeout);
                   }
                   else {
                       _this.start();
@@ -6578,7 +6589,7 @@ var App = (function (exports) {
       };
       Scheduler.prototype.schedule = function () {
           this.stop();
-          this.run(CATCH_FRAMES);
+          this.run();
       };
       Scheduler.prototype.observe = function () {
           var _this = this;
@@ -6626,7 +6637,7 @@ var App = (function (exports) {
           };
       }
       ResizeObservation.prototype.isActive = function () {
-          var size = calculateBoxSize(this.target, this.observedBox);
+          var size = calculateBoxSize(this.target, this.observedBox, true);
           if (skipNotifyOnElement(this.target)) {
               this.lastReportedSize = size;
           }
@@ -6650,7 +6661,7 @@ var App = (function (exports) {
       return ResizeObserverDetail;
   }());
 
-  var observerMap = new Map();
+  var observerMap = new WeakMap();
   var getObservationIndex = function (observationTargets, target) {
       for (var i = 0; i < observationTargets.length; i += 1) {
           if (observationTargets[i].target === target) {
@@ -6664,36 +6675,33 @@ var App = (function (exports) {
       }
       ResizeObserverController.connect = function (resizeObserver, callback) {
           var detail = new ResizeObserverDetail(resizeObserver, callback);
-          resizeObservers.push(detail);
           observerMap.set(resizeObserver, detail);
       };
       ResizeObserverController.observe = function (resizeObserver, target, options) {
-          if (observerMap.has(resizeObserver)) {
-              var detail = observerMap.get(resizeObserver);
-              if (getObservationIndex(detail.observationTargets, target) < 0) {
-                  detail.observationTargets.push(new ResizeObservation(target, options && options.box));
-                  updateCount(1);
-                  scheduler.schedule();
-              }
+          var detail = observerMap.get(resizeObserver);
+          var firstObservation = detail.observationTargets.length === 0;
+          if (getObservationIndex(detail.observationTargets, target) < 0) {
+              firstObservation && resizeObservers.push(detail);
+              detail.observationTargets.push(new ResizeObservation(target, options && options.box));
+              updateCount(1);
+              scheduler.schedule();
           }
       };
       ResizeObserverController.unobserve = function (resizeObserver, target) {
-          if (observerMap.has(resizeObserver)) {
-              var detail = observerMap.get(resizeObserver);
-              var index = getObservationIndex(detail.observationTargets, target);
-              if (index >= 0) {
-                  detail.observationTargets.splice(index, 1);
-                  updateCount(-1);
-              }
+          var detail = observerMap.get(resizeObserver);
+          var index = getObservationIndex(detail.observationTargets, target);
+          var lastObservation = detail.observationTargets.length === 1;
+          if (index >= 0) {
+              lastObservation && resizeObservers.splice(resizeObservers.indexOf(detail), 1);
+              detail.observationTargets.splice(index, 1);
+              updateCount(-1);
           }
       };
       ResizeObserverController.disconnect = function (resizeObserver) {
-          if (observerMap.has(resizeObserver)) {
-              var detail = observerMap.get(resizeObserver);
-              resizeObservers.splice(resizeObservers.indexOf(detail), 1);
-              observerMap.delete(resizeObserver);
-              updateCount(-detail.observationTargets.length);
-          }
+          var _this = this;
+          var detail = observerMap.get(resizeObserver);
+          detail.observationTargets.slice().forEach(function (ot) { return _this.unobserve(resizeObserver, ot.target); });
+          detail.activeTargets.splice(0, detail.activeTargets.length);
       };
       return ResizeObserverController;
   }());
@@ -6742,6 +6750,7 @@ var App = (function (exports) {
       xml: "http://www.w3.org/XML/1998/namespace",
       xmlns: "http://www.w3.org/2000/xmlns/"
   };
+  const format2$1 = format$1(",.2f"), format1$1 = format$1(",.1f"), format0$1 = format$1(",.0f");
   /**
    * Measure the content area minus the padding and border
    * @param container - DOM element to measure
@@ -6809,7 +6818,6 @@ var App = (function (exports) {
       svg.appendChild(canvas);
       return svg;
   }
-  const format2$1 = format$1(",.2f"), format1$1 = format$1(",.1f"), format0$1 = format$1(",.0f");
 
   function drawColumnChart(node, data) {
       const s = new Slicer(data.map(d => d.label));
@@ -11185,7 +11193,7 @@ var App = (function (exports) {
 
   var global$1 = typeof window !== 'undefined' ? window : {};
 
-  var cache$1 = new Map();
+  var cache$1 = new WeakMap();
   var scrollRegexp$1 = /auto|scroll/;
   var verticalRegexp$1 = /^tb|vertical/;
   var IE$1 = (/msie|trident/i).test(global$1.navigator && global$1.navigator.userAgent);
@@ -11205,8 +11213,9 @@ var App = (function (exports) {
       contentBoxSize: size$1(),
       contentRect: new DOMRectReadOnly$1(0, 0, 0, 0)
   });
-  var calculateBoxSizes$1 = function (target) {
-      if (cache$1.has(target)) {
+  var calculateBoxSizes$1 = function (target, forceRecalculation) {
+      if (forceRecalculation === void 0) { forceRecalculation = false; }
+      if (cache$1.has(target) && !forceRecalculation) {
           return cache$1.get(target);
       }
       if (isHidden$1(target)) {
@@ -11248,8 +11257,8 @@ var App = (function (exports) {
       cache$1.set(target, boxes);
       return boxes;
   };
-  var calculateBoxSize$1 = function (target, observedBox) {
-      var _a = calculateBoxSizes$1(target), borderBoxSize = _a.borderBoxSize, contentBoxSize = _a.contentBoxSize, devicePixelContentBoxSize = _a.devicePixelContentBoxSize;
+  var calculateBoxSize$1 = function (target, observedBox, forceRecalculation) {
+      var _a = calculateBoxSizes$1(target, forceRecalculation), borderBoxSize = _a.borderBoxSize, contentBoxSize = _a.contentBoxSize, devicePixelContentBoxSize = _a.devicePixelContentBoxSize;
       switch (observedBox) {
           case ResizeObserverBoxOptions$1.DEVICE_PIXEL_CONTENT_BOX:
               return devicePixelContentBoxSize;
@@ -11315,7 +11324,6 @@ var App = (function (exports) {
   };
 
   var gatherActiveObservationsAtDepth$1 = function (depth) {
-      cache$1.clear();
       resizeObservers$1.forEach(function processObserver(ro) {
           ro.activeTargets.splice(0, ro.activeTargets.length);
           ro.skippedTargets.splice(0, ro.skippedTargets.length);
@@ -11368,7 +11376,7 @@ var App = (function (exports) {
 
   var watching$1 = 0;
   var isWatching$1 = function () { return !!watching$1; };
-  var CATCH_FRAMES$1 = 60 / 5;
+  var CATCH_PERIOD$1 = 250;
   var observerConfig$1 = { attributes: true, characterData: true, childList: true, subtree: true };
   var events$1 = [
       'resize',
@@ -11386,6 +11394,10 @@ var App = (function (exports) {
       'blur',
       'focus'
   ];
+  var time$1 = function (timeout) {
+      if (timeout === void 0) { timeout = 0; }
+      return Date.now() + timeout;
+  };
   var scheduled$1 = false;
   var Scheduler$1 = (function () {
       function Scheduler() {
@@ -11393,12 +11405,14 @@ var App = (function (exports) {
           this.stopped = true;
           this.listener = function () { return _this.schedule(); };
       }
-      Scheduler.prototype.run = function (frames) {
+      Scheduler.prototype.run = function (timeout) {
           var _this = this;
+          if (timeout === void 0) { timeout = CATCH_PERIOD$1; }
           if (scheduled$1) {
               return;
           }
           scheduled$1 = true;
+          var until = time$1(timeout);
           queueResizeObserver$1(function () {
               var elementsHaveResized = false;
               try {
@@ -11406,14 +11420,15 @@ var App = (function (exports) {
               }
               finally {
                   scheduled$1 = false;
+                  timeout = until - time$1();
                   if (!isWatching$1()) {
                       return;
                   }
                   if (elementsHaveResized) {
-                      _this.run(60);
+                      _this.run(1000);
                   }
-                  else if (frames) {
-                      _this.run(frames - 1);
+                  else if (timeout > 0) {
+                      _this.run(timeout);
                   }
                   else {
                       _this.start();
@@ -11423,7 +11438,7 @@ var App = (function (exports) {
       };
       Scheduler.prototype.schedule = function () {
           this.stop();
-          this.run(CATCH_FRAMES$1);
+          this.run();
       };
       Scheduler.prototype.observe = function () {
           var _this = this;
@@ -11471,7 +11486,7 @@ var App = (function (exports) {
           };
       }
       ResizeObservation.prototype.isActive = function () {
-          var size = calculateBoxSize$1(this.target, this.observedBox);
+          var size = calculateBoxSize$1(this.target, this.observedBox, true);
           if (skipNotifyOnElement$1(this.target)) {
               this.lastReportedSize = size;
           }
@@ -11495,7 +11510,7 @@ var App = (function (exports) {
       return ResizeObserverDetail;
   }());
 
-  var observerMap$1 = new Map();
+  var observerMap$1 = new WeakMap();
   var getObservationIndex$1 = function (observationTargets, target) {
       for (var i = 0; i < observationTargets.length; i += 1) {
           if (observationTargets[i].target === target) {
@@ -11509,36 +11524,33 @@ var App = (function (exports) {
       }
       ResizeObserverController.connect = function (resizeObserver, callback) {
           var detail = new ResizeObserverDetail$1(resizeObserver, callback);
-          resizeObservers$1.push(detail);
           observerMap$1.set(resizeObserver, detail);
       };
       ResizeObserverController.observe = function (resizeObserver, target, options) {
-          if (observerMap$1.has(resizeObserver)) {
-              var detail = observerMap$1.get(resizeObserver);
-              if (getObservationIndex$1(detail.observationTargets, target) < 0) {
-                  detail.observationTargets.push(new ResizeObservation$1(target, options && options.box));
-                  updateCount$1(1);
-                  scheduler$1.schedule();
-              }
+          var detail = observerMap$1.get(resizeObserver);
+          var firstObservation = detail.observationTargets.length === 0;
+          if (getObservationIndex$1(detail.observationTargets, target) < 0) {
+              firstObservation && resizeObservers$1.push(detail);
+              detail.observationTargets.push(new ResizeObservation$1(target, options && options.box));
+              updateCount$1(1);
+              scheduler$1.schedule();
           }
       };
       ResizeObserverController.unobserve = function (resizeObserver, target) {
-          if (observerMap$1.has(resizeObserver)) {
-              var detail = observerMap$1.get(resizeObserver);
-              var index = getObservationIndex$1(detail.observationTargets, target);
-              if (index >= 0) {
-                  detail.observationTargets.splice(index, 1);
-                  updateCount$1(-1);
-              }
+          var detail = observerMap$1.get(resizeObserver);
+          var index = getObservationIndex$1(detail.observationTargets, target);
+          var lastObservation = detail.observationTargets.length === 1;
+          if (index >= 0) {
+              lastObservation && resizeObservers$1.splice(resizeObservers$1.indexOf(detail), 1);
+              detail.observationTargets.splice(index, 1);
+              updateCount$1(-1);
           }
       };
       ResizeObserverController.disconnect = function (resizeObserver) {
-          if (observerMap$1.has(resizeObserver)) {
-              var detail = observerMap$1.get(resizeObserver);
-              resizeObservers$1.splice(resizeObservers$1.indexOf(detail), 1);
-              observerMap$1.delete(resizeObserver);
-              updateCount$1(-detail.observationTargets.length);
-          }
+          var _this = this;
+          var detail = observerMap$1.get(resizeObserver);
+          detail.observationTargets.slice().forEach(function (ot) { return _this.unobserve(resizeObserver, ot.target); });
+          detail.activeTargets.splice(0, detail.activeTargets.length);
       };
       return ResizeObserverController;
   }());
@@ -11587,6 +11599,15 @@ var App = (function (exports) {
       xml: "http://www.w3.org/XML/1998/namespace",
       xmlns: "http://www.w3.org/2000/xmlns/"
   };
+  const format2$2 = format$1$1(",.2f"), format1$2 = format$1$1(",.1f"), format0$2 = format$1$1(",.0f");
+  /**
+   * Convenience wrapper for D3-format
+   * @example - formatNumber(1234) -> 1,234
+   * @param v - number to convert to number string
+   */
+  function formatNumber$1(v) {
+      return v < 1 ? format2$2(v) : v < 10 ? format1$2(v) : format0$2(v);
+  }
   /**
    * Measure the content area minus the padding and border
    * @param container - DOM element to measure
@@ -11653,10 +11674,6 @@ var App = (function (exports) {
       canvas.setAttributeNS(null, "transform", `translate(${options.margin.left},${options.margin.top})`);
       svg.appendChild(canvas);
       return svg;
-  }
-  const format2$2 = format$1$1(",.2f"), format1$2 = format$1$1(",.1f"), format0$2 = format$1$1(",.0f");
-  function formatNumber$1(v) {
-      return v < 1 ? format2$2(v) : v < 10 ? format1$2(v) : format0$2(v);
   }
 
   class Sankey {
@@ -11872,6 +11889,7 @@ var App = (function (exports) {
           selectAll("g.links").lower();
           const path = links
               .append("path")
+              .attr("id", d => `${id}_p${d.id}`)
               .attr("class", "link")
               .attr("stroke", (d) => d.fill ? d.fill : d.nodeIn.fill)
               .attr("stroke-width", (d) => d.w)
@@ -11914,6 +11932,7 @@ var App = (function (exports) {
           });
           select$1("g.nodes").raise();
           const rect = nodes.append("rect")
+              .attr("id", (d) => `${id}_r${d.id}`)
               .attr("class", "node")
               .attr("height", (d) => d.h + "px")
               .attr("width", (d) => d.w + "px")
@@ -12466,57 +12485,20 @@ var App = (function (exports) {
   }
 
   function initPlayback$1(config) {
-      const tip = document.createElement("div");
-      tip.classList.add("tip");
-      document.body.appendChild(tip);
-      tip.innerHTML = `<div class="message"></div><div class="playback-pause">pause</div><progress class="playback" min="0" max="8" value="0"></progress>`;
-      const m = tip.querySelector(".message");
-      const ps = tip.querySelector(".playback-pause");
-      const bar = tip.querySelector("progress");
-      let timer, barTimer;
-      let restart;
+      const tip = document.querySelector("nel-tip");
       function run(nodes) {
           if (nodes.length === 0) {
-              tip.style.opacity = "0";
+              tip.show = false;
               return;
           }
           const node = nodes.shift();
-          restart = nodes;
-          const box = node.dom.getBoundingClientRect();
-          tip.style.left = (box.left + box.width / 2) + "px";
-          tip.style.top = (box.top + box.height / 2) + "px";
-          m.innerHTML = node.story;
-          ps.textContent = "pause";
-          bar.value = 0;
-          clearInterval(barTimer);
-          tip.style.opacity = "1";
-          timer = setTimeout(() => {
-              tip.style.opacity = "0";
-              run(restart);
-          }, 8000);
-          barTimer = setInterval(progressBar, 50);
+          if (node.dom.tagName === "g") {
+              node.dom = node.dom.querySelector("rect");
+          }
+          tip.for = node.dom.id;
+          tip.textContent = node.story;
+          tip.show = true;
       }
-      function pause() {
-          if (timer === null) {
-              run(restart);
-          }
-          else {
-              clearTimeout(timer);
-              clearInterval(barTimer);
-              ps.textContent = "resume";
-              timer = null;
-          }
-      }
-      function progressBar() {
-          if (timer && bar.value < bar.max) {
-              bar.value += 0.05;
-          }
-          else {
-              clearInterval(barTimer);
-              barTimer = null;
-          }
-      }
-      ps.addEventListener("click", pause);
       window.addEventListener("node-playback", (e) => {
           run(e.detail);
       });

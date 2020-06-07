@@ -1,0 +1,22 @@
+{
+  "entries": [
+    "./components/nel-expand-item/nel-expand-item.js",
+    "./components/nel-item-collection/nel-item-collection.js",
+    "./components/nel-list-item/nel-list-item.js",
+    "./components/nel-modal-view/nel-modal-view.js",
+    "./components/nel-network-connection/nel-network-connection.js",
+    "./components/nel-on-off/nel-on-off.js",
+    "./components/nel-slicer/nel-slicer.js",
+    "./components/nel-status-badge/nel-status-badge.js",
+    "./components/nel-text-input/nel-text-input.js",
+    "./components/nel-text-tag/nel-text-tag.js",
+    "./components/nel-tip/nel-tip.js"
+  ],
+  "compiler": {
+    "name": "@stencil/core",
+    "version": "1.14.0",
+    "typescriptVersion": "3.9.3"
+  },
+  "collections": [],
+  "bundles": []
+}

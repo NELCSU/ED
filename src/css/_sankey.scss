@@ -22,10 +22,8 @@
   cursor: pointer;
 }
 
-rect {
+rect.node {
   shape-rendering: crispEdges;
-  stroke: #000;
-  stroke-width: 1px;
 }
 
 text {

@@ -1,0 +1,51 @@
+:host {
+  width: 100%;
+}
+
+:host([disabled]),
+:host([disabled]) > details {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+details {
+  display: block;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+}
+
+summary:focus {
+  outline: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.title {
+  width: 100%;
+}
+
+.title > ::slotted(*) {
+  align-items: center;
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  padding-left: 10px;
+  user-select: none;
+}

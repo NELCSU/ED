@@ -1,0 +1,223 @@
+:host {
+  display: block;
+}
+
+:host([show]) > .tip {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.tip {
+  max-height: 25%;
+  max-width: 25%;
+  min-height: 50px;
+  min-width: 100px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 400ms ease-in-out;
+}
+
+.tip-action {
+  cursor: pointer;
+  font-size: 0.8em;
+  margin-right: 5px;
+}
+
+.tip-panel {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  margin: 1em 5px 0.4em 0;
+  width: 100%;
+}
+
+.tip-wrapper {
+  background-color: #fff;
+  border: 1px solid #009;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  position: relative;
+  z-index: 100000;
+}
+
+.tip-wrapper:before {
+  border-style: solid;
+  content: "";
+  height: 0px;
+  position: absolute;
+  width: 0px;
+}
+
+.tip-wrapper:after {
+  border-style: solid;
+  content: "";
+  height: 0px;
+  position: absolute;
+  width: 0px;
+}
+
+.tip-wrapper.top-right:before {
+  border-width: 10px;
+  border-left-color: #009;
+  border-right-color: transparent;
+  border-top-color: #009;
+  border-bottom-color: transparent;
+  bottom: -21px;
+  left: 19.5px;
+}
+
+.tip-wrapper.top-right:after {
+  border-width: 10px;
+  border-left-color: #fff;
+  border-right-color: transparent;
+  border-top-color: #fff;
+  border-bottom-color: transparent;
+  bottom: -19.5px;
+  left: 20px;
+}
+
+.tip-wrapper.top-left:before {
+  border-width: 10px;
+  border-right-color: #009;
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-top-color: #009;
+  bottom: -21px;
+  right: 19px;
+}
+
+.tip-wrapper.top-left:after {
+  border-width: 10px;
+  border-left-color: transparent;
+  border-right-color: #fff;
+  border-top-color: #fff;
+  border-bottom-color: transparent;
+  bottom: -19.5px;
+  right: 19.5px;
+}
+
+.tip-wrapper.middle-left:before {
+  border-width: 10px;
+  border-right-color: transparent;
+  border-left-color: #009;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+  top: calc(50% - 10px);
+  right: -20px;
+}
+
+.tip-wrapper.middle-left:after {
+  border-width: 10px;
+  border-right-color: transparent;
+  border-left-color: #fff;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+  top: calc(50% - 10px);
+  right: -19px;
+}
+
+.tip-wrapper.middle-right:before {
+  border-width: 10px;
+  border-right-color: #009;
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+  top: calc(50% - 10px);
+  left: -20px;
+}
+
+.tip-wrapper.middle-right:after {
+  border-width: 9.5px;
+  border-right-color: #fff;
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+  top: calc(50% - 10px);
+  left: -18.5px;
+}
+
+.tip-wrapper.bottom-left:before {
+  border-width: 10px;
+  border-right-color: #009;
+  border-left-color: transparent;
+  border-bottom-color: #009;
+  border-top-color: transparent;
+  top: -21px;
+  right: 19px;
+}
+
+.tip-wrapper.bottom-left:after {
+  border-width: 10px;
+  border-left-color: transparent;
+  border-right-color: #fff;
+  border-top-color: transparent;
+  border-bottom-color: #fff;
+  top: -19px;
+  right: 19.5px;
+}
+
+.tip-wrapper.bottom-right:before {
+  border-width: 10px;
+  border-right-color: transparent;
+  border-left-color: #009;
+  border-bottom-color: #009;
+  border-top-color: transparent;
+  top: -21px;
+  left: 19px;
+}
+
+.tip-wrapper.bottom-right:after {
+  border-width: 10px;
+  border-right-color: transparent;
+  border-left-color: #fff;
+  border-bottom-color: #fff;
+  border-top-color: transparent;
+  top: -19px;
+  left: 19.5px;
+}
+
+.tip-message {
+  padding: 10px;
+  width: 100%;
+}
+
+.tip-progress {
+  border-radius: 0;
+  height: 0.3em;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.tip-progress.bottom {
+  bottom: -1px;
+}
+
+.tip-progress.top {
+  top: -1px;
+}
+
+.tip-progress::-webkit-progress-bar {
+  border-radius: 0;
+  height: 0.3em;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.tip-progress::-webkit-progress-value {
+  background-color: #009;
+  border-radius: 0;
+  display: block;
+  height: 0.3em;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}

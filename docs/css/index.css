@@ -258,10 +258,8 @@ text.chart-legend {
   cursor: pointer;
 }
 
-rect {
+rect.node {
   shape-rendering: crispEdges;
-  stroke: #000;
-  stroke-width: 1px;
 }
 
 text {
@@ -438,27 +436,44 @@ img.ready:hover {
   transition: opacity 500ms ease-in;
 }
 
+.tip-content-wrapper {
+  max-width: 25%;
+  min-height: 100px;
+  min-width: 150px;
+}
+
 .playback-pause {
+  bottom: 0.6em;
   cursor: pointer;
   font-size: 0.8em;
-  margin: 20px 0 20px 0;
-  text-align: right;
-  width: 100%;
+  position: absolute;
+  right: 5px;
 }
 
 progress.playback {
-  bottom: 0;
+  border-radius: 0;
+  bottom: -1px;
+  height: 0.3em;
   left: 0;
   margin: 0;
   padding: 0;
   position: absolute;
-  width: 100%;
+  width: calc(100% + 1px);
 }
 
 progress.playback::-webkit-progress-bar {
-  border-radius: 1px;
+  border-radius: 0;
+  height: 0.3em;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 progress.playback::-webkit-progress-value {
-  border-radius: 1px;
+  border-radius: 0;
+  display: block;
+  height: 0.3em;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }

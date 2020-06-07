@@ -75,6 +75,17 @@ select {
   fill: $color2;
 }
 
-.tip {
+.tip,
+.tip-pointer {
   background-color: $color2;
+  border: 1px solid $color1;
+}
+
+progress.playback::-webkit-progress-value {
+  background-color: $color1;
+}
+
+rect.node {
+  stroke: $color3;
+  stroke-width: 1px;
 }

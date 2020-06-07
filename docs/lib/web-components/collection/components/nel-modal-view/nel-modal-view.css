@@ -1,0 +1,47 @@
+:host {
+  pointer-events: none;
+}
+
+.modal-view {
+  opacity: 0;
+  transition: opacity 500ms;
+}
+
+:host([open]) {
+  pointer-events: auto;
+}
+
+:host([open]) > .modal-view {
+  background-color: rgba(0, 0, 0, 0.5);
+  bottom: 0;
+  display: block;
+  left: 0;
+  opacity: 1;
+  position: fixed;
+  right: 0;
+  top: 0;
+  transition: opacity 500ms;
+  z-index: 10000;
+}
+
+.modal-content {
+  position: absolute;
+}
+
+.bottom {
+  bottom: 0%;
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+
+.center {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.top {
+  left: 50%;
+  top: 0%;
+  transform: translate(-50%, 0%);
+}
