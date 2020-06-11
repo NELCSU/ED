@@ -4513,329 +4513,6 @@ var App = (function (exports) {
       });
   }
 
-  // Computes the decimal coefficient and exponent of the specified number x with
-  // significant digits p, where x is positive and p is in [1, 21] or undefined.
-  // For example, formatDecimal(1.23) returns ["123", 0].
-  function formatDecimal(x, p) {
-    if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
-    var i, coefficient = x.slice(0, i);
-
-    // The string returned by toExponential either has the form \d\.\d+e[-+]\d+
-    // (e.g., 1.2e+3) or the form \de[-+]\d+ (e.g., 1e+3).
-    return [
-      coefficient.length > 1 ? coefficient[0] + coefficient.slice(2) : coefficient,
-      +x.slice(i + 1)
-    ];
-  }
-
-  function exponent(x) {
-    return x = formatDecimal(Math.abs(x)), x ? x[1] : NaN;
-  }
-
-  function formatGroup(grouping, thousands) {
-    return function(value, width) {
-      var i = value.length,
-          t = [],
-          j = 0,
-          g = grouping[0],
-          length = 0;
-
-      while (i > 0 && g > 0) {
-        if (length + g + 1 > width) g = Math.max(1, width - length);
-        t.push(value.substring(i -= g, i + g));
-        if ((length += g + 1) > width) break;
-        g = grouping[j = (j + 1) % grouping.length];
-      }
-
-      return t.reverse().join(thousands);
-    };
-  }
-
-  function formatNumerals(numerals) {
-    return function(value) {
-      return value.replace(/[0-9]/g, function(i) {
-        return numerals[+i];
-      });
-    };
-  }
-
-  // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
-  var re = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
-
-  function formatSpecifier(specifier) {
-    if (!(match = re.exec(specifier))) throw new Error("invalid format: " + specifier);
-    var match;
-    return new FormatSpecifier({
-      fill: match[1],
-      align: match[2],
-      sign: match[3],
-      symbol: match[4],
-      zero: match[5],
-      width: match[6],
-      comma: match[7],
-      precision: match[8] && match[8].slice(1),
-      trim: match[9],
-      type: match[10]
-    });
-  }
-
-  formatSpecifier.prototype = FormatSpecifier.prototype; // instanceof
-
-  function FormatSpecifier(specifier) {
-    this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
-    this.align = specifier.align === undefined ? ">" : specifier.align + "";
-    this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
-    this.symbol = specifier.symbol === undefined ? "" : specifier.symbol + "";
-    this.zero = !!specifier.zero;
-    this.width = specifier.width === undefined ? undefined : +specifier.width;
-    this.comma = !!specifier.comma;
-    this.precision = specifier.precision === undefined ? undefined : +specifier.precision;
-    this.trim = !!specifier.trim;
-    this.type = specifier.type === undefined ? "" : specifier.type + "";
-  }
-
-  FormatSpecifier.prototype.toString = function() {
-    return this.fill
-        + this.align
-        + this.sign
-        + this.symbol
-        + (this.zero ? "0" : "")
-        + (this.width === undefined ? "" : Math.max(1, this.width | 0))
-        + (this.comma ? "," : "")
-        + (this.precision === undefined ? "" : "." + Math.max(0, this.precision | 0))
-        + (this.trim ? "~" : "")
-        + this.type;
-  };
-
-  // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
-  function formatTrim(s) {
-    out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
-      switch (s[i]) {
-        case ".": i0 = i1 = i; break;
-        case "0": if (i0 === 0) i0 = i; i1 = i; break;
-        default: if (!+s[i]) break out; if (i0 > 0) i0 = 0; break;
-      }
-    }
-    return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
-  }
-
-  var prefixExponent;
-
-  function formatPrefixAuto(x, p) {
-    var d = formatDecimal(x, p);
-    if (!d) return x + "";
-    var coefficient = d[0],
-        exponent = d[1],
-        i = exponent - (prefixExponent = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
-        n = coefficient.length;
-    return i === n ? coefficient
-        : i > n ? coefficient + new Array(i - n + 1).join("0")
-        : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
-        : "0." + new Array(1 - i).join("0") + formatDecimal(x, Math.max(0, p + i - 1))[0]; // less than 1y!
-  }
-
-  function formatRounded(x, p) {
-    var d = formatDecimal(x, p);
-    if (!d) return x + "";
-    var coefficient = d[0],
-        exponent = d[1];
-    return exponent < 0 ? "0." + new Array(-exponent).join("0") + coefficient
-        : coefficient.length > exponent + 1 ? coefficient.slice(0, exponent + 1) + "." + coefficient.slice(exponent + 1)
-        : coefficient + new Array(exponent - coefficient.length + 2).join("0");
-  }
-
-  var formatTypes = {
-    "%": function(x, p) { return (x * 100).toFixed(p); },
-    "b": function(x) { return Math.round(x).toString(2); },
-    "c": function(x) { return x + ""; },
-    "d": function(x) { return Math.round(x).toString(10); },
-    "e": function(x, p) { return x.toExponential(p); },
-    "f": function(x, p) { return x.toFixed(p); },
-    "g": function(x, p) { return x.toPrecision(p); },
-    "o": function(x) { return Math.round(x).toString(8); },
-    "p": function(x, p) { return formatRounded(x * 100, p); },
-    "r": formatRounded,
-    "s": formatPrefixAuto,
-    "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
-    "x": function(x) { return Math.round(x).toString(16); }
-  };
-
-  function identity$1(x) {
-    return x;
-  }
-
-  var map = Array.prototype.map,
-      prefixes = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
-
-  function formatLocale(locale) {
-    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$1 : formatGroup(map.call(locale.grouping, Number), locale.thousands + ""),
-        currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
-        currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
-        decimal = locale.decimal === undefined ? "." : locale.decimal + "",
-        numerals = locale.numerals === undefined ? identity$1 : formatNumerals(map.call(locale.numerals, String)),
-        percent = locale.percent === undefined ? "%" : locale.percent + "",
-        minus = locale.minus === undefined ? "-" : locale.minus + "",
-        nan = locale.nan === undefined ? "NaN" : locale.nan + "";
-
-    function newFormat(specifier) {
-      specifier = formatSpecifier(specifier);
-
-      var fill = specifier.fill,
-          align = specifier.align,
-          sign = specifier.sign,
-          symbol = specifier.symbol,
-          zero = specifier.zero,
-          width = specifier.width,
-          comma = specifier.comma,
-          precision = specifier.precision,
-          trim = specifier.trim,
-          type = specifier.type;
-
-      // The "n" type is an alias for ",g".
-      if (type === "n") comma = true, type = "g";
-
-      // The "" type, and any invalid type, is an alias for ".12~g".
-      else if (!formatTypes[type]) precision === undefined && (precision = 12), trim = true, type = "g";
-
-      // If zero fill is specified, padding goes after sign and before digits.
-      if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
-
-      // Compute the prefix and suffix.
-      // For SI-prefix, the suffix is lazily computed.
-      var prefix = symbol === "$" ? currencyPrefix : symbol === "#" && /[boxX]/.test(type) ? "0" + type.toLowerCase() : "",
-          suffix = symbol === "$" ? currencySuffix : /[%p]/.test(type) ? percent : "";
-
-      // What format function should we use?
-      // Is this an integer type?
-      // Can this type generate exponential notation?
-      var formatType = formatTypes[type],
-          maybeSuffix = /[defgprs%]/.test(type);
-
-      // Set the default precision if not specified,
-      // or clamp the specified precision to the supported range.
-      // For significant precision, it must be in [1, 21].
-      // For fixed precision, it must be in [0, 20].
-      precision = precision === undefined ? 6
-          : /[gprs]/.test(type) ? Math.max(1, Math.min(21, precision))
-          : Math.max(0, Math.min(20, precision));
-
-      function format(value) {
-        var valuePrefix = prefix,
-            valueSuffix = suffix,
-            i, n, c;
-
-        if (type === "c") {
-          valueSuffix = formatType(value) + valueSuffix;
-          value = "";
-        } else {
-          value = +value;
-
-          // Determine the sign. -0 is not less than 0, but 1 / -0 is!
-          var valueNegative = value < 0 || 1 / value < 0;
-
-          // Perform the initial formatting.
-          value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
-
-          // Trim insignificant zeros.
-          if (trim) value = formatTrim(value);
-
-          // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
-          if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
-
-          // Compute the prefix and suffix.
-          valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
-          valueSuffix = (type === "s" ? prefixes[8 + prefixExponent / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
-
-          // Break the formatted value into the integer “value” part that can be
-          // grouped, and fractional or exponential “suffix” part that is not.
-          if (maybeSuffix) {
-            i = -1, n = value.length;
-            while (++i < n) {
-              if (c = value.charCodeAt(i), 48 > c || c > 57) {
-                valueSuffix = (c === 46 ? decimal + value.slice(i + 1) : value.slice(i)) + valueSuffix;
-                value = value.slice(0, i);
-                break;
-              }
-            }
-          }
-        }
-
-        // If the fill character is not "0", grouping is applied before padding.
-        if (comma && !zero) value = group(value, Infinity);
-
-        // Compute the padding.
-        var length = valuePrefix.length + value.length + valueSuffix.length,
-            padding = length < width ? new Array(width - length + 1).join(fill) : "";
-
-        // If the fill character is "0", grouping is applied after padding.
-        if (comma && zero) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
-
-        // Reconstruct the final output based on the desired alignment.
-        switch (align) {
-          case "<": value = valuePrefix + value + valueSuffix + padding; break;
-          case "=": value = valuePrefix + padding + value + valueSuffix; break;
-          case "^": value = padding.slice(0, length = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length); break;
-          default: value = padding + valuePrefix + value + valueSuffix; break;
-        }
-
-        return numerals(value);
-      }
-
-      format.toString = function() {
-        return specifier + "";
-      };
-
-      return format;
-    }
-
-    function formatPrefix(specifier, value) {
-      var f = newFormat((specifier = formatSpecifier(specifier), specifier.type = "f", specifier)),
-          e = Math.max(-8, Math.min(8, Math.floor(exponent(value) / 3))) * 3,
-          k = Math.pow(10, -e),
-          prefix = prefixes[8 + e / 3];
-      return function(value) {
-        return f(k * value) + prefix;
-      };
-    }
-
-    return {
-      format: newFormat,
-      formatPrefix: formatPrefix
-    };
-  }
-
-  var locale;
-  var format;
-  var formatPrefix;
-
-  defaultLocale({
-    decimal: ".",
-    thousands: ",",
-    grouping: [3],
-    currency: ["$", ""],
-    minus: "-"
-  });
-
-  function defaultLocale(definition) {
-    locale = formatLocale(definition);
-    format = locale.format;
-    formatPrefix = locale.formatPrefix;
-    return locale;
-  }
-
-  function precisionFixed(step) {
-    return Math.max(0, -exponent(Math.abs(step)));
-  }
-
-  function precisionPrefix(step, value) {
-    return Math.max(0, Math.max(-8, Math.min(8, Math.floor(exponent(value) / 3))) * 3 - exponent(Math.abs(step)));
-  }
-
-  function precisionRound(step, max) {
-    step = Math.abs(step), max = Math.abs(max) - step;
-    return Math.max(0, exponent(max) - exponent(step)) + 1;
-  }
-
   /**
    * returns short date format based on data key "daymonth" e.g. "0102" being 1st Feb
    * @param day
@@ -4843,14 +4520,6 @@ var App = (function (exports) {
   function getScreenDate(day) {
       const today = new Date(new Date().getFullYear(), parseInt(day.substr(2, 2)) - 1, parseInt(day.substr(0, 2)));
       return today.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
-  }
-  const format2 = format(",.2f"), format1 = format(",.1f"), format0 = format(",.0f");
-  /**
-   * Formats a number
-   * @param v
-   */
-  function formatNumber(v) {
-      return v < 1 ? format2(v) : v < 10 ? format1(v) : format0(v);
   }
 
   const day = document.getElementById("Day");
@@ -5015,12 +4684,12 @@ var App = (function (exports) {
   var ascendingBisect = bisector(ascending$1);
   var bisectRight = ascendingBisect.right;
 
-  function identity$2(x) {
+  function identity$1(x) {
     return x;
   }
 
   function rollup(values, reduce, ...keys) {
-    return nest(values, identity$2, reduce, keys);
+    return nest(values, identity$1, reduce, keys);
   }
 
   function nest(values, map, reduce, keys) {
@@ -5312,7 +4981,7 @@ var App = (function (exports) {
 
   var unit = [0, 1];
 
-  function identity$3(x) {
+  function identity$2(x) {
     return x;
   }
 
@@ -5376,14 +5045,14 @@ var App = (function (exports) {
         transform,
         untransform,
         unknown,
-        clamp = identity$3,
+        clamp = identity$2,
         piecewise,
         output,
         input;
 
     function rescale() {
       var n = Math.min(domain.length, range.length);
-      if (clamp !== identity$3) clamp = clamper(domain[0], domain[n - 1]);
+      if (clamp !== identity$2) clamp = clamper(domain[0], domain[n - 1]);
       piecewise = n > 2 ? polymap : bimap;
       output = input = null;
       return scale;
@@ -5410,7 +5079,7 @@ var App = (function (exports) {
     };
 
     scale.clamp = function(_) {
-      return arguments.length ? (clamp = _ ? true : identity$3, rescale()) : clamp !== identity$3;
+      return arguments.length ? (clamp = _ ? true : identity$2, rescale()) : clamp !== identity$2;
     };
 
     scale.interpolate = function(_) {
@@ -5428,7 +5097,330 @@ var App = (function (exports) {
   }
 
   function continuous() {
-    return transformer()(identity$3, identity$3);
+    return transformer()(identity$2, identity$2);
+  }
+
+  // Computes the decimal coefficient and exponent of the specified number x with
+  // significant digits p, where x is positive and p is in [1, 21] or undefined.
+  // For example, formatDecimal(1.23) returns ["123", 0].
+  function formatDecimal(x, p) {
+    if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
+    var i, coefficient = x.slice(0, i);
+
+    // The string returned by toExponential either has the form \d\.\d+e[-+]\d+
+    // (e.g., 1.2e+3) or the form \de[-+]\d+ (e.g., 1e+3).
+    return [
+      coefficient.length > 1 ? coefficient[0] + coefficient.slice(2) : coefficient,
+      +x.slice(i + 1)
+    ];
+  }
+
+  function exponent(x) {
+    return x = formatDecimal(Math.abs(x)), x ? x[1] : NaN;
+  }
+
+  function formatGroup(grouping, thousands) {
+    return function(value, width) {
+      var i = value.length,
+          t = [],
+          j = 0,
+          g = grouping[0],
+          length = 0;
+
+      while (i > 0 && g > 0) {
+        if (length + g + 1 > width) g = Math.max(1, width - length);
+        t.push(value.substring(i -= g, i + g));
+        if ((length += g + 1) > width) break;
+        g = grouping[j = (j + 1) % grouping.length];
+      }
+
+      return t.reverse().join(thousands);
+    };
+  }
+
+  function formatNumerals(numerals) {
+    return function(value) {
+      return value.replace(/[0-9]/g, function(i) {
+        return numerals[+i];
+      });
+    };
+  }
+
+  // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
+  var re = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
+
+  function formatSpecifier(specifier) {
+    if (!(match = re.exec(specifier))) throw new Error("invalid format: " + specifier);
+    var match;
+    return new FormatSpecifier({
+      fill: match[1],
+      align: match[2],
+      sign: match[3],
+      symbol: match[4],
+      zero: match[5],
+      width: match[6],
+      comma: match[7],
+      precision: match[8] && match[8].slice(1),
+      trim: match[9],
+      type: match[10]
+    });
+  }
+
+  formatSpecifier.prototype = FormatSpecifier.prototype; // instanceof
+
+  function FormatSpecifier(specifier) {
+    this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
+    this.align = specifier.align === undefined ? ">" : specifier.align + "";
+    this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
+    this.symbol = specifier.symbol === undefined ? "" : specifier.symbol + "";
+    this.zero = !!specifier.zero;
+    this.width = specifier.width === undefined ? undefined : +specifier.width;
+    this.comma = !!specifier.comma;
+    this.precision = specifier.precision === undefined ? undefined : +specifier.precision;
+    this.trim = !!specifier.trim;
+    this.type = specifier.type === undefined ? "" : specifier.type + "";
+  }
+
+  FormatSpecifier.prototype.toString = function() {
+    return this.fill
+        + this.align
+        + this.sign
+        + this.symbol
+        + (this.zero ? "0" : "")
+        + (this.width === undefined ? "" : Math.max(1, this.width | 0))
+        + (this.comma ? "," : "")
+        + (this.precision === undefined ? "" : "." + Math.max(0, this.precision | 0))
+        + (this.trim ? "~" : "")
+        + this.type;
+  };
+
+  // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
+  function formatTrim(s) {
+    out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
+      switch (s[i]) {
+        case ".": i0 = i1 = i; break;
+        case "0": if (i0 === 0) i0 = i; i1 = i; break;
+        default: if (!+s[i]) break out; if (i0 > 0) i0 = 0; break;
+      }
+    }
+    return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
+  }
+
+  var prefixExponent;
+
+  function formatPrefixAuto(x, p) {
+    var d = formatDecimal(x, p);
+    if (!d) return x + "";
+    var coefficient = d[0],
+        exponent = d[1],
+        i = exponent - (prefixExponent = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
+        n = coefficient.length;
+    return i === n ? coefficient
+        : i > n ? coefficient + new Array(i - n + 1).join("0")
+        : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
+        : "0." + new Array(1 - i).join("0") + formatDecimal(x, Math.max(0, p + i - 1))[0]; // less than 1y!
+  }
+
+  function formatRounded(x, p) {
+    var d = formatDecimal(x, p);
+    if (!d) return x + "";
+    var coefficient = d[0],
+        exponent = d[1];
+    return exponent < 0 ? "0." + new Array(-exponent).join("0") + coefficient
+        : coefficient.length > exponent + 1 ? coefficient.slice(0, exponent + 1) + "." + coefficient.slice(exponent + 1)
+        : coefficient + new Array(exponent - coefficient.length + 2).join("0");
+  }
+
+  var formatTypes = {
+    "%": function(x, p) { return (x * 100).toFixed(p); },
+    "b": function(x) { return Math.round(x).toString(2); },
+    "c": function(x) { return x + ""; },
+    "d": function(x) { return Math.round(x).toString(10); },
+    "e": function(x, p) { return x.toExponential(p); },
+    "f": function(x, p) { return x.toFixed(p); },
+    "g": function(x, p) { return x.toPrecision(p); },
+    "o": function(x) { return Math.round(x).toString(8); },
+    "p": function(x, p) { return formatRounded(x * 100, p); },
+    "r": formatRounded,
+    "s": formatPrefixAuto,
+    "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
+    "x": function(x) { return Math.round(x).toString(16); }
+  };
+
+  function identity$3(x) {
+    return x;
+  }
+
+  var map = Array.prototype.map,
+      prefixes = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
+
+  function formatLocale(locale) {
+    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$3 : formatGroup(map.call(locale.grouping, Number), locale.thousands + ""),
+        currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
+        currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
+        decimal = locale.decimal === undefined ? "." : locale.decimal + "",
+        numerals = locale.numerals === undefined ? identity$3 : formatNumerals(map.call(locale.numerals, String)),
+        percent = locale.percent === undefined ? "%" : locale.percent + "",
+        minus = locale.minus === undefined ? "-" : locale.minus + "",
+        nan = locale.nan === undefined ? "NaN" : locale.nan + "";
+
+    function newFormat(specifier) {
+      specifier = formatSpecifier(specifier);
+
+      var fill = specifier.fill,
+          align = specifier.align,
+          sign = specifier.sign,
+          symbol = specifier.symbol,
+          zero = specifier.zero,
+          width = specifier.width,
+          comma = specifier.comma,
+          precision = specifier.precision,
+          trim = specifier.trim,
+          type = specifier.type;
+
+      // The "n" type is an alias for ",g".
+      if (type === "n") comma = true, type = "g";
+
+      // The "" type, and any invalid type, is an alias for ".12~g".
+      else if (!formatTypes[type]) precision === undefined && (precision = 12), trim = true, type = "g";
+
+      // If zero fill is specified, padding goes after sign and before digits.
+      if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
+
+      // Compute the prefix and suffix.
+      // For SI-prefix, the suffix is lazily computed.
+      var prefix = symbol === "$" ? currencyPrefix : symbol === "#" && /[boxX]/.test(type) ? "0" + type.toLowerCase() : "",
+          suffix = symbol === "$" ? currencySuffix : /[%p]/.test(type) ? percent : "";
+
+      // What format function should we use?
+      // Is this an integer type?
+      // Can this type generate exponential notation?
+      var formatType = formatTypes[type],
+          maybeSuffix = /[defgprs%]/.test(type);
+
+      // Set the default precision if not specified,
+      // or clamp the specified precision to the supported range.
+      // For significant precision, it must be in [1, 21].
+      // For fixed precision, it must be in [0, 20].
+      precision = precision === undefined ? 6
+          : /[gprs]/.test(type) ? Math.max(1, Math.min(21, precision))
+          : Math.max(0, Math.min(20, precision));
+
+      function format(value) {
+        var valuePrefix = prefix,
+            valueSuffix = suffix,
+            i, n, c;
+
+        if (type === "c") {
+          valueSuffix = formatType(value) + valueSuffix;
+          value = "";
+        } else {
+          value = +value;
+
+          // Determine the sign. -0 is not less than 0, but 1 / -0 is!
+          var valueNegative = value < 0 || 1 / value < 0;
+
+          // Perform the initial formatting.
+          value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
+
+          // Trim insignificant zeros.
+          if (trim) value = formatTrim(value);
+
+          // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
+          if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
+
+          // Compute the prefix and suffix.
+          valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
+          valueSuffix = (type === "s" ? prefixes[8 + prefixExponent / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
+
+          // Break the formatted value into the integer “value” part that can be
+          // grouped, and fractional or exponential “suffix” part that is not.
+          if (maybeSuffix) {
+            i = -1, n = value.length;
+            while (++i < n) {
+              if (c = value.charCodeAt(i), 48 > c || c > 57) {
+                valueSuffix = (c === 46 ? decimal + value.slice(i + 1) : value.slice(i)) + valueSuffix;
+                value = value.slice(0, i);
+                break;
+              }
+            }
+          }
+        }
+
+        // If the fill character is not "0", grouping is applied before padding.
+        if (comma && !zero) value = group(value, Infinity);
+
+        // Compute the padding.
+        var length = valuePrefix.length + value.length + valueSuffix.length,
+            padding = length < width ? new Array(width - length + 1).join(fill) : "";
+
+        // If the fill character is "0", grouping is applied after padding.
+        if (comma && zero) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
+
+        // Reconstruct the final output based on the desired alignment.
+        switch (align) {
+          case "<": value = valuePrefix + value + valueSuffix + padding; break;
+          case "=": value = valuePrefix + padding + value + valueSuffix; break;
+          case "^": value = padding.slice(0, length = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length); break;
+          default: value = padding + valuePrefix + value + valueSuffix; break;
+        }
+
+        return numerals(value);
+      }
+
+      format.toString = function() {
+        return specifier + "";
+      };
+
+      return format;
+    }
+
+    function formatPrefix(specifier, value) {
+      var f = newFormat((specifier = formatSpecifier(specifier), specifier.type = "f", specifier)),
+          e = Math.max(-8, Math.min(8, Math.floor(exponent(value) / 3))) * 3,
+          k = Math.pow(10, -e),
+          prefix = prefixes[8 + e / 3];
+      return function(value) {
+        return f(k * value) + prefix;
+      };
+    }
+
+    return {
+      format: newFormat,
+      formatPrefix: formatPrefix
+    };
+  }
+
+  var locale;
+  var format;
+  var formatPrefix;
+
+  defaultLocale({
+    decimal: ".",
+    thousands: ",",
+    grouping: [3],
+    currency: ["$", ""],
+    minus: "-"
+  });
+
+  function defaultLocale(definition) {
+    locale = formatLocale(definition);
+    format = locale.format;
+    formatPrefix = locale.formatPrefix;
+    return locale;
+  }
+
+  function precisionFixed(step) {
+    return Math.max(0, -exponent(Math.abs(step)));
+  }
+
+  function precisionPrefix(step, value) {
+    return Math.max(0, Math.max(-8, Math.min(8, Math.floor(exponent(value) / 3))) * 3 - exponent(Math.abs(step)));
+  }
+
+  function precisionRound(step, max) {
+    step = Math.abs(step), max = Math.abs(max) - step;
+    return Math.max(0, exponent(max) - exponent(step)) + 1;
   }
 
   function tickFormat(start, stop, count, specifier) {
@@ -5533,7 +5525,7 @@ var App = (function (exports) {
         t1,
         k10,
         transform,
-        interpolator = identity$3,
+        interpolator = identity$2,
         clamp = false,
         unknown;
 
@@ -5583,7 +5575,7 @@ var App = (function (exports) {
   }
 
   function sequential() {
-    var scale = linearish(transformer$1()(identity$3));
+    var scale = linearish(transformer$1()(identity$2));
 
     scale.copy = function() {
       return copy$1(scale, sequential());
@@ -5943,316 +5935,6 @@ var App = (function (exports) {
           }
           return this;
       }
-  }
-
-  // Computes the decimal coefficient and exponent of the specified number x with
-  // significant digits p, where x is positive and p is in [1, 21] or undefined.
-  // For example, formatDecimal(1.23) returns ["123", 0].
-  function formatDecimal$1(x, p) {
-    if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
-    var i, coefficient = x.slice(0, i);
-
-    // The string returned by toExponential either has the form \d\.\d+e[-+]\d+
-    // (e.g., 1.2e+3) or the form \de[-+]\d+ (e.g., 1e+3).
-    return [
-      coefficient.length > 1 ? coefficient[0] + coefficient.slice(2) : coefficient,
-      +x.slice(i + 1)
-    ];
-  }
-
-  function exponent$1(x) {
-    return x = formatDecimal$1(Math.abs(x)), x ? x[1] : NaN;
-  }
-
-  function formatGroup$1(grouping, thousands) {
-    return function(value, width) {
-      var i = value.length,
-          t = [],
-          j = 0,
-          g = grouping[0],
-          length = 0;
-
-      while (i > 0 && g > 0) {
-        if (length + g + 1 > width) g = Math.max(1, width - length);
-        t.push(value.substring(i -= g, i + g));
-        if ((length += g + 1) > width) break;
-        g = grouping[j = (j + 1) % grouping.length];
-      }
-
-      return t.reverse().join(thousands);
-    };
-  }
-
-  function formatNumerals$1(numerals) {
-    return function(value) {
-      return value.replace(/[0-9]/g, function(i) {
-        return numerals[+i];
-      });
-    };
-  }
-
-  // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
-  var re$1 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
-
-  function formatSpecifier$1(specifier) {
-    if (!(match = re$1.exec(specifier))) throw new Error("invalid format: " + specifier);
-    var match;
-    return new FormatSpecifier$1({
-      fill: match[1],
-      align: match[2],
-      sign: match[3],
-      symbol: match[4],
-      zero: match[5],
-      width: match[6],
-      comma: match[7],
-      precision: match[8] && match[8].slice(1),
-      trim: match[9],
-      type: match[10]
-    });
-  }
-
-  formatSpecifier$1.prototype = FormatSpecifier$1.prototype; // instanceof
-
-  function FormatSpecifier$1(specifier) {
-    this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
-    this.align = specifier.align === undefined ? ">" : specifier.align + "";
-    this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
-    this.symbol = specifier.symbol === undefined ? "" : specifier.symbol + "";
-    this.zero = !!specifier.zero;
-    this.width = specifier.width === undefined ? undefined : +specifier.width;
-    this.comma = !!specifier.comma;
-    this.precision = specifier.precision === undefined ? undefined : +specifier.precision;
-    this.trim = !!specifier.trim;
-    this.type = specifier.type === undefined ? "" : specifier.type + "";
-  }
-
-  FormatSpecifier$1.prototype.toString = function() {
-    return this.fill
-        + this.align
-        + this.sign
-        + this.symbol
-        + (this.zero ? "0" : "")
-        + (this.width === undefined ? "" : Math.max(1, this.width | 0))
-        + (this.comma ? "," : "")
-        + (this.precision === undefined ? "" : "." + Math.max(0, this.precision | 0))
-        + (this.trim ? "~" : "")
-        + this.type;
-  };
-
-  // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
-  function formatTrim$1(s) {
-    out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
-      switch (s[i]) {
-        case ".": i0 = i1 = i; break;
-        case "0": if (i0 === 0) i0 = i; i1 = i; break;
-        default: if (!+s[i]) break out; if (i0 > 0) i0 = 0; break;
-      }
-    }
-    return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
-  }
-
-  var prefixExponent$1;
-
-  function formatPrefixAuto$1(x, p) {
-    var d = formatDecimal$1(x, p);
-    if (!d) return x + "";
-    var coefficient = d[0],
-        exponent = d[1],
-        i = exponent - (prefixExponent$1 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
-        n = coefficient.length;
-    return i === n ? coefficient
-        : i > n ? coefficient + new Array(i - n + 1).join("0")
-        : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
-        : "0." + new Array(1 - i).join("0") + formatDecimal$1(x, Math.max(0, p + i - 1))[0]; // less than 1y!
-  }
-
-  function formatRounded$1(x, p) {
-    var d = formatDecimal$1(x, p);
-    if (!d) return x + "";
-    var coefficient = d[0],
-        exponent = d[1];
-    return exponent < 0 ? "0." + new Array(-exponent).join("0") + coefficient
-        : coefficient.length > exponent + 1 ? coefficient.slice(0, exponent + 1) + "." + coefficient.slice(exponent + 1)
-        : coefficient + new Array(exponent - coefficient.length + 2).join("0");
-  }
-
-  var formatTypes$1 = {
-    "%": function(x, p) { return (x * 100).toFixed(p); },
-    "b": function(x) { return Math.round(x).toString(2); },
-    "c": function(x) { return x + ""; },
-    "d": function(x) { return Math.round(x).toString(10); },
-    "e": function(x, p) { return x.toExponential(p); },
-    "f": function(x, p) { return x.toFixed(p); },
-    "g": function(x, p) { return x.toPrecision(p); },
-    "o": function(x) { return Math.round(x).toString(8); },
-    "p": function(x, p) { return formatRounded$1(x * 100, p); },
-    "r": formatRounded$1,
-    "s": formatPrefixAuto$1,
-    "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
-    "x": function(x) { return Math.round(x).toString(16); }
-  };
-
-  function identity$5(x) {
-    return x;
-  }
-
-  var map$1 = Array.prototype.map,
-      prefixes$1 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
-
-  function formatLocale$1(locale) {
-    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$5 : formatGroup$1(map$1.call(locale.grouping, Number), locale.thousands + ""),
-        currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
-        currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
-        decimal = locale.decimal === undefined ? "." : locale.decimal + "",
-        numerals = locale.numerals === undefined ? identity$5 : formatNumerals$1(map$1.call(locale.numerals, String)),
-        percent = locale.percent === undefined ? "%" : locale.percent + "",
-        minus = locale.minus === undefined ? "-" : locale.minus + "",
-        nan = locale.nan === undefined ? "NaN" : locale.nan + "";
-
-    function newFormat(specifier) {
-      specifier = formatSpecifier$1(specifier);
-
-      var fill = specifier.fill,
-          align = specifier.align,
-          sign = specifier.sign,
-          symbol = specifier.symbol,
-          zero = specifier.zero,
-          width = specifier.width,
-          comma = specifier.comma,
-          precision = specifier.precision,
-          trim = specifier.trim,
-          type = specifier.type;
-
-      // The "n" type is an alias for ",g".
-      if (type === "n") comma = true, type = "g";
-
-      // The "" type, and any invalid type, is an alias for ".12~g".
-      else if (!formatTypes$1[type]) precision === undefined && (precision = 12), trim = true, type = "g";
-
-      // If zero fill is specified, padding goes after sign and before digits.
-      if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
-
-      // Compute the prefix and suffix.
-      // For SI-prefix, the suffix is lazily computed.
-      var prefix = symbol === "$" ? currencyPrefix : symbol === "#" && /[boxX]/.test(type) ? "0" + type.toLowerCase() : "",
-          suffix = symbol === "$" ? currencySuffix : /[%p]/.test(type) ? percent : "";
-
-      // What format function should we use?
-      // Is this an integer type?
-      // Can this type generate exponential notation?
-      var formatType = formatTypes$1[type],
-          maybeSuffix = /[defgprs%]/.test(type);
-
-      // Set the default precision if not specified,
-      // or clamp the specified precision to the supported range.
-      // For significant precision, it must be in [1, 21].
-      // For fixed precision, it must be in [0, 20].
-      precision = precision === undefined ? 6
-          : /[gprs]/.test(type) ? Math.max(1, Math.min(21, precision))
-          : Math.max(0, Math.min(20, precision));
-
-      function format(value) {
-        var valuePrefix = prefix,
-            valueSuffix = suffix,
-            i, n, c;
-
-        if (type === "c") {
-          valueSuffix = formatType(value) + valueSuffix;
-          value = "";
-        } else {
-          value = +value;
-
-          // Determine the sign. -0 is not less than 0, but 1 / -0 is!
-          var valueNegative = value < 0 || 1 / value < 0;
-
-          // Perform the initial formatting.
-          value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
-
-          // Trim insignificant zeros.
-          if (trim) value = formatTrim$1(value);
-
-          // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
-          if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
-
-          // Compute the prefix and suffix.
-          valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
-          valueSuffix = (type === "s" ? prefixes$1[8 + prefixExponent$1 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
-
-          // Break the formatted value into the integer “value” part that can be
-          // grouped, and fractional or exponential “suffix” part that is not.
-          if (maybeSuffix) {
-            i = -1, n = value.length;
-            while (++i < n) {
-              if (c = value.charCodeAt(i), 48 > c || c > 57) {
-                valueSuffix = (c === 46 ? decimal + value.slice(i + 1) : value.slice(i)) + valueSuffix;
-                value = value.slice(0, i);
-                break;
-              }
-            }
-          }
-        }
-
-        // If the fill character is not "0", grouping is applied before padding.
-        if (comma && !zero) value = group(value, Infinity);
-
-        // Compute the padding.
-        var length = valuePrefix.length + value.length + valueSuffix.length,
-            padding = length < width ? new Array(width - length + 1).join(fill) : "";
-
-        // If the fill character is "0", grouping is applied after padding.
-        if (comma && zero) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
-
-        // Reconstruct the final output based on the desired alignment.
-        switch (align) {
-          case "<": value = valuePrefix + value + valueSuffix + padding; break;
-          case "=": value = valuePrefix + padding + value + valueSuffix; break;
-          case "^": value = padding.slice(0, length = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length); break;
-          default: value = padding + valuePrefix + value + valueSuffix; break;
-        }
-
-        return numerals(value);
-      }
-
-      format.toString = function() {
-        return specifier + "";
-      };
-
-      return format;
-    }
-
-    function formatPrefix(specifier, value) {
-      var f = newFormat((specifier = formatSpecifier$1(specifier), specifier.type = "f", specifier)),
-          e = Math.max(-8, Math.min(8, Math.floor(exponent$1(value) / 3))) * 3,
-          k = Math.pow(10, -e),
-          prefix = prefixes$1[8 + e / 3];
-      return function(value) {
-        return f(k * value) + prefix;
-      };
-    }
-
-    return {
-      format: newFormat,
-      formatPrefix: formatPrefix
-    };
-  }
-
-  var locale$1;
-  var format$1;
-  var formatPrefix$1;
-
-  defaultLocale$1({
-    decimal: ".",
-    thousands: ",",
-    grouping: [3],
-    currency: ["$", ""],
-    minus: "-"
-  });
-
-  function defaultLocale$1(definition) {
-    locale$1 = formatLocale$1(definition);
-    format$1 = locale$1.format;
-    formatPrefix$1 = locale$1.formatPrefix;
-    return locale$1;
   }
 
   var resizeObservers = [];
@@ -6750,7 +6432,6 @@ var App = (function (exports) {
       xml: "http://www.w3.org/XML/1998/namespace",
       xmlns: "http://www.w3.org/2000/xmlns/"
   };
-  const format2$1 = format$1(",.2f"), format1$1 = format$1(",.1f"), format0$1 = format$1(",.0f");
   /**
    * Measure the content area minus the padding and border
    * @param container - DOM element to measure
@@ -6822,7 +6503,9 @@ var App = (function (exports) {
   function drawColumnChart(node, data) {
       const s = new Slicer(data.map(d => d.label));
       const total = Math.round(sum(data, (d) => d.value));
-      const f = (total === 1) ? format(".0%") : format(".0f");
+      const fp = (total === 1)
+          ? new Intl.NumberFormat("en-GB", { style: "percent" })
+          : new Intl.NumberFormat("en-GB", { style: "decimal" });
       const margin = { top: 30, right: 10, bottom: 30, left: 20 };
       const width = node.clientWidth;
       const rw = width - margin.left - margin.right;
@@ -6878,12 +6561,12 @@ var App = (function (exports) {
           .attr("y", 0)
           .attr("height", (d) => rh - y(d.value));
       rbar.append("title")
-          .text((d) => `${d.label}: ${f(d.value)} calls`);
+          .text((d) => `${d.label}: ${fp.format(d.value)} calls`);
       gbar.append("text")
           .classed("bar", true)
           .attr("x", x.bandwidth() / 2)
           .attr("y", -2)
-          .text((d) => `${f(d.value)}`);
+          .text((d) => `${fp.format(d.value)}`);
       function barClickHandler(d, event) {
           event.stopImmediatePropagation();
           if (event.ctrlKey) {
@@ -8652,7 +8335,7 @@ var App = (function (exports) {
 
   var degrees$1 = 180 / Math.PI;
 
-  var identity$6 = {
+  var identity$5 = {
     translateX: 0,
     translateY: 0,
     rotate: 0,
@@ -8683,7 +8366,7 @@ var App = (function (exports) {
       svgNode$1;
 
   function parseCss$1(value) {
-    if (value === "none") return identity$6;
+    if (value === "none") return identity$5;
     if (!cssNode$1) cssNode$1 = document.createElement("DIV"), cssRoot$1 = document.documentElement, cssView$1 = document.defaultView;
     cssNode$1.style.transform = value;
     value = cssView$1.getComputedStyle(cssRoot$1.appendChild(cssNode$1), null).getPropertyValue("transform");
@@ -8693,10 +8376,10 @@ var App = (function (exports) {
   }
 
   function parseSvg$1(value) {
-    if (value == null) return identity$6;
+    if (value == null) return identity$5;
     if (!svgNode$1) svgNode$1 = document.createElementNS("http://www.w3.org/2000/svg", "g");
     svgNode$1.setAttribute("transform", value);
-    if (!(value = svgNode$1.transform.baseVal.consolidate())) return identity$6;
+    if (!(value = svgNode$1.transform.baseVal.consolidate())) return identity$5;
     value = value.matrix;
     return decompose$1(value.a, value.b, value.c, value.d, value.e, value.f);
   }
@@ -8896,7 +8579,7 @@ var App = (function (exports) {
   // Computes the decimal coefficient and exponent of the specified number x with
   // significant digits p, where x is positive and p is in [1, 21] or undefined.
   // For example, formatDecimal(1.23) returns ["123", 0].
-  function formatDecimal$2(x, p) {
+  function formatDecimal$1(x, p) {
     if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
     var i, coefficient = x.slice(0, i);
 
@@ -8908,11 +8591,11 @@ var App = (function (exports) {
     ];
   }
 
-  function exponent$2(x) {
-    return x = formatDecimal$2(Math.abs(x)), x ? x[1] : NaN;
+  function exponent$1(x) {
+    return x = formatDecimal$1(Math.abs(x)), x ? x[1] : NaN;
   }
 
-  function formatGroup$2(grouping, thousands) {
+  function formatGroup$1(grouping, thousands) {
     return function(value, width) {
       var i = value.length,
           t = [],
@@ -8931,7 +8614,7 @@ var App = (function (exports) {
     };
   }
 
-  function formatNumerals$2(numerals) {
+  function formatNumerals$1(numerals) {
     return function(value) {
       return value.replace(/[0-9]/g, function(i) {
         return numerals[+i];
@@ -8940,12 +8623,12 @@ var App = (function (exports) {
   }
 
   // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
-  var re$2 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
+  var re$1 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
 
-  function formatSpecifier$2(specifier) {
-    if (!(match = re$2.exec(specifier))) throw new Error("invalid format: " + specifier);
+  function formatSpecifier$1(specifier) {
+    if (!(match = re$1.exec(specifier))) throw new Error("invalid format: " + specifier);
     var match;
-    return new FormatSpecifier$2({
+    return new FormatSpecifier$1({
       fill: match[1],
       align: match[2],
       sign: match[3],
@@ -8959,9 +8642,9 @@ var App = (function (exports) {
     });
   }
 
-  formatSpecifier$2.prototype = FormatSpecifier$2.prototype; // instanceof
+  formatSpecifier$1.prototype = FormatSpecifier$1.prototype; // instanceof
 
-  function FormatSpecifier$2(specifier) {
+  function FormatSpecifier$1(specifier) {
     this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
     this.align = specifier.align === undefined ? ">" : specifier.align + "";
     this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
@@ -8974,7 +8657,7 @@ var App = (function (exports) {
     this.type = specifier.type === undefined ? "" : specifier.type + "";
   }
 
-  FormatSpecifier$2.prototype.toString = function() {
+  FormatSpecifier$1.prototype.toString = function() {
     return this.fill
         + this.align
         + this.sign
@@ -8988,7 +8671,7 @@ var App = (function (exports) {
   };
 
   // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
-  function formatTrim$2(s) {
+  function formatTrim$1(s) {
     out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
       switch (s[i]) {
         case ".": i0 = i1 = i; break;
@@ -8999,23 +8682,23 @@ var App = (function (exports) {
     return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
   }
 
-  var prefixExponent$2;
+  var prefixExponent$1;
 
-  function formatPrefixAuto$2(x, p) {
-    var d = formatDecimal$2(x, p);
+  function formatPrefixAuto$1(x, p) {
+    var d = formatDecimal$1(x, p);
     if (!d) return x + "";
     var coefficient = d[0],
         exponent = d[1],
-        i = exponent - (prefixExponent$2 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
+        i = exponent - (prefixExponent$1 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
         n = coefficient.length;
     return i === n ? coefficient
         : i > n ? coefficient + new Array(i - n + 1).join("0")
         : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
-        : "0." + new Array(1 - i).join("0") + formatDecimal$2(x, Math.max(0, p + i - 1))[0]; // less than 1y!
+        : "0." + new Array(1 - i).join("0") + formatDecimal$1(x, Math.max(0, p + i - 1))[0]; // less than 1y!
   }
 
-  function formatRounded$2(x, p) {
-    var d = formatDecimal$2(x, p);
+  function formatRounded$1(x, p) {
+    var d = formatDecimal$1(x, p);
     if (!d) return x + "";
     var coefficient = d[0],
         exponent = d[1];
@@ -9024,7 +8707,7 @@ var App = (function (exports) {
         : coefficient + new Array(exponent - coefficient.length + 2).join("0");
   }
 
-  var formatTypes$2 = {
+  var formatTypes$1 = {
     "%": function(x, p) { return (x * 100).toFixed(p); },
     "b": function(x) { return Math.round(x).toString(2); },
     "c": function(x) { return x + ""; },
@@ -9033,9 +8716,9 @@ var App = (function (exports) {
     "f": function(x, p) { return x.toFixed(p); },
     "g": function(x, p) { return x.toPrecision(p); },
     "o": function(x) { return Math.round(x).toString(8); },
-    "p": function(x, p) { return formatRounded$2(x * 100, p); },
-    "r": formatRounded$2,
-    "s": formatPrefixAuto$2,
+    "p": function(x, p) { return formatRounded$1(x * 100, p); },
+    "r": formatRounded$1,
+    "s": formatPrefixAuto$1,
     "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
     "x": function(x) { return Math.round(x).toString(16); }
   };
@@ -9044,21 +8727,21 @@ var App = (function (exports) {
     return x;
   }
 
-  var map$2 = Array.prototype.map,
-      prefixes$2 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
+  var map$1 = Array.prototype.map,
+      prefixes$1 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
 
-  function formatLocale$2(locale) {
-    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$2$1 : formatGroup$2(map$2.call(locale.grouping, Number), locale.thousands + ""),
+  function formatLocale$1(locale) {
+    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$2$1 : formatGroup$1(map$1.call(locale.grouping, Number), locale.thousands + ""),
         currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
         currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
         decimal = locale.decimal === undefined ? "." : locale.decimal + "",
-        numerals = locale.numerals === undefined ? identity$2$1 : formatNumerals$2(map$2.call(locale.numerals, String)),
+        numerals = locale.numerals === undefined ? identity$2$1 : formatNumerals$1(map$1.call(locale.numerals, String)),
         percent = locale.percent === undefined ? "%" : locale.percent + "",
         minus = locale.minus === undefined ? "-" : locale.minus + "",
         nan = locale.nan === undefined ? "NaN" : locale.nan + "";
 
     function newFormat(specifier) {
-      specifier = formatSpecifier$2(specifier);
+      specifier = formatSpecifier$1(specifier);
 
       var fill = specifier.fill,
           align = specifier.align,
@@ -9075,7 +8758,7 @@ var App = (function (exports) {
       if (type === "n") comma = true, type = "g";
 
       // The "" type, and any invalid type, is an alias for ".12~g".
-      else if (!formatTypes$2[type]) precision === undefined && (precision = 12), trim = true, type = "g";
+      else if (!formatTypes$1[type]) precision === undefined && (precision = 12), trim = true, type = "g";
 
       // If zero fill is specified, padding goes after sign and before digits.
       if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
@@ -9088,7 +8771,7 @@ var App = (function (exports) {
       // What format function should we use?
       // Is this an integer type?
       // Can this type generate exponential notation?
-      var formatType = formatTypes$2[type],
+      var formatType = formatTypes$1[type],
           maybeSuffix = /[defgprs%]/.test(type);
 
       // Set the default precision if not specified,
@@ -9117,14 +8800,14 @@ var App = (function (exports) {
           value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
 
           // Trim insignificant zeros.
-          if (trim) value = formatTrim$2(value);
+          if (trim) value = formatTrim$1(value);
 
           // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
           if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
 
           // Compute the prefix and suffix.
           valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
-          valueSuffix = (type === "s" ? prefixes$2[8 + prefixExponent$2 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
+          valueSuffix = (type === "s" ? prefixes$1[8 + prefixExponent$1 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
 
           // Break the formatted value into the integer “value” part that can be
           // grouped, and fractional or exponential “suffix” part that is not.
@@ -9169,10 +8852,10 @@ var App = (function (exports) {
     }
 
     function formatPrefix(specifier, value) {
-      var f = newFormat((specifier = formatSpecifier$2(specifier), specifier.type = "f", specifier)),
-          e = Math.max(-8, Math.min(8, Math.floor(exponent$2(value) / 3))) * 3,
+      var f = newFormat((specifier = formatSpecifier$1(specifier), specifier.type = "f", specifier)),
+          e = Math.max(-8, Math.min(8, Math.floor(exponent$1(value) / 3))) * 3,
           k = Math.pow(10, -e),
-          prefix = prefixes$2[8 + e / 3];
+          prefix = prefixes$1[8 + e / 3];
       return function(value) {
         return f(k * value) + prefix;
       };
@@ -9184,11 +8867,11 @@ var App = (function (exports) {
     };
   }
 
-  var locale$2;
-  var format$2;
-  var formatPrefix$2;
+  var locale$1;
+  var format$1;
+  var formatPrefix$1;
 
-  defaultLocale$2({
+  defaultLocale$1({
     decimal: ".",
     thousands: ",",
     grouping: [3],
@@ -9196,35 +8879,35 @@ var App = (function (exports) {
     minus: "-"
   });
 
-  function defaultLocale$2(definition) {
-    locale$2 = formatLocale$2(definition);
-    format$2 = locale$2.format;
-    formatPrefix$2 = locale$2.formatPrefix;
-    return locale$2;
+  function defaultLocale$1(definition) {
+    locale$1 = formatLocale$1(definition);
+    format$1 = locale$1.format;
+    formatPrefix$1 = locale$1.formatPrefix;
+    return locale$1;
   }
 
   function precisionFixed$1(step) {
-    return Math.max(0, -exponent$2(Math.abs(step)));
+    return Math.max(0, -exponent$1(Math.abs(step)));
   }
 
   function precisionPrefix$1(step, value) {
-    return Math.max(0, Math.max(-8, Math.min(8, Math.floor(exponent$2(value) / 3))) * 3 - exponent$2(Math.abs(step)));
+    return Math.max(0, Math.max(-8, Math.min(8, Math.floor(exponent$1(value) / 3))) * 3 - exponent$1(Math.abs(step)));
   }
 
   function precisionRound$1(step, max) {
     step = Math.abs(step), max = Math.abs(max) - step;
-    return Math.max(0, exponent$2(max) - exponent$2(step)) + 1;
+    return Math.max(0, exponent$1(max) - exponent$1(step)) + 1;
   }
 
   function tickFormat$1(start, stop, count, specifier) {
     var step = tickStep$1(start, stop, count),
         precision;
-    specifier = formatSpecifier$2(specifier == null ? ",f" : specifier);
+    specifier = formatSpecifier$1(specifier == null ? ",f" : specifier);
     switch (specifier.type) {
       case "s": {
         var value = Math.max(Math.abs(start), Math.abs(stop));
         if (specifier.precision == null && !isNaN(precision = precisionPrefix$1(step, value))) specifier.precision = precision;
-        return formatPrefix$2(specifier, value);
+        return formatPrefix$1(specifier, value);
       }
       case "":
       case "e":
@@ -9240,7 +8923,7 @@ var App = (function (exports) {
         break;
       }
     }
-    return format$2(specifier);
+    return format$1(specifier);
   }
 
   function linearish$1(scale) {
@@ -10794,316 +10477,6 @@ var App = (function (exports) {
     return drag;
   }
 
-  // Computes the decimal coefficient and exponent of the specified number x with
-  // significant digits p, where x is positive and p is in [1, 21] or undefined.
-  // For example, formatDecimal(1.23) returns ["123", 0].
-  function formatDecimal$1$1(x, p) {
-    if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
-    var i, coefficient = x.slice(0, i);
-
-    // The string returned by toExponential either has the form \d\.\d+e[-+]\d+
-    // (e.g., 1.2e+3) or the form \de[-+]\d+ (e.g., 1e+3).
-    return [
-      coefficient.length > 1 ? coefficient[0] + coefficient.slice(2) : coefficient,
-      +x.slice(i + 1)
-    ];
-  }
-
-  function exponent$1$1(x) {
-    return x = formatDecimal$1$1(Math.abs(x)), x ? x[1] : NaN;
-  }
-
-  function formatGroup$1$1(grouping, thousands) {
-    return function(value, width) {
-      var i = value.length,
-          t = [],
-          j = 0,
-          g = grouping[0],
-          length = 0;
-
-      while (i > 0 && g > 0) {
-        if (length + g + 1 > width) g = Math.max(1, width - length);
-        t.push(value.substring(i -= g, i + g));
-        if ((length += g + 1) > width) break;
-        g = grouping[j = (j + 1) % grouping.length];
-      }
-
-      return t.reverse().join(thousands);
-    };
-  }
-
-  function formatNumerals$1$1(numerals) {
-    return function(value) {
-      return value.replace(/[0-9]/g, function(i) {
-        return numerals[+i];
-      });
-    };
-  }
-
-  // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
-  var re$1$1 = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
-
-  function formatSpecifier$1$1(specifier) {
-    if (!(match = re$1$1.exec(specifier))) throw new Error("invalid format: " + specifier);
-    var match;
-    return new FormatSpecifier$1$1({
-      fill: match[1],
-      align: match[2],
-      sign: match[3],
-      symbol: match[4],
-      zero: match[5],
-      width: match[6],
-      comma: match[7],
-      precision: match[8] && match[8].slice(1),
-      trim: match[9],
-      type: match[10]
-    });
-  }
-
-  formatSpecifier$1$1.prototype = FormatSpecifier$1$1.prototype; // instanceof
-
-  function FormatSpecifier$1$1(specifier) {
-    this.fill = specifier.fill === undefined ? " " : specifier.fill + "";
-    this.align = specifier.align === undefined ? ">" : specifier.align + "";
-    this.sign = specifier.sign === undefined ? "-" : specifier.sign + "";
-    this.symbol = specifier.symbol === undefined ? "" : specifier.symbol + "";
-    this.zero = !!specifier.zero;
-    this.width = specifier.width === undefined ? undefined : +specifier.width;
-    this.comma = !!specifier.comma;
-    this.precision = specifier.precision === undefined ? undefined : +specifier.precision;
-    this.trim = !!specifier.trim;
-    this.type = specifier.type === undefined ? "" : specifier.type + "";
-  }
-
-  FormatSpecifier$1$1.prototype.toString = function() {
-    return this.fill
-        + this.align
-        + this.sign
-        + this.symbol
-        + (this.zero ? "0" : "")
-        + (this.width === undefined ? "" : Math.max(1, this.width | 0))
-        + (this.comma ? "," : "")
-        + (this.precision === undefined ? "" : "." + Math.max(0, this.precision | 0))
-        + (this.trim ? "~" : "")
-        + this.type;
-  };
-
-  // Trims insignificant zeros, e.g., replaces 1.2000k with 1.2k.
-  function formatTrim$1$1(s) {
-    out: for (var n = s.length, i = 1, i0 = -1, i1; i < n; ++i) {
-      switch (s[i]) {
-        case ".": i0 = i1 = i; break;
-        case "0": if (i0 === 0) i0 = i; i1 = i; break;
-        default: if (!+s[i]) break out; if (i0 > 0) i0 = 0; break;
-      }
-    }
-    return i0 > 0 ? s.slice(0, i0) + s.slice(i1 + 1) : s;
-  }
-
-  var prefixExponent$1$1;
-
-  function formatPrefixAuto$1$1(x, p) {
-    var d = formatDecimal$1$1(x, p);
-    if (!d) return x + "";
-    var coefficient = d[0],
-        exponent = d[1],
-        i = exponent - (prefixExponent$1$1 = Math.max(-8, Math.min(8, Math.floor(exponent / 3))) * 3) + 1,
-        n = coefficient.length;
-    return i === n ? coefficient
-        : i > n ? coefficient + new Array(i - n + 1).join("0")
-        : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
-        : "0." + new Array(1 - i).join("0") + formatDecimal$1$1(x, Math.max(0, p + i - 1))[0]; // less than 1y!
-  }
-
-  function formatRounded$1$1(x, p) {
-    var d = formatDecimal$1$1(x, p);
-    if (!d) return x + "";
-    var coefficient = d[0],
-        exponent = d[1];
-    return exponent < 0 ? "0." + new Array(-exponent).join("0") + coefficient
-        : coefficient.length > exponent + 1 ? coefficient.slice(0, exponent + 1) + "." + coefficient.slice(exponent + 1)
-        : coefficient + new Array(exponent - coefficient.length + 2).join("0");
-  }
-
-  var formatTypes$1$1 = {
-    "%": function(x, p) { return (x * 100).toFixed(p); },
-    "b": function(x) { return Math.round(x).toString(2); },
-    "c": function(x) { return x + ""; },
-    "d": function(x) { return Math.round(x).toString(10); },
-    "e": function(x, p) { return x.toExponential(p); },
-    "f": function(x, p) { return x.toFixed(p); },
-    "g": function(x, p) { return x.toPrecision(p); },
-    "o": function(x) { return Math.round(x).toString(8); },
-    "p": function(x, p) { return formatRounded$1$1(x * 100, p); },
-    "r": formatRounded$1$1,
-    "s": formatPrefixAuto$1$1,
-    "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
-    "x": function(x) { return Math.round(x).toString(16); }
-  };
-
-  function identity$3$1(x) {
-    return x;
-  }
-
-  var map$1$1 = Array.prototype.map,
-      prefixes$1$1 = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
-
-  function formatLocale$1$1(locale) {
-    var group = locale.grouping === undefined || locale.thousands === undefined ? identity$3$1 : formatGroup$1$1(map$1$1.call(locale.grouping, Number), locale.thousands + ""),
-        currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
-        currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
-        decimal = locale.decimal === undefined ? "." : locale.decimal + "",
-        numerals = locale.numerals === undefined ? identity$3$1 : formatNumerals$1$1(map$1$1.call(locale.numerals, String)),
-        percent = locale.percent === undefined ? "%" : locale.percent + "",
-        minus = locale.minus === undefined ? "-" : locale.minus + "",
-        nan = locale.nan === undefined ? "NaN" : locale.nan + "";
-
-    function newFormat(specifier) {
-      specifier = formatSpecifier$1$1(specifier);
-
-      var fill = specifier.fill,
-          align = specifier.align,
-          sign = specifier.sign,
-          symbol = specifier.symbol,
-          zero = specifier.zero,
-          width = specifier.width,
-          comma = specifier.comma,
-          precision = specifier.precision,
-          trim = specifier.trim,
-          type = specifier.type;
-
-      // The "n" type is an alias for ",g".
-      if (type === "n") comma = true, type = "g";
-
-      // The "" type, and any invalid type, is an alias for ".12~g".
-      else if (!formatTypes$1$1[type]) precision === undefined && (precision = 12), trim = true, type = "g";
-
-      // If zero fill is specified, padding goes after sign and before digits.
-      if (zero || (fill === "0" && align === "=")) zero = true, fill = "0", align = "=";
-
-      // Compute the prefix and suffix.
-      // For SI-prefix, the suffix is lazily computed.
-      var prefix = symbol === "$" ? currencyPrefix : symbol === "#" && /[boxX]/.test(type) ? "0" + type.toLowerCase() : "",
-          suffix = symbol === "$" ? currencySuffix : /[%p]/.test(type) ? percent : "";
-
-      // What format function should we use?
-      // Is this an integer type?
-      // Can this type generate exponential notation?
-      var formatType = formatTypes$1$1[type],
-          maybeSuffix = /[defgprs%]/.test(type);
-
-      // Set the default precision if not specified,
-      // or clamp the specified precision to the supported range.
-      // For significant precision, it must be in [1, 21].
-      // For fixed precision, it must be in [0, 20].
-      precision = precision === undefined ? 6
-          : /[gprs]/.test(type) ? Math.max(1, Math.min(21, precision))
-          : Math.max(0, Math.min(20, precision));
-
-      function format(value) {
-        var valuePrefix = prefix,
-            valueSuffix = suffix,
-            i, n, c;
-
-        if (type === "c") {
-          valueSuffix = formatType(value) + valueSuffix;
-          value = "";
-        } else {
-          value = +value;
-
-          // Determine the sign. -0 is not less than 0, but 1 / -0 is!
-          var valueNegative = value < 0 || 1 / value < 0;
-
-          // Perform the initial formatting.
-          value = isNaN(value) ? nan : formatType(Math.abs(value), precision);
-
-          // Trim insignificant zeros.
-          if (trim) value = formatTrim$1$1(value);
-
-          // If a negative value rounds to zero after formatting, and no explicit positive sign is requested, hide the sign.
-          if (valueNegative && +value === 0 && sign !== "+") valueNegative = false;
-
-          // Compute the prefix and suffix.
-          valuePrefix = (valueNegative ? (sign === "(" ? sign : minus) : sign === "-" || sign === "(" ? "" : sign) + valuePrefix;
-          valueSuffix = (type === "s" ? prefixes$1$1[8 + prefixExponent$1$1 / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
-
-          // Break the formatted value into the integer “value” part that can be
-          // grouped, and fractional or exponential “suffix” part that is not.
-          if (maybeSuffix) {
-            i = -1, n = value.length;
-            while (++i < n) {
-              if (c = value.charCodeAt(i), 48 > c || c > 57) {
-                valueSuffix = (c === 46 ? decimal + value.slice(i + 1) : value.slice(i)) + valueSuffix;
-                value = value.slice(0, i);
-                break;
-              }
-            }
-          }
-        }
-
-        // If the fill character is not "0", grouping is applied before padding.
-        if (comma && !zero) value = group(value, Infinity);
-
-        // Compute the padding.
-        var length = valuePrefix.length + value.length + valueSuffix.length,
-            padding = length < width ? new Array(width - length + 1).join(fill) : "";
-
-        // If the fill character is "0", grouping is applied after padding.
-        if (comma && zero) value = group(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
-
-        // Reconstruct the final output based on the desired alignment.
-        switch (align) {
-          case "<": value = valuePrefix + value + valueSuffix + padding; break;
-          case "=": value = valuePrefix + padding + value + valueSuffix; break;
-          case "^": value = padding.slice(0, length = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length); break;
-          default: value = padding + valuePrefix + value + valueSuffix; break;
-        }
-
-        return numerals(value);
-      }
-
-      format.toString = function() {
-        return specifier + "";
-      };
-
-      return format;
-    }
-
-    function formatPrefix(specifier, value) {
-      var f = newFormat((specifier = formatSpecifier$1$1(specifier), specifier.type = "f", specifier)),
-          e = Math.max(-8, Math.min(8, Math.floor(exponent$1$1(value) / 3))) * 3,
-          k = Math.pow(10, -e),
-          prefix = prefixes$1$1[8 + e / 3];
-      return function(value) {
-        return f(k * value) + prefix;
-      };
-    }
-
-    return {
-      format: newFormat,
-      formatPrefix: formatPrefix
-    };
-  }
-
-  var locale$1$1;
-  var format$1$1;
-  var formatPrefix$1$1;
-
-  defaultLocale$1$1({
-    decimal: ".",
-    thousands: ",",
-    grouping: [3],
-    currency: ["$", ""],
-    minus: "-"
-  });
-
-  function defaultLocale$1$1(definition) {
-    locale$1$1 = formatLocale$1$1(definition);
-    format$1$1 = locale$1$1.format;
-    formatPrefix$1$1 = locale$1$1.formatPrefix;
-    return locale$1$1;
-  }
-
   var resizeObservers$1 = [];
 
   var hasActiveObservations$1 = function () {
@@ -11599,15 +10972,6 @@ var App = (function (exports) {
       xml: "http://www.w3.org/XML/1998/namespace",
       xmlns: "http://www.w3.org/2000/xmlns/"
   };
-  const format2$2 = format$1$1(",.2f"), format1$2 = format$1$1(",.1f"), format0$2 = format$1$1(",.0f");
-  /**
-   * Convenience wrapper for D3-format
-   * @example - formatNumber(1234) -> 1,234
-   * @param v - number to convert to number string
-   */
-  function formatNumber$1(v) {
-      return v < 1 ? format2$2(v) : v < 10 ? format1$2(v) : format0$2(v);
-  }
   /**
    * Measure the content area minus the padding and border
    * @param container - DOM element to measure
@@ -11693,6 +11057,7 @@ var App = (function (exports) {
           this.rw = 150;
           this.w = 200;
           this._extent = [0, 0]; // min/max node values
+          this._fp = new Intl.NumberFormat("en-GB", { style: "decimal" });
           this._linkGenerator = () => true;
           this._layerGap = 0;
           this._totalLayers = 0;
@@ -11837,13 +11202,13 @@ var App = (function (exports) {
                   .attr("x", (d) => -d.h / 2)
                   .attr("y", () => this.nodeSize / 2)
                   .attr("transform", "rotate(270)")
-                  .text((d) => d.h > 50 ? formatNumber$1(d.value) : "");
+                  .text((d) => d.h > 50 ? this._fp.format(d.value) : "");
           }
           else {
               innerLabel
                   .attr("x", (d) => d.w / 2)
                   .attr("y", () => this.nodeSize / 2)
-                  .text((d) => d.w > 50 ? formatNumber$1(d.value) : "");
+                  .text((d) => d.w > 50 ? this._fp.format(d.value) : "");
           }
           const t1 = transition$1().duration(600);
           if (this.orient === "horizontal") {
@@ -11895,7 +11260,7 @@ var App = (function (exports) {
               .attr("stroke-width", (d) => d.w)
               .attr("fill", "none");
           links.append("title")
-              .text((d) => `${d.nodeIn.name} -> ${d.nodeOut.name} - ${formatNumber$1(d.value)}`);
+              .text((d) => `${d.nodeIn.name} -> ${d.nodeOut.name} - ${this._fp.format(d.value)}`);
           const t = transition$1().duration(600);
           path.transition(t).delay(1000)
               // @ts-ignore
@@ -11952,7 +11317,7 @@ var App = (function (exports) {
           nodes.transition(t1)
               .attr("transform", (d) => `translate(${d.x} ${d.y})`);
           nodes.append("title")
-              .text((d) => `${d.name} - ${formatNumber$1(d.value)}`);
+              .text((d) => `${d.name} - ${this._fp.format(d.value)}`);
           function dragstart(d) {
               if (!d.__x) {
                   d.__x = event$1.x;
@@ -12340,6 +11705,7 @@ var App = (function (exports) {
   const color$2 = sequential(interpolateViridis).domain([0, 1]);
   const chart = document.getElementById("chart");
   const desc = (a, b) => a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
+  const fp = new Intl.NumberFormat("en-GB", { style: "decimal" });
   /**
    * @param config
    */
@@ -12402,9 +11768,9 @@ var App = (function (exports) {
                   return ns.value;
               })
                   .reduce((ac, v) => ac + v, 0);
-              text = `<div>${d.name}</div><div>Incoming: ${formatNumber(src)} calls</div>`;
-              text += `<div>Outgoing: ${formatNumber(tgt)} calls</div>`;
-              text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+              text = `<div>${d.name}</div><div>Incoming: ${fp.format(src)} calls</div>`;
+              text += `<div>Outgoing: ${fp.format(tgt)} calls</div>`;
+              text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : fp.format(tgt / src)}`;
           }
           config.breakdown.message = text;
           config.breakdown.chart = [];
@@ -12421,7 +11787,7 @@ var App = (function (exports) {
           const d = g.datum();
           const sg = select(chart).select("svg");
           let text = `<div>${d.nodeIn.name} → ${d.nodeOut.name} calls</div>`;
-          text += `<div>Outgoing: ${formatNumber(d.value)} calls</div>`;
+          text += `<div>Outgoing: ${fp.format(d.value)} calls</div>`;
           config.breakdown.message = text;
           config.breakdown.chart = [];
           if (d.supply && d.supply.length > 0) {
@@ -12580,7 +11946,7 @@ var App = (function (exports) {
 
   function Map$1() {}
 
-  Map$1.prototype = map$3.prototype = {
+  Map$1.prototype = map$2.prototype = {
     constructor: Map$1,
     has: function(key) {
       return (prefix + key) in this;
@@ -12628,7 +11994,7 @@ var App = (function (exports) {
     }
   };
 
-  function map$3(object, f) {
+  function map$2(object, f) {
     var map = new Map$1;
 
     // Copy constructor.
@@ -12652,7 +12018,7 @@ var App = (function (exports) {
 
   function Set() {}
 
-  var proto = map$3.prototype;
+  var proto = map$2.prototype;
 
   Set.prototype = set$3.prototype = {
     constructor: Set,
@@ -12690,7 +12056,7 @@ var App = (function (exports) {
     var request,
         event = dispatch("beforesend", "progress", "load", "error"),
         mimeType,
-        headers = map$3(),
+        headers = map$2(),
         xhr = new XMLHttpRequest,
         user = null,
         password = null,

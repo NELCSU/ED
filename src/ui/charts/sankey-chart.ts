@@ -4,11 +4,11 @@ import { rollup, sum } from "d3-array";
 import { scaleSequential } from "d3-scale";
 import { select } from "d3-selection";
 import { interpolateViridis } from "d3-scale-chromatic";
-import { formatNumber } from "../../utils/format";
 
 const color = scaleSequential(interpolateViridis).domain([0, 1]);
 const chart = document.getElementById("chart") as HTMLDivElement;
 const desc = (a: TBreakdown, b: TBreakdown) => a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
+const fp: Intl.NumberFormat= new Intl.NumberFormat("en-GB", { style: "decimal" });
 
 /**
  * @param config 
@@ -88,9 +88,9 @@ export function initSankeyChart(config: TConfig) {
         })
         .reduce((ac: any, v: number) => ac + v, 0);
 
-      text = `<div>${d.name}</div><div>Incoming: ${formatNumber(src)} calls</div>`;
-      text += `<div>Outgoing: ${formatNumber(tgt)} calls</div>`;
-      text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : formatNumber(tgt / src)}`;
+      text = `<div>${d.name}</div><div>Incoming: ${fp.format(src)} calls</div>`;
+      text += `<div>Outgoing: ${fp.format(tgt)} calls</div>`;
+      text += `Out/In: ${(src === 0 || tgt === 0) ? "---" : fp.format(tgt / src)}`;
     }
 
     config.breakdown.message = text;
@@ -112,7 +112,7 @@ export function initSankeyChart(config: TConfig) {
     const sg = select(chart).select("svg");
 
     let text = `<div>${d.nodeIn.name} → ${d.nodeOut.name} calls</div>`;
-    text += `<div>Outgoing: ${formatNumber(d.value)} calls</div>`;
+    text += `<div>Outgoing: ${fp.format(d.value)} calls</div>`;
 
     config.breakdown.message = text;
     config.breakdown.chart = [];
