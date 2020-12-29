@@ -8,6 +8,16 @@
 			"problemMatcher": [],
 			"label": "npm: test",
 			"detail": "npm run http"
+		},
+		{
+			"type": "npm",
+			"script": "build",
+			"problemMatcher": [
+				"$eslint-compact"
+			],
+			"group": "build",
+			"label": "npm: build",
+			"detail": "npm run compile-js"
 		}
 	]
 }

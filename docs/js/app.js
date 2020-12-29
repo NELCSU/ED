@@ -12467,6 +12467,8 @@ var App = (function (exports) {
 
   exports.start = start$2;
 
+  Object.defineProperty(exports, '__esModule', { value: true });
+
   return exports;
 
 }({}));
